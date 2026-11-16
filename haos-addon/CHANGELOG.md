@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Appui pris dès pointerdown, sans double action au relâchement ou au clic.
+- Tolérance aux pertes brèves de suivi : attente d'une projection valide pendant 1,5 s.
+- Position courante utilisable à l'appui uniquement si valide et âgée de moins de 100 ms ; toute image invalide l'efface.
+- Viseur vert lorsque le placement est possible et sélection tactile XR native en repli hors panneau.
+
 ## 0.1.5
 
 - Placement tactile réactif même si la visée est invalide, retour immédiat et motif du refus.

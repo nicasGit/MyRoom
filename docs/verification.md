@@ -17,4 +17,6 @@ Version 0.1.4 : six tests logiciels, dont trois nouveaux tests de projection du 
 
 Version 0.1.5 : les tests couvrent également le dédoublonnage pointerup/click, la validation des diagnostics XR, leur accusé de réception WebSocket et leur présence dans le journal admin avec l'identité serveur. L'absence d'action sur le téléphone de l'utilisateur n'a pas pu être reproduite sur matériel ; le blocage silencieux du bouton quand la visée est invalide est corrigé et des traces permettent de poursuivre le diagnostic.
 
+Version 0.1.6 : tests supplémentaires du contact pointerdown sans double action au relâchement, de la position récente consommée une seule fois, de la reprise du suivi pendant une demande, de l'invalidation des positions périmées et du refus d'une reprise après expiration ou annulation. Le retour utilisateur montre une alternance entre projection valide et suivi absent sur téléphone ; ces tests simulent ces transitions en logiciel, sans validation matérielle de la correction.
+
 Non vérifiés : affichage navigateur, sessions WebXR, Quest 2 / 3 / 3S, précision du calibrage, image Docker ARM64, Nginx en exécution et installation HAOS. Docker n'est pas disponible dans cet environnement. Voir [la procédure matérielle](quest-validation.md) et [le déploiement](deployment.md).

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { makeCalibration, toRoom, projectToFloor } from './calibration';
 import './style.css';
 import { bindPress } from './press';
+import { PlacementRequest } from './placement';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -13,7 +14,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.1.5');
+diagnostic('Version client', '0.1.6');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -107,10 +108,13 @@ enter.onclick = async () => {
     const target = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.055, 24), materialA);
     target.rotation.x = -Math.PI / 2;
     scene.add(markerA, markerB, target);
-    let pendingPlacement = false;
+    const placement = new PlacementRequest<THREE.Vector3>();
+    let lastPlacementPress = -Infinity;
+    let lastTrackingReason = 'Aucune position XR reçue.';
+    let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; pendingPlacement = false; clearTimeout(placementTimer); };
+    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer); };
     disposeScene = () => { clearTimeout(placementTimer); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
@@ -139,21 +143,25 @@ enter.onclick = async () => {
       return projectToFloor(new THREE.Vector3().copy(pose.transform.position), new THREE.Vector3(0, 0, -1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));
     }
     unbindPlace = bindPress(place, () => {
-      if (calibration || pendingPlacement) return;
-      pendingPlacement = true;
-      feedback.textContent = `Appui reçu pour ${firstPoint ? 'B' : 'A'} : vérification de la position…`;
+      if (calibration || placement.pending) return;
+      lastPlacementPress = performance.now();
+      feedback.textContent = `Appui reçu pour ${firstPoint ? 'B' : 'A'} : maintenez la visée, attente du suivi (1,5 s)…`;
       xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A' });
+      frameReceived = false;
+      const immediate = placement.request();
+      if (immediate) { selectPoint(immediate); return; }
       placementTimer = setTimeout(() => {
-        if (!pendingPlacement) return;
-        pendingPlacement = false;
-        feedback.textContent = 'Aucune image XR reçue depuis l’appui. Revenez à la session AR active et réessayez.';
-        xrEvent('placement_timeout', { step: firstPoint ? 'B' : 'A', reason: 'no_xr_frame' });
+        if (!placement.pending) return;
+        placement.cancel();
+        feedback.textContent = frameReceived ? `Placement annulé : ${lastTrackingReason} Réessayez lorsque le viseur est vert.` : 'Aucune image XR reçue. Revenez à la session AR active et réessayez.';
+        xrEvent('placement_timeout', { step: firstPoint ? 'B' : 'A', reason: frameReceived ? lastTrackingReason.slice(0, 160) : 'no_xr_frame' });
       }, 1500);
     });
     session.addEventListener('select', event => {
       if (calibration) return;
-      // With DOM controls, screen taps are handled only by the explicit place button.
-      if (touchOverlay && event.inputSource.targetRayMode === 'screen') return;
+      // Native screen selection is a fallback outside the panel; suppress duplicates.
+      if (placement.pending || (event.inputSource.targetRayMode === 'screen' && performance.now() - lastPlacementPress < 700)) return;
+      xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A', reason: `xr_select_${event.inputSource.targetRayMode}` });
       const pose = event.frame.getPose(event.inputSource.targetRaySpace, reference);
       const point = pose && floorFromPose(pose);
       if (point) selectPoint(point);
@@ -163,6 +171,7 @@ enter.onclick = async () => {
     let trackingLoggedAt = -Infinity;
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
+      if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
       const valid = !!point && !calibration;
       // Invalid tracking must still allow a press and an explanation.
@@ -170,17 +179,18 @@ enter.onclick = async () => {
       const reason = !pose ? 'Suivi AR indisponible. Déplacez doucement le téléphone.'
         : pose.transform.position.y <= 0 ? 'La caméra est au niveau ou sous le sol (hauteur ≤ 0). Recommencez la session pour rétablir le sol local.'
         : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';
+      lastTrackingReason = reason;
+      overlay.classList.toggle('xr-tracking-valid', valid);
       if (reason !== trackingReason && performance.now() - trackingLoggedAt >= 2000) {
         trackingReason = reason; trackingLoggedAt = performance.now();
         xrEvent('tracking_changed', { reason: reason.slice(0, 160), ...(pose ? { viewerHeight: pose.transform.position.y } : {}) });
       }
       target.visible = valid;
       if (point) target.position.copy(point).setY(0.005);
-      if (pendingPlacement) {
-        pendingPlacement = false;
+      const ready = placement.update(point?.clone());
+      if (ready && !calibration) {
         clearTimeout(placementTimer);
-        if (point && !calibration) selectPoint(point);
-        else if (!calibration) rejectPlacement(reason, pose ? { viewerHeight: pose.transform.position.y } : {});
+        selectPoint(ready);
       }
       if (!point && !calibration) instruction.textContent = reason;
       else instruction.textContent = calibrationStatus.textContent;
