@@ -1,5 +1,5 @@
 name: MyRoom
-version: "0.2.1"
+version: "0.2.2"
 slug: myroom
 url: https://github.com/nicasgit/myroom
 image: ghcr.io/nicasgit/myroom

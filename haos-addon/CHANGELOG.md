@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Portes et fenêtres rectangulaires : choix du mur, dimensions, distance au coin et hauteur du bas.
+- Placement optionnel du centre au sol en AR, retrait des ouvertures et sauvegarde avec chaque pièce.
+- Découpes dans les murs de l’aperçu 3D et de l’AR ; validation des dimensions et chevauchements.
+- Lecture des anciennes pièces sans migration manuelle.
+
 ## 0.2.1
 
 - Panneau AR borné sous le viseur central, y compris sur petits écrans et en paysage.

@@ -1,7 +1,8 @@
 // Pure geometry/schema module shared with the browser. All dimensions are metres.
 export type Point2 = { x: number; z: number };
 export type Obstacle = { name: string; x: number; z: number; width: number; depth: number; height: number };
-export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[] };
+export type Opening = { name:string; kind:'door'|'window'; wall:number; offset:number; width:number; height:number; sill:number };
+export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[] };
 export type RoomLibrary = { version: 1; revision: number; activeId: string | null; rooms: RoomModel[] };
 const number = (n: unknown, min: number, max: number): n is number => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
 const text = (n: unknown): n is string => typeof n === 'string' && n.trim().length > 0 && n.length <= 64;
@@ -67,7 +68,35 @@ export function parseRoom(value: unknown): RoomModel {
     }
     return obstacle;
   });
-  return {id:r.id,name:r.name.trim(),floor,height:r.height,obstacles};
+  const rawOpenings=r.openings===undefined?[]:r.openings;
+  if(!Array.isArray(rawOpenings)||rawOpenings.length>32)throw new Error('Maximum 32 ouvertures par pièce.');
+  const openings:Opening[]=rawOpenings.map(item=>{
+    const o=object(item);
+    if(!text(o.name)||(o.kind!=='door'&&o.kind!=='window')||!Number.isInteger(o.wall)||!number(o.wall,0,floor.length-1))throw new Error('Nom, type ou mur de l’ouverture invalide.');
+    const a=floor[o.wall],b=floor[(o.wall+1)%floor.length],length=Math.hypot(b.x-a.x,b.z-a.z);
+    if(!number(o.offset,0,length)||!number(o.width,0.15,length)||!number(o.height,0.15,height)||!number(o.sill,0,height)||o.offset+o.width>length+1e-8||o.sill+o.height>height+1e-8)throw new Error('L’ouverture doit tenir entièrement dans le mur (dimensions en mètres).');
+    if(o.kind==='door'&&o.sill!==0)throw new Error('Une porte doit commencer au sol.');
+    return {name:o.name.trim(),kind:o.kind,wall:o.wall,offset:o.offset,width:o.width,height:o.height,sill:o.sill};
+  });
+  for(let i=0;i<openings.length;i++)for(let j=i+1;j<openings.length;j++){
+    const a=openings[i],b=openings[j];
+    if(a.wall===b.wall&&Math.min(a.offset+a.width,b.offset+b.width)-Math.max(a.offset,b.offset)>1e-8&&Math.min(a.sill+a.height,b.sill+b.height)-Math.max(a.sill,b.sill)>1e-8)throw new Error('Deux ouvertures se chevauchent sur le même mur.');
+  }
+  return {id:r.id,name:r.name.trim(),floor,height:r.height,obstacles,openings};
+}
+// Solid rectangular panels around holes, in wall-local coordinates (x from first corner).
+export function wallPanels(length:number,height:number,openings:Opening[]){
+  const cuts=[...new Set([0,length,...openings.flatMap(o=>[o.offset,o.offset+o.width])])].sort((a,b)=>a-b);
+  const panels:{offset:number;width:number;bottom:number;height:number}[]=[];
+  for(let i=0;i<cuts.length-1;i++){
+    const x=cuts[i],end=cuts[i+1];if(end-x<1e-8)continue;
+    const middle=(x+end)/2;
+    const holes=openings.filter(o=>middle>o.offset&&middle<o.offset+o.width).sort((a,b)=>a.sill-b.sill);
+    let bottom=0;
+    for(const hole of holes){if(hole.sill-bottom>1e-8)panels.push({offset:x,width:end-x,bottom,height:hole.sill-bottom});bottom=Math.max(bottom,hole.sill+hole.height);}
+    if(height-bottom>1e-8)panels.push({offset:x,width:end-x,bottom,height:height-bottom});
+  }
+  return panels;
 }
 export function parseLibrary(value: unknown): RoomLibrary {
   const library=object(value);

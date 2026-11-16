@@ -48,7 +48,7 @@ function render(state: State) {
     el('rooms-summary').textContent=`${library.rooms.length} / 20 pièces enregistrées · Active : ${active?.name??'aucune'}`;
     el('rooms').replaceChildren(...library.rooms.map(room=>{
       const card=node('article','','player');
-      card.append(node('h3',room.name+(room.id===library!.activeId?' · active':'')),node('p',`${area(room.floor).toFixed(1)} m² · hauteur ${room.height} m · ${room.obstacles.length} obstacles`));
+      card.append(node('h3',room.name+(room.id===library!.activeId?' · active':'')),node('p',`${area(room.floor).toFixed(1)} m² · hauteur ${room.height} m · ${room.obstacles.length} obstacles · ${(room.openings??[]).length} ouvertures`));
       const activate=node('button','Activer','secondary') as HTMLButtonElement;
       activate.disabled=room.id===library!.activeId;
       activate.onclick=()=>{if(confirm(`Activer ${room.name} ? Les joueurs devront refaire le calibrage A/B.`))void action('rooms/activate',{id:room.id,revision:library!.revision});};

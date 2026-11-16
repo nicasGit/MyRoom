@@ -19,6 +19,7 @@ a { color: #67e8f9; }
 .xr-panel label { display: block; margin: 10px 0; font-size: 14px; }
 input { color: #e6edf7; background: #17283f; border: 1px solid #68829b; border-radius: 5px; padding: 10px; max-width: 100%; box-sizing: border-box; }
 .xr-panel input { width: 100%; margin-top: 5px; }
+.xr-panel select { width: 100%; margin-top: 5px; min-height: 44px; color: #e6edf7; background: #17283f; border: 1px solid #68829b; padding: 8px; }
 .xr-actions { margin-top: 8px; }
 [hidden] { display: none !important; }
 #room-preview { min-height: 100px; width: 100%; }

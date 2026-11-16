@@ -12,12 +12,22 @@ export class Survey {
   private token='';
   private firstCorner:Point2|undefined;
   private saving=false;
-  private stage:'none'|'floor'|'ready'|'obstacle'='none';
+  private stage:'none'|'floor'|'ready'|'obstacle'|'opening'='none';
+  private wallKey='';
+  private edits:('opening'|'obstacle')[]=[];
   private preview=createPreview(el('room-preview'));
   private previewKey='';
   constructor(private getCalibration:()=>Calibration|undefined,private feedback:(message:string)=>void,private changed:()=>void,private activeChanged:()=>void) {
     el('survey-new').onclick=()=>this.begin(false);
     el('survey-edit').onclick=()=>this.begin(true);
+    el('opening-kind').onchange=()=>{
+      const window=el<HTMLSelectElement>('opening-kind').value==='window';
+      el<HTMLInputElement>('opening-sill').disabled=!window;
+      el<HTMLInputElement>('opening-sill').value=window?'0.9':'0';
+      el<HTMLInputElement>('opening-height').value=window?'1.2':'2.1';
+    };
+    el('survey-opening').onclick=()=>this.addOpening();
+    el('survey-opening-aim').onclick=()=>{if(this.stage==='ready'&&!this.saving){this.stage='opening';this.feedback('Visez le sol au pied du centre de l’ouverture, sur le mur choisi.');this.refresh();}};
     el('survey-close').onclick=()=> {
       if(!this.draft||this.saving) return;
       try { this.draft.floor=parseFloor(this.draft.floor);this.stage='ready';this.feedback('Contour fermé. Réglez la hauteur, puis ajoutez les obstacles.');this.refresh(); }
@@ -29,8 +39,9 @@ export class Survey {
     };
     el('survey-undo').onclick=()=> {
       if(!this.draft||this.saving) return;
-      if(this.stage==='obstacle') {this.firstCorner=undefined;this.stage='ready';}
+      if(this.stage==='obstacle'||this.stage==='opening') {this.firstCorner=undefined;this.stage='ready';}
       else if(this.stage==='floor') this.draft.floor.pop();
+      else if(this.edits.pop()==='opening')this.draft.openings.pop();
       else this.draft.obstacles.pop();
       this.feedback('Dernier élément retiré.');this.refresh();
     };
@@ -45,9 +56,9 @@ export class Survey {
       this.changed();
     };
   }
-  get collecting(){return !this.saving&&(this.stage==='floor'||this.stage==='obstacle');}
-  get label(){return this.stage==='floor'?`Placer le coin ${(this.draft?.floor.length??0)+1}`:this.firstCorner?'Placer le 2e coin de l’obstacle':'Placer le 1er coin de l’obstacle';}
-  get instruction(){return this.stage==='floor'?'Contour : placez les coins dans l’ordre en visant le sol, puis fermez le contour.':this.stage==='obstacle'?'Obstacle : placez deux coins opposés de son empreinte au sol. Le volume est aligné sur les axes A/B.':'Calibrage prêt. Relevez une nouvelle pièce ou modifiez la pièce active.';}
+  get collecting(){return !this.saving&&(this.stage==='floor'||this.stage==='obstacle'||this.stage==='opening');}
+  get label(){return this.stage==='opening'?'Placer le centre de l’ouverture':this.stage==='floor'?`Placer le coin ${(this.draft?.floor.length??0)+1}`:this.firstCorner?'Placer le 2e coin de l’obstacle':'Placer le 1er coin de l’obstacle';}
+  get instruction(){return this.stage==='opening'?'Ouverture : visez le sol au pied de son centre sur le mur choisi, puis placez le point.':this.stage==='floor'?'Contour : placez les coins dans l’ordre en visant le sol, puis fermez le contour.':this.stage==='obstacle'?'Obstacle : placez deux coins opposés de son empreinte au sol. Le volume est aligné sur les axes A/B.':'Calibrage prêt. Relevez une nouvelle pièce ou modifiez la pièce active.';}
   current(){return this.draft??this.model;}
   closed(){return this.stage!=='floor';}
   pendingCorner(){return this.firstCorner;}
@@ -67,7 +78,8 @@ export class Survey {
   private begin(edit:boolean){
     if(!this.getCalibration()||this.saving)return;
     this.baseRevision=this.revision;
-    this.draft=edit&&this.model?structuredClone(this.model):{id:crypto.randomUUID(),name:'Nouvelle pièce',height:2.5,floor:[],obstacles:[]};
+    this.draft=edit&&this.model?structuredClone(this.model):{id:crypto.randomUUID(),name:'Nouvelle pièce',height:2.5,floor:[],obstacles:[],openings:[]};
+    this.draft.openings??=[];this.edits=[];
     this.stage=edit&&this.model?'ready':'floor';this.firstCorner=undefined;
     el<HTMLInputElement>('survey-name').value=this.draft.name;
     el<HTMLInputElement>('survey-height').value=String(this.draft.height);
@@ -84,14 +96,30 @@ export class Survey {
         const last=this.draft.floor.at(-1);
         if(last&&Math.hypot(last.x-p.x,last.z-p.z)<0.15)throw new Error('Coin trop proche du précédent (15 cm minimum).');
         this.draft.floor.push(p);this.feedback(`Coin ${this.draft.floor.length} placé. Continuez dans l’ordre autour de la pièce.`);
+      } else if(this.stage==='opening'){
+        const wall=Number(el<HTMLSelectElement>('opening-wall').value),a=this.draft.floor[wall],b=this.draft.floor[(wall+1)%this.draft.floor.length];
+        const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);
+        if(Math.abs((p.x-a.x)*dz-(p.z-a.z)*dx)/length>0.5)throw new Error('Visez le sol au pied du mur choisi (50 cm maximum).');
+        this.addOpening(((p.x-a.x)*dx+(p.z-a.z)*dz)/length-Number(el<HTMLInputElement>('opening-width').value)/2);
       } else if(!this.firstCorner){this.firstCorner=p;this.feedback('Premier coin placé. Visez le coin opposé au sol.');}
       else {
         const a=this.firstCorner;
         const obstacle={name:el<HTMLInputElement>('obstacle-name').value||`Obstacle ${this.draft.obstacles.length+1}`,x:(a.x+p.x)/2,z:(a.z+p.z)/2,width:Math.abs(p.x-a.x),depth:Math.abs(p.z-a.z),height:Number(el<HTMLInputElement>('obstacle-height').value)};
         parseRoom({...this.draft,obstacles:[...this.draft.obstacles,obstacle]});
-        this.draft.obstacles.push(obstacle);this.firstCorner=undefined;this.stage='ready';this.feedback(`${obstacle.name} ajouté. Vous pouvez en ajouter un autre ou enregistrer.`);
+        this.draft.obstacles.push(obstacle);this.edits.push('obstacle');this.firstCorner=undefined;this.stage='ready';this.feedback(`${obstacle.name} ajouté. Vous pouvez en ajouter un autre ou enregistrer.`);
       }
       this.refresh();
+    }catch(error){this.feedback(String(error));}
+  }
+  private addOpening(offset?:number){
+    if(!this.draft||this.saving||(this.stage!=='ready'&&this.stage!=='opening'))return;
+    try{
+      const kind=el<HTMLSelectElement>('opening-kind').value;
+      const opening={name:el<HTMLInputElement>('opening-name').value||(kind==='door'?'Porte':'Fenêtre'),kind,wall:Number(el<HTMLSelectElement>('opening-wall').value),offset:offset??Number(el<HTMLInputElement>('opening-offset').value),width:Number(el<HTMLInputElement>('opening-width').value),height:Number(el<HTMLInputElement>('opening-height').value),sill:kind==='door'?0:Number(el<HTMLInputElement>('opening-sill').value)};
+      const validated=parseRoom({...this.draft,openings:[...this.draft.openings,opening]});
+      this.draft.openings=validated.openings;this.edits.push('opening');this.stage='ready';
+      el<HTMLInputElement>('opening-offset').value=String(opening.offset);
+      this.feedback(`${opening.name} ajoutée. Enregistrez pour conserver la découpe du mur.`);this.refresh();
     }catch(error){this.feedback(String(error));}
   }
   refresh(){
@@ -102,8 +130,22 @@ export class Survey {
     el<HTMLButtonElement>('survey-close').disabled=this.stage!=='floor'||(this.draft?.floor.length??0)<3||this.saving;
     el<HTMLButtonElement>('survey-obstacle').disabled=this.stage!=='ready'||this.saving;
     el<HTMLButtonElement>('survey-save').disabled=this.stage!=='ready'||this.saving;
+    for(const id of ['survey-opening','survey-opening-aim'])el<HTMLButtonElement>(id).disabled=this.stage!=='ready'||this.saving;
+    const wallKey=JSON.stringify(this.draft?.floor);
+    if(wallKey!==this.wallKey){
+      this.wallKey=wallKey;const select=el<HTMLSelectElement>('opening-wall');select.replaceChildren();
+      this.draft?.floor.forEach((a,i,points)=>{const b=points[(i+1)%points.length],option=document.createElement('option');option.value=String(i);option.textContent=`Mur ${i+1} · coin ${i+1} → ${(i+1)%points.length+1} · ${Math.hypot(b.x-a.x,b.z-a.z).toFixed(2)} m`;select.append(option);});
+    }
+    const list=el('opening-list');list.replaceChildren();
+    this.draft?.openings.forEach((opening,i)=>{
+      const item=document.createElement('li'),remove=document.createElement('button');
+      item.textContent=`${opening.name} · mur ${opening.wall+1} · ${opening.width} × ${opening.height} m · bas ${opening.sill} m `;
+      remove.textContent='Retirer';remove.disabled=this.stage!=='ready'||this.saving;
+      remove.onclick=()=>{if(!this.draft||this.stage!=='ready'||this.saving)return;this.draft.openings.splice(i,1);this.edits=this.edits.filter(kind=>kind!=='opening');this.refresh();};
+      item.append(remove);list.append(item);
+    });
     const current=this.current();
-    const summary=current?`${current.name} · ${current.floor.length} coins · ${current.obstacles.length} obstacles · murs ${current.height} m${this.closed()&&current.floor.length>=3?` · ${area(current.floor).toFixed(1)} m²`:''}`:'Aucune pièce active. Calibrez A/B, puis relevez une pièce en AR.';
+    const summary=current?`${current.name} · ${current.floor.length} coins · ${current.obstacles.length} obstacles · ${(current.openings??[]).length} ouvertures · murs ${current.height} m${this.closed()&&current.floor.length>=3?` · ${area(current.floor).toFixed(1)} m²`:''}`:'Aucune pièce active. Calibrez A/B, puis relevez une pièce en AR.';
     el('survey-summary').textContent=summary;
     el('room-summary').textContent=summary+(this.draft?' · brouillon non enregistré':'');
     const key=JSON.stringify(this.model);

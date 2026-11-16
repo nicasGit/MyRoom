@@ -12,6 +12,14 @@
 
 Le brouillon d'une nouvelle pièce ne remplace pas l'ancienne tant qu'il n'est pas enregistré. **Modifier la pièce active** permet de changer son nom, sa hauteur et ses obstacles ; un nouveau contour se relève actuellement dans une nouvelle fiche. Après calibrage, la pièce active enregistrée se superpose en filaire/transparence à la caméra.
 
+## Portes et fenêtres (0.2.2)
+
+Après avoir fermé le contour, ou via **Modifier la pièce active**, ouvrir **Portes et fenêtres**. Choisir le mur : « coin 1 → 2 » suit l’ordre du relevé et le dernier mur revient au premier coin. Saisir le type, le nom, la largeur et la hauteur en mètres. La distance est mesurée depuis le premier coin du mur jusqu’au bord de l’ouverture. Une porte commence au sol ; pour une fenêtre, saisir aussi la hauteur de son bas au-dessus du sol.
+
+**Ajouter l’ouverture** utilise les mesures saisies. Pour la positionner par visée, saisir d’abord ses dimensions, toucher **Viser son centre au sol**, puis placer le viseur au sol au pied du centre de l’ouverture sur le mur choisi et utiliser le bouton de placement. La position est projetée sur ce mur ; une visée éloignée de plus de 50 cm est refusée. La hauteur n’est pas mesurée automatiquement.
+
+Les ouvertures doivent tenir entièrement dans le mur, sans chevauchement. Maximum : 32 par pièce. Leur contour est vert pour une porte, jaune pour une fenêtre ; le mur est découpé dans l’aperçu et en AR. **Retirer** supprime une ouverture du brouillon ; **Enregistrer et activer** conserve toutes les modifications sur le serveur. Les anciennes pièces restent lisibles avec une liste d’ouvertures vide. Chaque ouverture stocke le mur, la distance au coin, les dimensions et la hauteur du bas. Pas de vantail animé, vitrage, collision ou détection automatique d’ouverture.
+
 ## Plusieurs pièces
 
 L'administration affiche une bibliothèque de **20 pièces maximum**, leur surface, hauteur et nombre d'obstacles. **Activer** sélectionne une seule pièce pour la salle multijoueur ; cela ne crée pas plusieurs parties simultanées. Les clients présents reçoivent le modèle actif. Une activation avec changement d'identifiant invalide leur calibrage : ils doivent refaire A/B dans la pièce physique correspondante. Enregistrer son propre relevé conserve le calibrage de cet appareil.
@@ -28,6 +36,6 @@ Chaque écriture est préparée dans rooms.json.tmp puis renommée avant de remp
 
 ## Limites
 
-Reconstruction **manuelle simplifiée**, sans textures, scan automatique, détection de meubles, plafond irrégulier, portes, fenêtres, ancrage partagé ou occlusion réelle. Les obstacles reposent sur le sol et sont alignés sur les axes A/B. La précision dépend de local-floor, du suivi, des repères et des mesures saisies. Le modèle n'est pas un système de détection d'obstacles ni une limite de sécurité pour les déplacements.
+Reconstruction **manuelle simplifiée**, sans textures, scan automatique, détection de meubles, plafond irrégulier, ancrage partagé ou occlusion réelle. Les portes et fenêtres sont des ouvertures rectangulaires saisies manuellement. Les obstacles reposent sur le sol et sont alignés sur les axes A/B. La précision dépend de local-floor, du suivi, des repères et des mesures saisies. Le modèle n'est pas un système de détection d'obstacles ni une limite de sécurité pour les déplacements.
 
 Aucun essai de ce relevé 3D sur téléphone, HAOS/Raspberry Pi ou Quest n'a été effectué par l'agent. Le retour utilisateur de la version 0.1.6 confirme le placement A/B sur son téléphone, pas cette nouvelle reconstruction 3D.

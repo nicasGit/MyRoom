@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { RoomModel } from '../../server/src/scene-schema.js';
+import { wallPanels,type RoomModel } from '../../server/src/scene-schema.js';
 
 export function modelGroup(model: RoomModel, closed=true) {
   const group=new THREE.Group();
@@ -17,9 +17,19 @@ export function modelGroup(model: RoomModel, closed=true) {
     floor.rotation.x=-Math.PI/2; group.add(floor);
     model.floor.forEach((a,i)=> {
       const b=model.floor[(i+1)%model.floor.length];
-      const wall=new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(b.x-a.x,b.z-a.z),model.height,0.025),new THREE.MeshBasicMaterial({color:0x79b4f5,transparent:true,opacity:0.12,depthWrite:false}));
-      wall.position.set((a.x+b.x)/2,model.height/2,(a.z+b.z)/2); wall.rotation.y=-Math.atan2(b.z-a.z,b.x-a.x);
-      const edges=new THREE.LineSegments(new THREE.EdgesGeometry(wall.geometry),new THREE.LineBasicMaterial({color:0x79b4f5})); wall.add(edges); group.add(wall);
+      const length=Math.hypot(b.x-a.x,b.z-a.z),openings=(model.openings??[]).filter(o=>o.wall===i);
+      const wall=new THREE.Group();wall.name=`wall-${i}`;
+      wall.position.set(a.x,0,a.z); wall.rotation.y=-Math.atan2(b.z-a.z,b.x-a.x);
+      for(const panel of wallPanels(length,model.height,openings)){
+        const mesh=new THREE.Mesh(new THREE.BoxGeometry(panel.width,panel.height,0.025),new THREE.MeshBasicMaterial({color:0x79b4f5,transparent:true,opacity:0.12,depthWrite:false}));
+        mesh.position.set(panel.offset+panel.width/2,panel.bottom+panel.height/2,0);
+        mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:0x79b4f5})));wall.add(mesh);
+      }
+      for(const o of openings){
+        const points=[[o.offset,o.sill],[o.offset+o.width,o.sill],[o.offset+o.width,o.sill+o.height],[o.offset,o.sill+o.height]].map(([x,y])=>new THREE.Vector3(x,y,0));
+        wall.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:o.kind==='door'?0x87f0b5:0xffe082})));
+      }
+      group.add(wall);
     });
   }
   model.obstacles.forEach(o=> {
