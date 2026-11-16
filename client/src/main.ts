@@ -5,6 +5,7 @@ import { bindPress } from './press';
 import { PlacementRequest } from './placement';
 import { Survey } from './survey';
 import { modelGroup, disposeGroup } from './model-view';
+import { capturePlanes,importSurfaces,QuestButtons } from './quest-scan';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -16,7 +17,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.2.2');
+diagnostic('Version client', '0.3.0');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -88,7 +89,7 @@ enter.onclick = async () => {
     if (!renderer.domElement.isConnected) document.body.append(renderer.domElement);
     overlay.hidden = false;
     session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay'], domOverlay: { root: overlay },
+      requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection'], domOverlay: { root: overlay },
     });
     const touchOverlay = !!session.domOverlayState;
     xrEvent('session_started', { overlay: touchOverlay });
@@ -107,6 +108,56 @@ enter.onclick = async () => {
     if (!reference) throw new Error('Référentiel XR indisponible');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera();
+    const scanStatus=element('quest-scan-status'),importButton=element<HTMLButtonElement>('quest-import');
+    let importRequested=false,importTimeout:ReturnType<typeof setTimeout>|undefined;
+    const requestImport=()=>{
+      if(!calibration){feedback.textContent='Terminez A/B avant l’import.';return;}
+      if(importRequested)return;
+      importRequested=true;feedback.textContent='Lecture des surfaces dans la prochaine image XR…';
+      importTimeout=setTimeout(()=>{if(importRequested){importRequested=false;feedback.textContent='Import annulé : aucune image XR active. Revenez à la session et réessayez.';}},3000);
+    };
+    importButton.onclick=requestImport;
+    // Headset-readable feedback also works when DOM Overlay is unavailable.
+    const hudCanvas=document.createElement('canvas');hudCanvas.width=1024;hudCanvas.height=512;
+    const hudContext=hudCanvas.getContext('2d')!;
+    const hudTexture=new THREE.CanvasTexture(hudCanvas);
+    const hudMaterial=new THREE.SpriteMaterial({map:hudTexture,depthTest:false,depthWrite:false});
+    const hud=new THREE.Sprite(hudMaterial);hud.scale.set(0.9,0.45,1);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
+    let hudKey='',lastScanUpdate=-Infinity;
+    const questButtons=new QuestButtons();
+    const updateScan=(frame:XRFrame,pose:XRViewerPose|null)=>{
+      for(const action of questButtons.poll(session!.inputSources)){
+        if(action==='import')requestImport();
+        else if(action==='save')survey.saveDraft();
+        else survey.cancel();
+      }
+      if(performance.now()-lastScanUpdate>1000){
+        lastScanUpdate=performance.now();
+        const planes=frame.detectedPlanes;
+        const message=planes===undefined?'Plans WebXR indisponibles dans cette session : relevé manuel disponible.':`${planes.size} surface(s) détectée(s). Configurez l’espace du Quest si la liste reste vide.`;
+        if(scanStatus.textContent!==message){scanStatus.textContent=message;xrEvent('scan_status',{reason:message.slice(0,160)});}
+        importButton.disabled=!calibration||!planes?.size;
+      }
+      if(importRequested){
+        importRequested=false;clearTimeout(importTimeout);
+        try{
+          if(!calibration||!pose)throw new Error('Suivi ou calibrage indisponible. Réessayez sans vous recentrer.');
+          const result=importSurfaces(capturePlanes(frame,reference),calibration,crypto.randomUUID());
+          survey.importRoom(result.room);
+          feedback.textContent=`Import : ${result.room.floor.length} coins, ${result.room.obstacles.length} meubles. ${result.warnings.join(' ')} Vérifiez avant d’enregistrer.`;
+          xrEvent('scan_imported',{reason:feedback.textContent.slice(0,160)});
+        }catch(error){feedback.textContent=String(error);xrEvent('scan_error',{reason:String(error).slice(0,160)});}
+      }
+      if(!touchOverlay&&pose){
+        hud.position.set(0,0.32,-1.2).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)).add(new THREE.Vector3().copy(pose.transform.position));
+        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${scanStatus.textContent}\n${feedback.textContent}`;
+        if(text!==hudKey){
+          hudKey=text;hudContext.fillStyle='rgba(9,20,34,0.94)';hudContext.fillRect(0,0,1024,512);hudContext.fillStyle='#ffffff';hudContext.font='30px sans-serif';
+          let y=42;for(const paragraph of text.split('\n')){let line='';for(const word of paragraph.split(' ')){if(hudContext.measureText(line+word).width>970){hudContext.fillText(line,24,y);y+=38;line='';}line+=word+' ';}hudContext.fillText(line,24,y);y+=45;}
+          hudTexture.needsUpdate=true;
+        }
+      }
+    };
     const geometry = new THREE.SphereGeometry(0.04);
     const materialA = new THREE.MeshBasicMaterial({ color: 0x67e8f9 });
     const materialB = new THREE.MeshBasicMaterial({ color: 0xa7f3a0 });
@@ -137,8 +188,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer); };
-    disposeScene = () => { clearTimeout(placementTimer); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);updateSurveyScene=()=>{}; };
+    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);updateSurveyScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -195,6 +246,7 @@ enter.onclick = async () => {
     let trackingLoggedAt = -Infinity;
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
+      if(frame)updateScan(frame,pose??null);
       if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
       const canPlace=!calibration||survey.collecting;

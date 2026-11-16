@@ -62,6 +62,14 @@ export class Survey {
   current(){return this.draft??this.model;}
   closed(){return this.stage!=='floor';}
   pendingCorner(){return this.firstCorner;}
+  importRoom(room:RoomModel){
+    if(!this.getCalibration()||this.saving)throw new Error('Terminez le calibrage A/B avant l’import.');
+    if(this.draft)throw new Error('Enregistrez ou annulez le brouillon avant un nouvel import.');
+    this.draft=parseRoom(room);this.baseRevision=this.revision;this.stage='ready';this.edits=[];this.firstCorner=undefined;
+    el<HTMLInputElement>('survey-name').value=room.name;el<HTMLInputElement>('survey-height').value=String(room.height);
+    this.refresh();
+  }
+  saveDraft(){if(this.stage==='ready')void this.save();}
   receive(model:RoomModel|null,revision:number){
     if(revision<this.revision)return;
     const changedId=this.model?.id!==model?.id;

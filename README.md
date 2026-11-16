@@ -30,7 +30,7 @@ npm start
 
 ## Prototype
 
-Depuis 0.2.0 : [reconstruction manuelle 3D et bibliothèque persistante](docs/room-library.md). Après A/B, relever le contour, saisir la hauteur des murs et représenter les obstacles par des boîtes. Jusqu'à vingt pièces peuvent être enregistrées sur disque, activées, supprimées et exportées depuis l'administration. Pas de scan automatique de surfaces ou d'objets.
+Depuis 0.2.0 : [reconstruction manuelle 3D et bibliothèque persistante](docs/room-library.md). Après A/B, relever le contour, saisir la hauteur des murs et représenter les obstacles par des boîtes. Jusqu'à vingt pièces peuvent être enregistrées sur disque, activées, supprimées et exportées depuis l'administration. Depuis 0.3.0 : [import expérimental des surfaces du Quest](docs/quest-scan.md), selon les plans exposés par WebXR ; contour et meubles approximatifs à vérifier avant sauvegarde. Les portes et fenêtres peuvent être ajoutées manuellement.
 
 Administration : ouvrir `/admin.html` ou le lien sur la page joueur. Configurer `admin_token` dans HAOS ; en développement PowerShell : `$env:ADMIN_TOKEN = 'VOTRE_SECRET_ALEATOIRE_16_CARACTERES_MINIMUM'` avant `npm run dev`. Ne pas committer ce secret. Voir [le guide admin](haos-addon/DOCS.md#administration).
 
@@ -38,6 +38,6 @@ Administration : ouvrir `/admin.html` ou le lien sur la page joueur. Configurer 
 - Quatre places synchronisées, reconnexion réseau, énigme de démonstration autoritaire en mémoire.
 - Calibrage manuel horizontal à deux points au sol via gâchette, communs à tous les casques.
 
-Quest 2, Quest 3 et Quest 3S sont des cibles prévues. **Aucun test WebXR sur ces casques n'a été effectué.** Disponibilité AR, interface de calibrage et précision doivent être vérifiées sur chaque appareil et version du navigateur. Sur téléphone compatible DOM Overlay, des commandes tactiles permettent de placer A/B avec le rayon central, de recommencer et de quitter la session. Le support est détecté pendant la session, sans supposer qu'un navigateur le fournit. Voir [le guide tactile](docs/mobile-ar.md). Sur casque sans DOM Overlay, utiliser la gâchette ; il n'y a pas encore de panneau 3D d'instructions dans le casque.
+Quest 2, Quest 3 et Quest 3S sont des cibles prévues. **Aucun test WebXR sur ces casques n'a été effectué.** Disponibilité AR, interface de calibrage et précision doivent être vérifiées sur chaque appareil et version du navigateur. Sur téléphone compatible DOM Overlay, des commandes tactiles permettent de placer A/B avec le rayon central, de recommencer et de quitter la session. Le support est détecté pendant la session, sans supposer qu'un navigateur le fournit. Voir [le guide tactile](docs/mobile-ar.md). Sans DOM Overlay, un panneau 3D affiche les messages ; gâchette pour A/B, A/X pour importer, B droit pour enregistrer et Y gauche pour annuler le brouillon avec contrôleurs WebXR standard.
 
 Les pièces 3D et la sélection active sont enregistrées sur disque. Les connexions et l'état des énigmes restent en mémoire et sont perdus au redémarrage. Les poses joueurs ne sont pas diffusées. Les écritures de la bibliothèque et l'administration demandent le jeton ; les joueurs n'ont pas de comptes ou d'ancres persistantes.

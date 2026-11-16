@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Import expérimental des surfaces WebXR, destiné au Quest 3 : contour du sol, hauteur estimée et boîtes de meubles identifiés.
+- Brouillon à vérifier avant sauvegarde dans la bibliothèque persistante ; calibrage A/B conservé.
+- Détection des capacités, repli manuel et diagnostics d’import dans le journal HAOS.
+- Commandes contrôleur A/X importer, B droit enregistrer, Y gauche annuler et panneau de messages 3D sans DOM Overlay.
+- Pas de validation physique Quest ; ouvertures et corrections restent manuelles.
+
 ## 0.2.2
 
 - Portes et fenêtres rectangulaires : choix du mur, dimensions, distance au coin et hauteur du bas.

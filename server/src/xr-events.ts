@@ -2,6 +2,7 @@ const events = new Set([
   'session_requested', 'session_started', 'session_ended', 'session_error',
   'placement_requested', 'placement_accepted', 'placement_rejected', 'placement_timeout',
   'calibration_reset', 'calibration_completed', 'tracking_changed',
+  'scan_status','scan_imported','scan_error',
 ]);
 export function parseXREvent(value: unknown): { event: string; details: Record<string, unknown> } | undefined {
   if (!value || typeof value !== 'object' || !('type' in value) || value.type !== 'xr_event' || !('event' in value) || typeof value.event !== 'string' || !events.has(value.event)) return;

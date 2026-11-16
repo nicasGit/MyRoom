@@ -73,6 +73,7 @@ test('un appui tactile suivi du clic synthétique ne place pas deux repères', (
   assert.equal(presses, 3);
 });
 test('les diagnostics XR ne peuvent pas injecter des événements serveur ni des champs arbitraires', () => {
+  assert.deepEqual(parseXREvent({type:'xr_event',event:'scan_imported',details:{reason:'4 coins, 1 meuble'}}),{event:'scan_imported',details:{reason:'4 coins, 1 meuble'}});
   assert.deepEqual(parseXREvent({ type: 'xr_event', event: 'placement_accepted', details: { step: 'A', x: 1, y: 0, z: -2 } }), { event: 'placement_accepted', details: { step: 'A', x: 1, y: 0, z: -2 } });
   for (const value of [null, {}, { type: 'xr_event', event: 'server_started', details: {} }, { type: 'xr_event', event: 'session_started', details: { id: 'spoofed' } }, { type: 'xr_event', event: 'placement_accepted', details: { x: Infinity } }, { type: 'xr_event', event: 'placement_rejected', details: { reason: 'x'.repeat(161) } }, { type: 'xr_event', event: 'session_started', details: [] }]) {
     assert.equal(parseXREvent(value), undefined);

@@ -7,6 +7,7 @@
     <p><a href="/admin.html">Administration de la salle →</a></p>
     <h2>Diagnostic WebXR</h2><ul id="diagnostics"></ul>
     <button id="enter" disabled>Démarrer immersive-ar</button>
+    <p>Quest 3 : configurez l’espace dans le casque et autorisez les données spatiales. Après A/B, importez les surfaces disponibles. Aux contrôleurs : A/X importer, B droit enregistrer le brouillon après vérification, Y gauche annuler. Les surfaces dépendent des capacités du navigateur.</p>
     <p id="status" role="status"></p>
     <h2>Joueurs (4 places)</h2><ol id="players"></ol>
     <h2>Calibrage manuel</h2>
@@ -32,6 +33,8 @@
         <small id="xr-log-status">Journal serveur : connexion en attente.</small>
       </details>
       <section id="survey-panel" hidden>
+        <p id="quest-scan-status" role="status">Import Quest : en attente de session.</p>
+        <button id="quest-import" disabled>Importer les surfaces du Quest</button>
         <p><strong>Reconstruction manuelle 3D</strong></p><p id="survey-summary"></p>
         <div class="xr-actions"><button id="survey-new">Nouvelle pièce</button><button id="survey-edit">Modifier la pièce active</button></div>
         <div id="survey-settings" hidden>

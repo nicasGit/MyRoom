@@ -2,6 +2,8 @@
 
 ## Construire une pièce manuellement
 
+Depuis la version 0.3.0, un [import expérimental des surfaces Quest](quest-scan.md) peut créer le brouillon à partir des plans WebXR disponibles. Le parcours manuel ci-dessous reste disponible.
+
 1. Configurer un jeton administrateur d'au moins 16 caractères dans HAOS. Sur la page joueur, le saisir dans le champ dédié avant de démarrer l'AR. Le jeton est gardé uniquement en mémoire pour la session de page ; il ne fait pas partie des modèles enregistrés. Utiliser HTTPS.
 2. Choisir deux repères physiques A/B durables pour cette pièce et effectuer le calibrage. Tous les appareils devront réutiliser ces mêmes repères, dans le même ordre, à chaque session. Noter ou marquer physiquement leur position ; le modèle ne les reconnaît pas automatiquement.
 3. Dans le panneau AR, toucher **Nouvelle pièce**. Saisir un nom et la **hauteur mesurée des murs**. La valeur initiale 2,5 m est une valeur proposée à remplacer par la mesure réelle.
