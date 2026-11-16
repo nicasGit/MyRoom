@@ -1,0 +1,19 @@
+name: MyRoom
+version: "0.1.0"
+slug: myroom
+url: https://github.com/nicasgit/myroom
+image: ghcr.io/nicasgit/myroom
+description: Prototype WebXR multijoueur pour une pièce partagée
+arch:
+  - aarch64
+startup: application
+boot: auto
+init: false
+ports:
+  8080/tcp: 8099
+ports_description:
+  8080/tcp: HTTP interne à placer derrière un proxy HTTPS
+options:
+  public_origin: "https://myroom.example.com"
+schema:
+  public_origin: url
