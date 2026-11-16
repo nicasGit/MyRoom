@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MyRoom — Administration</title></head>
+<body>
+  <header><a class="brand" href="/">M<span>MyRoom</span></a><span class="tag">CONSOLE ADMIN</span><a href="/">Vue joueur ↗</a></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">ESPACE DE CONTRÔLE</p><h1>Votre salle, en direct.</h1><p class="muted">Gérez les connexions et préparez la prochaine partie.</p></div><span id="connection" class="badge">Non connecté</span></div>
+    <section id="login-panel" class="panel login">
+      <div><h2>Accès administrateur</h2><p class="muted">Utilisez le jeton défini dans la configuration de l’add-on. Il reste uniquement en mémoire dans cet onglet.</p></div>
+      <form id="login"><label for="token">Jeton administrateur</label><div class="form-row"><input id="token" type="password" required minlength="16" autocomplete="off" placeholder="Au moins 16 caractères"><button type="submit">Se connecter →</button></div></form>
+    </section>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <div id="dashboard" hidden>
+      <div class="metrics"><section class="panel"><p class="eyebrow">JOUEURS CONNECTÉS</p><strong id="count">0 / 4</strong><p class="muted">Quatre places dans une même pièce</p></section><section class="panel"><p class="eyebrow">ÉNIGME DE DÉMONSTRATION</p><strong id="puzzle">—</strong><p id="revision" class="muted"></p></section><section class="panel"><p class="eyebrow">SERVEUR EN LIGNE DEPUIS</p><strong id="uptime">—</strong><p id="origin" class="muted"></p></section></div>
+      <section class="panel"><div class="section-head"><div><h2>Les joueurs</h2><p class="muted">Une connexion correspond à un onglet ou à un appareil.</p></div><span class="badge">Actualisation · 2 s</span></div><div id="players" class="players"></div></section>
+      <section class="panel controls"><div><h2>Préparer une nouvelle tentative</h2><p class="muted">Réinitialise l’énigme pour tous les joueurs. Les connexions restent actives.</p></div><button id="reset" class="secondary">Réinitialiser l’énigme</button></section>
+      <section class="panel"><div class="section-head"><div><h2>Journal de la salle</h2><p class="muted">Les 100 derniers événements applicatifs, du plus récent au plus ancien.</p></div><button id="refresh" class="secondary">Actualiser</button></div><div class="log-wrap"><table><thead><tr><th>Heure locale</th><th>Événement</th><th>Détails</th></tr></thead><tbody id="logs"></tbody></table></div></section>
+      <div class="footer"><p class="muted">L’administration ne prend aucune place joueur. État et journal conservés en mémoire jusqu’au redémarrage.</p><button id="logout" class="secondary">Se déconnecter</button></div>
+    </div>
+  </main>
+  <script type="module" src="/src/admin.ts"></script>
+</body></html>

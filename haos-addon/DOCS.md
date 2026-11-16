@@ -25,12 +25,20 @@ Ouvrir quatre onglets dans Chrome pour voir les quatre joueurs, puis résoudre l
 
 Sur une adresse LAN en HTTP, WebXR peut être absent et immersive-ar indisponible : les tests joueurs/énigme restent possibles. Pour l'AR, utiliser le proxy HTTPS avec certificat reconnu et remettre `public_origin` sur cette origine HTTPS. Le bouton LAN reste un raccourci de diagnostic HTTP ; ouvrir directement l'URL HTTPS pour les casques. Aucun test physique HAOS ou Quest n'a été réalisé.
 
+## Administration
+
+Dans Configuration, renseigner `admin_token` avec un secret aléatoire d'au moins 16 caractères puis redémarrer l'add-on. L'administration est désactivée tant que cette valeur est vide ou trop courte. Ouvrir MyRoom puis cliquer **Administration de la salle**, ou visiter `/admin.html` sur la même origine.
+
+Saisir le jeton pour consulter les joueurs, les cent derniers événements applicatifs et l'état de l'énigme. La réinitialisation est diffusée à tous les joueurs ; la déconnexion d'un joueur l'empêche de revenir automatiquement, mais il peut recharger sa page. Ce n'est pas un bannissement.
+
+Le jeton reste en mémoire dans l'onglet ; un rechargement demande une nouvelle connexion. Il n'est pas stocké dans l'URL ou le stockage du navigateur. Utiliser HTTPS pour protéger le jeton sur le réseau. Les accès directs HTTP sont réservés aux essais sur réseau de confiance. Pas de comptes ni de rôles multiples. Le journal admin contient les événements Node, pas les accès Nginx (visibles dans le journal HAOS).
+
 ## Journal
 
 Depuis 0.1.2, l'onglet **Journal** affiche les connexions et déconnexions (identifiant, place, nombre de joueurs), refus et actions d'énigme, avec horodatage UTC. Les accès et erreurs Nginx sont également affichés. Voir [les événements et leurs limites](../docs/logging.md). L'identifiant est celui d'une connexion, pas un compte utilisateur.
 
 ## Limites du prototype
 
-Quatre connexions, une salle et un état d'énigme en mémoire ; pas de comptes, d'authentification ou de persistance. Réserver l'accès au réseau de confiance. Les poses ne sont pas diffusées. Calibrage manuel horizontal à deux repères physiques, sans ancre spatiale partagée. Recalibrer après recentrage.
+Quatre connexions, une salle et un état d'énigme en mémoire ; pas de comptes joueurs, d'authentification des joueurs ou de persistance. L'accès admin est protégé par le jeton. Réserver l'accès au réseau de confiance. Les poses ne sont pas diffusées. Calibrage manuel horizontal à deux repères physiques, sans ancre spatiale partagée. Recalibrer après recentrage.
 
 Les validations sur Quest, Nginx déployé et HAOS/Raspberry Pi 5 restent à effectuer.

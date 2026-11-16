@@ -3,6 +3,8 @@ set -eu
 if [ -f /data/options.json ]; then
   PUBLIC_ORIGIN="$(jq -er '.public_origin' /data/options.json)"
   export PUBLIC_ORIGIN
+  ADMIN_TOKEN="$(jq -r '.admin_token // ""' /data/options.json)"
+  export ADMIN_TOKEN
 fi
 : "${PUBLIC_ORIGIN:?Configure public_origin / PUBLIC_ORIGIN}"
 node /app/server/dist/index.js &

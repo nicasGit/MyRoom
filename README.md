@@ -30,6 +30,8 @@ npm start
 
 ## Prototype
 
+Administration : ouvrir `/admin.html` ou le lien sur la page joueur. Configurer `admin_token` dans HAOS ; en développement PowerShell : `$env:ADMIN_TOKEN = 'VOTRE_SECRET_ALEATOIRE_16_CARACTERES_MINIMUM'` avant `npm run dev`. Ne pas committer ce secret. Voir [le guide admin](haos-addon/DOCS.md#administration).
+
 - Diagnostic contexte sécurisé, WebXR et `immersive-ar` ; démarrage de session avec sol local.
 - Quatre places synchronisées, reconnexion réseau, énigme de démonstration autoritaire en mémoire.
 - Calibrage manuel horizontal à deux points au sol via gâchette, communs à tous les casques.

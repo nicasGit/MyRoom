@@ -3,9 +3,18 @@ import { randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Room } from './room.js';
 import { log } from './logger.js';
+import { admin, type Connection } from './admin.js';
 
 const room = new Room();
+const connections = new Map<string, Connection>();
 const http = createServer((req, res) => {
+  if (req.url?.startsWith('/api/admin/')) {
+    void admin(req, res, room, connections, broadcast).catch(error => {
+      log('admin_error', { message: String(error) });
+      if (!res.headersSent) { res.writeHead(500); res.end(); }
+    });
+    return;
+  }
   res.writeHead(req.url === '/health' ? 200 : 404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ ok: req.url === '/health' }));
 });
@@ -37,6 +46,7 @@ wss.on('connection', (ws, req) => {
     ws.close(1008, 'Salle complète (4 joueurs)'); return;
   }
   const slot = room.players.get(id);
+  connections.set(id, { socket: ws, address, userAgent: context.userAgent, connectedAt: new Date().toISOString() });
   log('player_connected', { ...context, slot, connected: room.players.size });
   ws.send(JSON.stringify({ type: 'welcome', id })); broadcast();
   let alive = true;
@@ -63,7 +73,7 @@ wss.on('connection', (ws, req) => {
     }
   });
   ws.on('close', (code, reason) => {
-    clearInterval(timer); room.players.delete(id);
+    clearInterval(timer); room.players.delete(id); connections.delete(id);
     log('player_disconnected', { id, slot, code, reason: reason.toString().slice(0, 128), connected: room.players.size });
     broadcast();
   });

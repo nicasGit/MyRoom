@@ -6,7 +6,7 @@ import { WebSocket } from 'ws';
 
 test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine contrôlée', { timeout: 15000 }, async () => {
   const child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
-    env: { ...process.env, PORT: '13017', PUBLIC_ORIGIN: 'https://myroom.test' },
+    env: { ...process.env, PORT: '13017', PUBLIC_ORIGIN: 'https://myroom.test', ADMIN_TOKEN: 'test-admin-token-not-for-production' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const clients: WebSocket[] = [];
@@ -18,6 +18,11 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
       once(child, 'exit').then(() => { throw new Error('Serveur arrêté avant démarrage'); }),
     ]);
     assert.equal((await fetch('http://localhost:13017/health')).status, 200);
+    const adminUrl = 'http://localhost:13017/api/admin/';
+    const headers = { Authorization: 'Bearer test-admin-token-not-for-production', Origin: 'https://myroom.test', 'Content-Type': 'application/json' };
+    assert.equal((await fetch(`${adminUrl}state`)).status, 401);
+    assert.equal((await fetch(`${adminUrl}state`, { headers: { Authorization: 'Bearer incorrect' } })).status, 401);
+    assert.equal((await fetch(`${adminUrl}reset`, { method: 'POST', headers: { ...headers, Origin: 'https://other.test' }, body: '{}' })).status, 403);
     for (let i = 0; i < 4; i++) {
       const ws = new WebSocket('ws://localhost:13017/ws', { origin: 'https://myroom.test' });
       clients.push(ws);
@@ -34,6 +39,21 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
       assert.equal(state.players.length, 4);
       assert.equal(state.puzzle.solved, true); assert.equal(state.puzzle.revision, 1);
     }
+    const overview = await (await fetch(`${adminUrl}state`, { headers })).json();
+    assert.equal(overview.players.length, 4);
+    assert.ok(!JSON.stringify(overview).includes('test-admin-token-not-for-production'));
+    assert.ok(overview.logs.length <= 100);
+    const resetStates = clients.slice(0, 4).map(ws => once(ws, 'message'));
+    assert.equal((await fetch(`${adminUrl}reset`, { method: 'POST', headers, body: '{}' })).status, 200);
+    for (const [data] of await Promise.all(resetStates)) {
+      const state = JSON.parse(String(data));
+      assert.equal(state.puzzle.solved, false); assert.equal(state.puzzle.revision, 2);
+    }
+    assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: '{"id":42}' })).status, 400);
+    assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: '{"id":"absent"}' })).status, 404);
+    const kicked = once(clients[3], 'close');
+    assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: JSON.stringify({ id: overview.players.find((p: {slot: number}) => p.slot === 4).id }) })).status, 200);
+    assert.equal((await kicked)[0], 1008);
     const bad = new WebSocket('ws://localhost:13017/ws', { origin: 'https://other.test' });
     clients.push(bad);
     await new Promise<void>(resolve => bad.once('error', () => resolve()));

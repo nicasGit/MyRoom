@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Interface d'administration /admin.html : joueurs, état, journal et disponibilité serveur.
+- Commandes protégées par admin_token : réinitialisation d'énigme et déconnexion joueur.
+
 ## 0.1.2
 
 - Journal HAOS : connexions, départs, refus, erreurs et résolutions d'énigme horodatés.

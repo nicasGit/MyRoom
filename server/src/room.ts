@@ -14,4 +14,5 @@ export class Room {
   snapshot() {
     return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision } };
   }
+  reset() { this.solved = false; this.revision++; }
 }

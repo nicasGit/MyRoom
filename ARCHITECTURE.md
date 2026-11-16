@@ -21,6 +21,12 @@ Une salle en mémoire, quatre connexions maximum. Chaque connexion reçoit un UU
 
 Le serveur est autoritaire ; une commande périmée reçoit l'état courant sans mutation. La résolution est idempotente. Taille limitée à 4 Kio, 30 messages par fenêtre de 10 s, heartbeat ping/pong et contrôle d'origine. Pas de persistance ni d'authentification : prototype pour réseau de confiance. Un bouton peut résoudre la démo sans calibrage ; les futures énigmes devront valider leurs conditions côté serveur.
 
+## Administration
+
+`/admin.html` est une page distincte qui ne crée aucune connexion joueur. Elle interroge `/api/admin/state` toutes les deux secondes avec un jeton Bearer conservé uniquement dans la mémoire de l'onglet. Le serveur refuse l'administration si `ADMIN_TOKEN` contient moins de 16 caractères ; HAOS le fournit via l'option `admin_token`. Les API admin sont protégées, même si les fichiers de l'interface sont publics.
+
+`POST /api/admin/reset` attend `{}` et incrémente la révision sans réutiliser les anciennes révisions. `POST /api/admin/kick` attend `{ "id": "uuid" }` et ferme la connexion avec le code 1008 (sans reconnexion automatique). Chaque action vérifie le jeton, l'origine et le JSON. Ces commandes sont journalisées. L'état administrateur expose les métadonnées de connexion et les 100 derniers événements Node, sans les accès Nginx. Aucun compte, rôle multiple ou bannissement persistant. Utiliser HTTPS pour protéger le jeton en transit.
+
 ## Déploiement
 
 Image Node 22 Alpine multi-architecture, add-on limité à aarch64 pour Raspberry Pi 5. Le conteneur réunit Nginx et Node, arrêtés ensemble si un processus sort. HTTPS est terminé sur un proxy externe avec certificat reconnu par les casques. Le port 3000 n'est pas publié. Pas d'Ingress Home Assistant pour ce prototype : accès direct à une origine HTTPS dédiée.

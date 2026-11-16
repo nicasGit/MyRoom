@@ -11,4 +11,6 @@ Exécutées le 16 novembre 2026 sous Windows, Node.js 24.16.0 / npm 11.13.0 :
 
 Le test réseau démarre un vrai serveur Node sur le port 13017, vérifie `/health`, quatre connexions, le refus de la cinquième, la résolution diffusée et le contrôle d'origine.
 
+Version 0.1.3 : typecheck et compilation réussis ; les trois tests incluent maintenant l'authentification admin (jeton absent/incorrect), le refus d'une origine différente, la réinitialisation diffusée avec une nouvelle révision, la validation des identifiants et la déconnexion d'un joueur. Vérification manuelle dans le navigateur intégré : connexion admin, affichage joueur/journal et réinitialisation visible dans un onglet joueur. Pas d'essai physique HAOS ou Quest pour cette interface.
+
 Non vérifiés : affichage navigateur, sessions WebXR, Quest 2 / 3 / 3S, précision du calibrage, image Docker ARM64, Nginx en exécution et installation HAOS. Docker n'est pas disponible dans cet environnement. Voir [la procédure matérielle](quest-validation.md) et [le déploiement](deployment.md).

@@ -13,4 +13,8 @@ test('résolution autoritaire, idempotente et protégée par révision', () => {
   assert.equal(room.solve(1), false); assert.equal(room.solve(0), true);
   assert.equal(room.solve(0), false); assert.equal(room.solve(1), false);
   assert.equal(room.snapshot().puzzle.revision, 1);
+  room.reset();
+  assert.equal(room.solved, false); assert.equal(room.revision, 2);
+  assert.equal(room.solve(0), false); assert.equal(room.solve(1), false);
+  assert.equal(room.solve(2), true);
 });
