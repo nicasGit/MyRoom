@@ -25,11 +25,12 @@
   <div id="xr-overlay" hidden>
     <div class="xr-crosshair" aria-hidden="true">+</div>
     <section class="xr-panel" aria-label="Commandes AR tactiles">
-      <strong>Calibrage de la pièce</strong>
-      <p id="xr-instruction" role="status" aria-live="polite">Visez le repère A au sol avec le centre de l'écran.</p>
+      <div class="xr-actions xr-toolbar"><button id="xr-place" disabled>Placer A</button><button id="xr-reset">Recommencer</button><button id="xr-exit">Quitter l'AR</button></div>
       <p id="xr-feedback" role="status" aria-live="polite">En attente d'un appui.</p>
-      <small id="xr-log-status">Journal serveur : connexion en attente.</small>
-      <div class="xr-actions"><button id="xr-place" disabled>Placer A</button><button id="xr-reset">Recommencer</button><button id="xr-exit">Quitter l'AR</button></div>
+      <details class="xr-help"><summary>Instructions et journal</summary>
+        <p id="xr-instruction" role="status" aria-live="polite">Visez le repère A au sol avec le centre de l'écran.</p>
+        <small id="xr-log-status">Journal serveur : connexion en attente.</small>
+      </details>
       <section id="survey-panel" hidden>
         <p><strong>Reconstruction manuelle 3D</strong></p><p id="survey-summary"></p>
         <div class="xr-actions"><button id="survey-new">Nouvelle pièce</button><button id="survey-edit">Modifier la pièce active</button></div>

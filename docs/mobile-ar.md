@@ -10,6 +10,10 @@ Ouvrir MyRoom en HTTPS sur un téléphone compatible et démarrer immersive-ar. 
 
 Un appui sur un bouton ne produit pas en plus une sélection XR : beforexrselect est annulé dans le panneau et les événements tactiles suivants sont dédoublonnés. Après validation des deux points, les appuis ne modifient plus les repères jusqu'à Recommencer.
 
+## Panneau sur téléphone — 0.2.1
+
+Le panneau commence sous la zone de visée centrale et reste borné au bas de l'écran, en portrait comme en paysage. Les boutons Placer, Recommencer et Quitter restent en tête pendant le défilement. Le retour d'appui est visible ; ouvrir **Instructions et journal** pour les détails du suivi et de la connexion. Les champs de relevé des murs et obstacles défilent à l'intérieur du panneau sans recouvrir le viseur. À confirmer sur les appareils réels et avec leur clavier virtuel.
+
 ## Pertes brèves de suivi — 0.1.6
 
 Le contact initial (pointerdown) déclenche l'appui, sans attendre de retirer le doigt. Si une projection valide vient d'être observée il y a au plus 100 ms et qu'aucune image invalide ne l'a remplacée, elle est consommée immédiatement. Sinon, maintenir le centre de l'écran sur le même repère : la demande attend la première projection valide pendant au plus 1,5 seconde. Des images sans suivi n'annulent plus immédiatement l'appui. Un délai dépassé annule la demande ; aucun point n'est créé lors d'une reprise tardive du suivi.

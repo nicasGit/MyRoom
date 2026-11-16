@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Panneau AR borné sous le viseur central, y compris sur petits écrans et en paysage.
+- Commandes de placement en tête du panneau et fixes pendant le défilement.
+- Instructions détaillées et journal repliables pour réduire l'encombrement.
+
 ## 0.2.0
 
 - Reconstruction manuelle 3D : contour au sol, hauteur des murs et obstacles cubiques.
