@@ -13,6 +13,8 @@ Le dépôt est https://github.com/nicasgit/myroom. Le workflow [publish-addon.ya
 
 ## Versions suivantes
 
+Pour tester directement depuis Chrome sur le LAN, voir [le guide de l'add-on](../haos-addon/DOCS.md#test-local-chrome-depuis-haos). Depuis 0.1.1, sa page propose le bouton « Ouvrir l'interface Web ». Le réglage `public_origin` doit correspondre à l'adresse HTTP locale utilisée pour ce test ; rétablir l'origine HTTPS pour l'AR.
+
 Incrémenter version dans [config.yaml](../haos-addon/config.yaml), compléter le [changelog](../haos-addon/CHANGELOG.md) et pousser sur main. Attendre la publication avant la mise à jour HAOS. Le Supervisor utilise le tag de version, pas latest. Relancer manuellement le workflow depuis Actions si nécessaire. Ne pas réutiliser une version distribuée pour une nouvelle release.
 
 ## Construction manuelle

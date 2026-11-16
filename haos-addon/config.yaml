@@ -1,5 +1,5 @@
 name: MyRoom
-version: "0.1.0"
+version: "0.1.1"
 slug: myroom
 url: https://github.com/nicasgit/myroom
 image: ghcr.io/nicasgit/myroom
@@ -9,6 +9,7 @@ arch:
 startup: application
 boot: auto
 init: false
+webui: "http://[HOST]:[PORT:8080]/"
 ports:
   8080/tcp: 8099
 ports_description:
