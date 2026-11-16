@@ -1,6 +1,8 @@
 import './admin.css';
+import { createPreview } from './model-view';
+import { area,type RoomLibrary } from '../../server/src/scene-schema.js';
 type Player = { id: string; slot: number; address?: string; userAgent?: string; connectedAt: string };
-type State = { players: Player[]; puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[] };
+type State = { players: Player[]; puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let token = '';
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -9,9 +11,13 @@ let loading = false;
 let session = 0;
 let previousPlayers = '';
 const notice = el('notice');
+let library:RoomLibrary|undefined;
+let libraryRevision=-1;
+const preview=createPreview(el('admin-room-preview'));
 function logout() {
   session++; token = ''; clearTimeout(timer); el<HTMLInputElement>('token').value = '';
   previousPlayers = '';
+  library=undefined;libraryRevision=-1;el('rooms').replaceChildren();preview(null);
   el('dashboard').hidden = true; el('login-panel').hidden = false;
   el('players').replaceChildren(); el('logs').replaceChildren();
   el('connection').textContent = 'Non connecté'; el('connection').className = 'badge';
@@ -35,6 +41,23 @@ function node(tag: string, text: string, className?: string) {
   return value;
 }
 function render(state: State) {
+  library=state.library;
+  if(library.revision!==libraryRevision){
+    libraryRevision=library.revision;
+    const active=library.rooms.find(room=>room.id===library!.activeId)??null;
+    el('rooms-summary').textContent=`${library.rooms.length} / 20 pièces enregistrées · Active : ${active?.name??'aucune'}`;
+    el('rooms').replaceChildren(...library.rooms.map(room=>{
+      const card=node('article','','player');
+      card.append(node('h3',room.name+(room.id===library!.activeId?' · active':'')),node('p',`${area(room.floor).toFixed(1)} m² · hauteur ${room.height} m · ${room.obstacles.length} obstacles`));
+      const activate=node('button','Activer','secondary') as HTMLButtonElement;
+      activate.disabled=room.id===library!.activeId;
+      activate.onclick=()=>{if(confirm(`Activer ${room.name} ? Les joueurs devront refaire le calibrage A/B.`))void action('rooms/activate',{id:room.id,revision:library!.revision});};
+      const remove=node('button','Supprimer','danger');
+      remove.onclick=()=>{if(confirm(`Supprimer définitivement la pièce ${room.name} du serveur ?`))void action('rooms/delete',{id:room.id,revision:library!.revision});};
+      card.append(activate,remove);return card;
+    }));
+    preview(active);
+  }
   el('count').textContent = `${state.players.length} / 4`;
   el('puzzle').textContent = state.puzzle.solved ? 'Résolue' : 'À résoudre';
   el('revision').textContent = `Démo · révision ${state.puzzle.revision}`;
@@ -92,3 +115,8 @@ el('login').onsubmit = event => {
 el('reset').onclick = () => { if (confirm('Réinitialiser l’énigme pour tous les joueurs ?')) void action('reset', {}); };
 el('refresh').onclick = () => { void refresh(); };
 el('logout').onclick = () => { logout(); notice.textContent = ''; };
+el('rooms-export').onclick=()=>{
+  if(!library)return;
+  const url=URL.createObjectURL(new Blob([JSON.stringify(library,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');link.href=url;link.download='myroom-rooms.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};

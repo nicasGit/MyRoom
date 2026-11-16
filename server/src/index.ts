@@ -5,12 +5,15 @@ import { Room } from './room.js';
 import { log } from './logger.js';
 import { admin, type Connection } from './admin.js';
 import { parseXREvent } from './xr-events.js';
+import { RoomStore } from './room-store.js';
 
 const room = new Room();
+const store = new RoomStore(process.env.DATA_DIR ?? 'data');
+room.model = store.active(); room.libraryRevision = store.snapshot().revision;
 const connections = new Map<string, Connection>();
 const http = createServer((req, res) => {
   if (req.url?.startsWith('/api/admin/')) {
-    void admin(req, res, room, connections, broadcast).catch(error => {
+    void admin(req, res, room, connections, broadcast, store).catch(error => {
       log('admin_error', { message: String(error) });
       if (!res.headersSent) { res.writeHead(500); res.end(); }
     });
@@ -87,7 +90,7 @@ wss.on('connection', (ws, req) => {
 });
 const port = Number(process.env.PORT ?? 3000);
 http.on('error', error => { log('server_error', { message: error.message }); process.exitCode = 1; });
-http.listen(port, '0.0.0.0', () => log('server_started', { port, maxPlayers: 4, publicOrigin: process.env.PUBLIC_ORIGIN ?? 'localhost:5173' }));
+http.listen(port, '0.0.0.0', () => log('server_started', { port, maxPlayers: 4, publicOrigin: process.env.PUBLIC_ORIGIN ?? 'localhost:5173', savedRooms:store.snapshot().rooms.length, activeRoom:room.model?.name ?? null }));
 function shutdown() {
   log('server_stopping', { connected: room.players.size });
   for (const client of wss.clients) client.terminate();

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Reconstruction manuelle 3D : contour au sol, hauteur des murs et obstacles cubiques.
+- Bibliothèque de vingt pièces nommées, sauvegardée sur disque dans le stockage HAOS.
+- Administration : aperçu 3D, activation, suppression et export des pièces.
+- Protection par jeton administrateur, validation géométrique et contrôle de révision.
+
 ## 0.1.6
 
 - Appui pris dès pointerdown, sans double action au relâchement ou au clic.

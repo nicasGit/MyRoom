@@ -3,13 +3,17 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { WebSocket } from 'ws';
+import { mkdtempSync,rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join,resolve,dirname } from 'node:path';
 
-function messageOfType(ws: WebSocket, type: string, revision?: number): Promise<any> {
+function messageOfType(ws: WebSocket, type: string, revision?: number,modelId?:string|null): Promise<any> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => { ws.off('message', receive); reject(new Error(`Message attendu : ${type}`)); }, 5000);
     function receive(raw: unknown) {
       const message = JSON.parse(String(raw));
       if (message.type !== type || (revision !== undefined && message.puzzle?.revision !== revision)) return;
+      if(modelId!==undefined&&(message.model?.id??null)!==modelId)return;
       clearTimeout(timeout); ws.off('message', receive); resolve(message);
     }
     ws.on('message', receive);
@@ -17,8 +21,9 @@ function messageOfType(ws: WebSocket, type: string, revision?: number): Promise<
 }
 
 test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine contrôlée', { timeout: 15000 }, async () => {
+  const directory=mkdtempSync(join(tmpdir(),'myroom-network-'));
   const child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
-    env: { ...process.env, PORT: '13017', PUBLIC_ORIGIN: 'https://myroom.test', ADMIN_TOKEN: 'test-admin-token-not-for-production' },
+    env: { ...process.env, DATA_DIR:directory, PORT: '13017', PUBLIC_ORIGIN: 'https://myroom.test', ADMIN_TOKEN: 'test-admin-token-not-for-production' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const clients: WebSocket[] = [];
@@ -67,6 +72,17 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
       assert.equal(state.puzzle.solved, false); assert.equal(state.puzzle.revision, 2);
     }
     assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: '{"id":42}' })).status, 400);
+    const roomModel={id:'salon',name:'Salon',height:2.5,floor:[{x:0,z:0},{x:4,z:0},{x:4,z:3},{x:0,z:3}],obstacles:[{name:'Table',x:2,z:1.5,width:1,depth:1,height:0.8}]};
+    assert.equal((await fetch(`${adminUrl}rooms/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:0,room:roomModel})})).status,401);
+    const modelStates=clients.slice(0,4).map(ws=>messageOfType(ws,'state',2,'salon'));
+    const saved=await fetch(`${adminUrl}rooms/save`,{method:'POST',headers,body:JSON.stringify({revision:0,room:roomModel})});
+    assert.equal(saved.status,200);
+    for(const state of await Promise.all(modelStates)){assert.equal(state.model.obstacles[0].name,'Table');assert.equal(state.libraryRevision,1);}
+    assert.equal((await fetch(`${adminUrl}rooms/save`,{method:'POST',headers,body:JSON.stringify({revision:0,room:roomModel})})).status,400);
+    assert.equal((await fetch(`${adminUrl}rooms/save`,{method:'POST',headers,body:JSON.stringify({revision:1,room:{...roomModel,id:'bureau',name:'Bureau'}})})).status,200);
+    assert.equal((await fetch(`${adminUrl}rooms/activate`,{method:'POST',headers,body:JSON.stringify({revision:2,id:'salon'})})).status,200);
+    const library=(await (await fetch(`${adminUrl}state`,{headers})).json()).library;
+    assert.equal(library.rooms.length,2);assert.equal(library.activeId,'salon');
     assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: '{"id":"absent"}' })).status, 404);
     const kicked = once(clients[3], 'close');
     assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: JSON.stringify({ id: overview.players.find((p: {slot: number}) => p.slot === 4).id }) })).status, 200);
@@ -81,6 +97,8 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     for (const ws of clients) ws.terminate();
     const closed = once(child, 'close');
     child.kill(); await closed;
+    if(resolve(dirname(directory))!==resolve(tmpdir()))throw new Error('Chemin temporaire inattendu');
+    rmSync(directory,{recursive:true,force:true});
   }
   const events = output.trim().split(/\r?\n/).map(line => JSON.parse(line));
   assert.equal(events.filter(event => event.event === 'player_connected').length, 4);

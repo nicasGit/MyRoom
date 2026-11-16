@@ -29,6 +29,16 @@ Le serveur est autoritaire ; une commande périmée reçoit l'état courant sans
 
 `POST /api/admin/reset` attend `{}` et incrémente la révision sans réutiliser les anciennes révisions. `POST /api/admin/kick` attend `{ "id": "uuid" }` et ferme la connexion avec le code 1008 (sans reconnexion automatique). Chaque action vérifie le jeton, l'origine et le JSON. Ces commandes sont journalisées. L'état administrateur expose les métadonnées de connexion et les 100 derniers événements Node, sans les accès Nginx. Aucun compte, rôle multiple ou bannissement persistant. Utiliser HTTPS pour protéger le jeton en transit.
 
+## Pièces 3D et bibliothèque persistante
+
+Le modèle manuel contient un identifiant, un nom, un polygone de sol (3–32 sommets en coordonnées A/B), une hauteur uniforme de murs et jusqu'à 32 obstacles cubiques alignés sur les axes de la pièce. Le module pur `server/src/scene-schema.ts` est partagé par le serveur et les builds client pour la validation géométrique ; il ne contient aucun accès système. Les pièces peuvent être concaves ; contours croisés, coordonnées non finies et obstacles dépassant le contour sont rejetés.
+
+Une bibliothèque versionnée contient jusqu'à vingt pièces et une sélection active. `RoomStore` la charge depuis DATA_DIR/rooms.json, la valide et effectue des écritures par fichier temporaire puis renommage, avant publication en mémoire. La révision globale évite les écrasements concurrents. Sous HAOS, DATA_DIR vaut /data/myroom ; un fichier corrompu bloque le démarrage pour préserver les données.
+
+Les commandes `POST /api/admin/rooms/save` (`{revision,room}`), `/activate` et `/delete` (`{revision,id}`) nécessitent le jeton, l'origine configurée et un JSON limité à 32 Kio. La sauvegarde active la pièce. L'API admin expose la bibliothèque complète ; l'instantané WebSocket expose `model` et `libraryRevision` pour la seule pièce active. Chaque modification est diffusée et journalisée. Les mesures sont déclarées manuellement par l'administrateur ; aucun scan automatique ni ancre spatiale partagée.
+
+Changer de pièce active invalide le calibrage local des joueurs ; ils doivent retrouver les repères physiques A/B de la pièce correspondante. Les brouillons non enregistrés sont locaux et perdus après fin de session ou recentrage. La bibliothèque ne persiste ni l'état des énigmes ni les connexions. Voir [le guide](docs/room-library.md).
+
 ## Déploiement
 
 Image Node 22 Alpine multi-architecture, add-on limité à aarch64 pour Raspberry Pi 5. Le conteneur réunit Nginx et Node, arrêtés ensemble si un processus sort. HTTPS est terminé sur un proxy externe avec certificat reconnu par les casques. Le port 3000 n'est pas publié. Pas d'Ingress Home Assistant pour ce prototype : accès direct à une origine HTTPS dédiée.

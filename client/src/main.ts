@@ -3,6 +3,8 @@ import { makeCalibration, toRoom, projectToFloor } from './calibration';
 import './style.css';
 import { bindPress } from './press';
 import { PlacementRequest } from './placement';
+import { Survey } from './survey';
+import { modelGroup, disposeGroup } from './model-view';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -14,7 +16,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.1.6');
+diagnostic('Version client', '0.2.0');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -50,6 +52,8 @@ function rejectPlacement(reason: string, details: Record<string, unknown> = {}) 
   xrEvent('placement_rejected', { step: firstPoint ? 'B' : 'A', reason: reason.slice(0, 160), ...details });
 }
 let resetScene = () => {};
+let updateSurveyScene = () => {};
+const survey = new Survey(()=>calibration, message=>{feedback.textContent=message;}, ()=>updateSurveyScene(), ()=>{if(calibration)resetCalibration();});
 function calibrationMessage(text: string) {
   calibrationStatus.textContent = text; instruction.textContent = text;
 }
@@ -57,6 +61,9 @@ function resetCalibration() {
   firstPoint = undefined; calibration = undefined;
   place.textContent = 'Placer A'; place.disabled = false;
   resetScene();
+  survey.cancel(); survey.refresh();
+  overlay.classList.remove('xr-tracking-valid');
+  place.hidden = false;
   feedback.textContent = 'En attente d’un appui sur Placer A.';
   xrEvent('calibration_reset');
   calibrationMessage('Visez le repère A au sol : centre de l’écran + bouton Placer A, ou gâchette du contrôleur.');
@@ -108,6 +115,22 @@ enter.onclick = async () => {
     const target = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.055, 24), materialA);
     target.rotation.x = -Math.PI / 2;
     scene.add(markerA, markerB, target);
+    let surveyGroup:THREE.Group|undefined;
+    let surveyKey='';
+    updateSurveyScene=()=> {
+      const model=survey.current();
+      const key=JSON.stringify({model,calibration,closed:survey.closed(),corner:survey.pendingCorner()});
+      if(key===surveyKey)return;surveyKey=key;
+      if(surveyGroup){disposeGroup(surveyGroup);surveyGroup=undefined;}
+      if(!calibration||!model)return;
+      surveyGroup=modelGroup(model,survey.closed());
+      const corner=survey.pendingCorner();
+      if(corner){
+        const marker=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),new THREE.MeshBasicMaterial({color:0xffbd73}));
+        marker.position.set(corner.x,0.05,corner.z);surveyGroup.add(marker);
+      }
+      surveyGroup.position.copy(calibration.origin);surveyGroup.rotation.y=-calibration.yaw;scene.add(surveyGroup);
+    };
     const placement = new PlacementRequest<THREE.Vector3>();
     let lastPlacementPress = -Infinity;
     let lastTrackingReason = 'Aucune position XR reçue.';
@@ -115,11 +138,11 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer); };
-    disposeScene = () => { clearTimeout(placementTimer); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); };
+    disposeScene = () => { clearTimeout(placementTimer); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);updateSurveyScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
-      if (calibration) return;
+      if (calibration) {survey.add(point);return;}
       if (!firstPoint) {
         firstPoint = point.clone(); markerA.position.copy(point); markerA.visible = true;
         place.textContent = 'Placer B';
@@ -135,6 +158,7 @@ enter.onclick = async () => {
           feedback.textContent = '✓ B placé. Calibrage terminé.';
           xrEvent('placement_accepted', { step: 'B', x: point.x, y: point.y, z: point.z });
           xrEvent('calibration_completed', { distance: calibration.distance });
+          survey.refresh();
           calibrationMessage(`Calibré : A → B = ${calibration.distance.toFixed(2)} m ; B dans la pièce = (${roomPoint.x.toFixed(2)}, ${roomPoint.z.toFixed(2)}). Recommencez pour changer les repères.`);
         } catch (error) { rejectPlacement(`${String(error)} Visez B plus loin de A.`); }
       }
@@ -143,10 +167,10 @@ enter.onclick = async () => {
       return projectToFloor(new THREE.Vector3().copy(pose.transform.position), new THREE.Vector3(0, 0, -1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));
     }
     unbindPlace = bindPress(place, () => {
-      if (calibration || placement.pending) return;
+      if ((calibration&&!survey.collecting) || placement.pending) return;
       lastPlacementPress = performance.now();
-      feedback.textContent = `Appui reçu pour ${firstPoint ? 'B' : 'A'} : maintenez la visée, attente du suivi (1,5 s)…`;
-      xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A' });
+      feedback.textContent = `Appui reçu : ${calibration?survey.label:firstPoint?'B':'A'}. Maintenez la visée (1,5 s)…`;
+      xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A', reason:calibration?survey.label:'calibration' });
       frameReceived = false;
       const immediate = placement.request();
       if (immediate) { selectPoint(immediate); return; }
@@ -158,7 +182,7 @@ enter.onclick = async () => {
       }, 1500);
     });
     session.addEventListener('select', event => {
-      if (calibration) return;
+      if (calibration&&!survey.collecting) return;
       // Native screen selection is a fallback outside the panel; suppress duplicates.
       if (placement.pending || (event.inputSource.targetRayMode === 'screen' && performance.now() - lastPlacementPress < 700)) return;
       xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A', reason: `xr_select_${event.inputSource.targetRayMode}` });
@@ -173,9 +197,11 @@ enter.onclick = async () => {
       const pose = frame?.getViewerPose(reference);
       if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
-      const valid = !!point && !calibration;
+      const canPlace=!calibration||survey.collecting;
+      const valid = !!point && canPlace;
       // Invalid tracking must still allow a press and an explanation.
-      place.disabled = !!calibration;
+      place.hidden = !canPlace; place.disabled = !canPlace;
+      if(calibration&&survey.collecting)place.textContent=survey.label;
       const reason = !pose ? 'Suivi AR indisponible. Déplacez doucement le téléphone.'
         : pose.transform.position.y <= 0 ? 'La caméra est au niveau ou sous le sol (hauteur ≤ 0). Recommencez la session pour rétablir le sol local.'
         : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';
@@ -188,12 +214,12 @@ enter.onclick = async () => {
       target.visible = valid;
       if (point) target.position.copy(point).setY(0.005);
       const ready = placement.update(point?.clone());
-      if (ready && !calibration) {
+      if (ready && canPlace) {
         clearTimeout(placementTimer);
         selectPoint(ready);
       }
       if (!point && !calibration) instruction.textContent = reason;
-      else instruction.textContent = calibrationStatus.textContent;
+      else instruction.textContent = calibration?survey.instruction:calibrationStatus.textContent;
       renderer!.render(scene, camera);
     });
     status.textContent = touchOverlay ? 'Session AR active : visez au centre puis utilisez Placer A / Placer B.' : 'Session AR active : gâchette ou sélection tactile XR native si disponible. Commandes DOM indisponibles.';
@@ -232,6 +258,7 @@ function connect() {
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
         showPlayers(message.players); revision = message.puzzle.revision;
+        survey.receive(message.model??null,message.libraryRevision??0);
         element('puzzle').textContent = `Démo : ${message.puzzle.solved ? 'résolue' : 'à résoudre'} · révision ${revision}`;
         solve.disabled = message.puzzle.solved;
       }

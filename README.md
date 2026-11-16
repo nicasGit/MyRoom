@@ -30,6 +30,8 @@ npm start
 
 ## Prototype
 
+Depuis 0.2.0 : [reconstruction manuelle 3D et bibliothèque persistante](docs/room-library.md). Après A/B, relever le contour, saisir la hauteur des murs et représenter les obstacles par des boîtes. Jusqu'à vingt pièces peuvent être enregistrées sur disque, activées, supprimées et exportées depuis l'administration. Pas de scan automatique de surfaces ou d'objets.
+
 Administration : ouvrir `/admin.html` ou le lien sur la page joueur. Configurer `admin_token` dans HAOS ; en développement PowerShell : `$env:ADMIN_TOKEN = 'VOTRE_SECRET_ALEATOIRE_16_CARACTERES_MINIMUM'` avant `npm run dev`. Ne pas committer ce secret. Voir [le guide admin](haos-addon/DOCS.md#administration).
 
 - Diagnostic contexte sécurisé, WebXR et `immersive-ar` ; démarrage de session avec sol local.
@@ -38,4 +40,4 @@ Administration : ouvrir `/admin.html` ou le lien sur la page joueur. Configurer 
 
 Quest 2, Quest 3 et Quest 3S sont des cibles prévues. **Aucun test WebXR sur ces casques n'a été effectué.** Disponibilité AR, interface de calibrage et précision doivent être vérifiées sur chaque appareil et version du navigateur. Sur téléphone compatible DOM Overlay, des commandes tactiles permettent de placer A/B avec le rayon central, de recommencer et de quitter la session. Le support est détecté pendant la session, sans supposer qu'un navigateur le fournit. Voir [le guide tactile](docs/mobile-ar.md). Sur casque sans DOM Overlay, utiliser la gâchette ; il n'y a pas encore de panneau 3D d'instructions dans le casque.
 
-L'état est perdu au redémarrage du serveur. Les poses joueurs ne sont pas encore diffusées. Pas d'authentification, de gestion de comptes ou d'ancres persistantes.
+Les pièces 3D et la sélection active sont enregistrées sur disque. Les connexions et l'état des énigmes restent en mémoire et sont perdus au redémarrage. Les poses joueurs ne sont pas diffusées. Les écritures de la bibliothèque et l'administration demandent le jeton ; les joueurs n'ont pas de comptes ou d'ancres persistantes.

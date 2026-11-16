@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import type { WebSocket } from 'ws';
 import type { Room } from './room.js';
 import { log, recentLogs } from './logger.js';
+import type { RoomStore } from './room-store.js';
 
 export type Connection = { socket: WebSocket; address?: string; userAgent?: string; connectedAt: string };
 const started = Date.now();
@@ -10,7 +11,7 @@ function reply(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
   res.end(JSON.stringify(body));
 }
-export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void) {
+export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore) {
   const token = process.env.ADMIN_TOKEN ?? '';
   if (token.length < 16) { reply(res, 503, { error: 'Configurer admin_token avec au moins 16 caractères puis redémarrer.' }); return; }
   const supplied = req.headers.authorization ?? '';
@@ -23,6 +24,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       uptimeSeconds: Math.floor((Date.now() - started) / 1000),
       publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
       puzzle: room.snapshot().puzzle,
+      library:store.snapshot(),
       players: [...room.players].map(([id, slot]) => {
         const connection = connections.get(id);
         return { id, slot, address: connection?.address, userAgent: connection?.userAgent, connectedAt: connection?.connectedAt };
@@ -30,7 +32,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -45,11 +47,25 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     let bytes = 0;
     for await (const chunk of req) {
       bytes += Buffer.byteLength(chunk);
-      if (bytes > 4096) { reply(res, 413, { error: 'Message trop volumineux.' }); return; }
+      if (bytes > (req.url?.startsWith('/api/admin/rooms/') ? 32768 : 4096)) { reply(res, 413, { error: 'Message trop volumineux.' }); return; }
       chunks.push(Buffer.from(chunk));
     }
     const body: unknown = JSON.parse(Buffer.concat(chunks).toString());
     if (!body || typeof body !== 'object' || Array.isArray(body)) { reply(res, 400, { error: 'Objet JSON attendu.' }); return; }
+    if(req.url?.startsWith('/api/admin/rooms/')) {
+      const command=body as Record<string,unknown>;
+      const action=req.url.split('/').at(-1) as 'save'|'activate'|'delete';
+      try {
+        const library=store.change(action,command.revision,action==='save'?command.room:command.id);
+        room.model=store.active(); room.libraryRevision=library.revision;
+        log('room_library_changed',{action,revision:library.revision,rooms:library.rooms.length,activeId:library.activeId});
+        broadcast(); reply(res,200,{library});
+      } catch(error) {
+        log('room_library_error',{action,message:String(error)});
+        reply(res,400,{error: error instanceof Error ? error.message : 'Enregistrement impossible.'});
+      }
+      return;
+    }
     if (req.url === '/api/admin/reset') {
       if (Object.keys(body).length) { reply(res, 400, { error: 'Objet vide attendu.' }); return; }
       room.reset(); log('admin_puzzle_reset', { revision: room.revision }); broadcast();

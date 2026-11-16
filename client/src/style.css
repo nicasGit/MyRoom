@@ -12,3 +12,10 @@ a { color: #67e8f9; }
 #xr-place { background: #67e8f9; color: #102030; font-weight: 700; flex: 1; }
 #xr-feedback { border-left: 3px solid #67e8f9; padding-left: 10px; font-weight: 600; }
 #xr-log-status { display: block; color: #c3d8eb; margin-bottom: 12px; overflow-wrap: anywhere; }
+.xr-panel { max-height: 44vh; overflow-y: auto; overscroll-behavior: contain; }
+.xr-panel label { display: block; margin: 10px 0; font-size: 14px; }
+input { color: #e6edf7; background: #17283f; border: 1px solid #68829b; border-radius: 5px; padding: 10px; max-width: 100%; box-sizing: border-box; }
+.xr-panel input { width: 100%; margin-top: 5px; }
+.xr-actions { margin-top: 8px; }
+[hidden] { display: none !important; }
+#room-preview { min-height: 100px; width: 100%; }

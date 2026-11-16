@@ -12,6 +12,12 @@
     <h2>Calibrage manuel</h2>
     <p>Choisissez les mêmes repères A puis B au sol, séparés d'au moins 50 cm. Sur téléphone, visez avec le centre de l'écran et touchez « Placer A » puis « Placer B ». Sur casque, visez avec le contrôleur et utilisez la gâchette. Le rayon est projeté sur le sol local (y = 0) ; A définit l'origine et A → B l'axe +X.</p>
     <button id="reset">Recommencer le calibrage</button><p id="calibration">Non calibré</p>
+    <h2>Pièce 3D enregistrée</h2>
+    <p>Après A/B, relevez les coins du sol, saisissez la hauteur des murs et ajoutez des obstacles cubiques. Les hauteurs sont des mesures manuelles, pas une détection caméra.</p>
+    <label for="room-admin-token">Jeton administrateur pour enregistrer une pièce (à saisir avant l’AR)</label>
+    <input id="room-admin-token" type="password" autocomplete="off" placeholder="Même jeton que l’administration">
+    <p id="room-summary" role="status">Chargement de la pièce active…</p>
+    <div id="room-preview"></div><p>Glisser pour tourner l’aperçu 3D ; pincer ou utiliser la molette pour zoomer. La bibliothèque de pièces se gère dans l’administration.</p>
     <h2>Énigme de démonstration</h2><p id="puzzle"></p>
     <button id="solve" disabled>Résoudre l'énigme partagée</button>
     <p>Aucune validation physique sur casque effectuée. Le calibrage est expérimental et doit être refait après recentrage.</p>
@@ -24,6 +30,18 @@
       <p id="xr-feedback" role="status" aria-live="polite">En attente d'un appui.</p>
       <small id="xr-log-status">Journal serveur : connexion en attente.</small>
       <div class="xr-actions"><button id="xr-place" disabled>Placer A</button><button id="xr-reset">Recommencer</button><button id="xr-exit">Quitter l'AR</button></div>
+      <section id="survey-panel" hidden>
+        <p><strong>Reconstruction manuelle 3D</strong></p><p id="survey-summary"></p>
+        <div class="xr-actions"><button id="survey-new">Nouvelle pièce</button><button id="survey-edit">Modifier la pièce active</button></div>
+        <div id="survey-settings" hidden>
+          <label>Nom de la pièce <input id="survey-name" maxlength="64" value="Nouvelle pièce"></label>
+          <label>Hauteur mesurée des murs (m) <input id="survey-height" type="number" min="0.5" max="6" step="0.05" value="2.5"></label>
+          <div class="xr-actions"><button id="survey-close">Fermer le contour</button><button id="survey-undo">Annuler le dernier élément</button></div>
+          <label>Nom de l’obstacle <input id="obstacle-name" maxlength="64" placeholder="Table, canapé…"></label>
+          <label>Hauteur mesurée de l’obstacle (m) <input id="obstacle-height" type="number" min="0.1" max="6" step="0.05" value="0.8"></label>
+          <div class="xr-actions"><button id="survey-obstacle">Ajouter un obstacle</button><button id="survey-save">Enregistrer et activer</button><button id="survey-cancel">Annuler le relevé</button></div>
+        </div>
+      </section>
     </section>
   </div>
   <script type="module" src="/src/main.ts"></script>

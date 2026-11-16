@@ -7,6 +7,7 @@ if [ -f /data/options.json ]; then
   export ADMIN_TOKEN
 fi
 : "${PUBLIC_ORIGIN:?Configure public_origin / PUBLIC_ORIGIN}"
+export DATA_DIR=/data/myroom
 node /app/server/dist/index.js &
 server_pid=$!
 nginx -g 'daemon off;' &

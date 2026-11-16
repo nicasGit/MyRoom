@@ -8,6 +8,7 @@ Depuis 0.1.2, ouvrir l'onglet Journal de MyRoom dans Home Assistant. Les événe
 - `connection_rejected` : origine incorrecte, chemin incorrect ou salle complète.
 - `puzzle_solve` : joueur, révision demandée, révision actuelle et acceptation.
 - `invalid_message`, `rate_limit_exceeded`, `heartbeat_timeout`, `socket_error`, `server_error` : anomalies réseau ou protocole.
+- Depuis 0.2.0 : `room_library_changed` indique une sauvegarde, activation ou suppression persistée (révision et nombre de pièces). `room_library_error` indique un modèle refusé, un conflit ou une erreur d'écriture. Le démarrage affiche le nombre de pièces chargées et le nom de la pièce active.
 
 L'identifiant représente une connexion, pas une personne authentifiée ; un onglet supplémentaire ou une reconnexion crée une autre identité. Le navigateur déclaré n'identifie pas un modèle de casque de manière fiable. Derrière un proxy HTTPS externe, l'adresse affichée peut être celle du proxy. Le Nginx interne remplace X-Real-IP par l'adresse de son pair pour ne pas faire confiance à un en-tête fourni par un client.
 

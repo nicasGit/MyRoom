@@ -31,6 +31,8 @@ Depuis 0.1.4, un navigateur compatible DOM Overlay affiche **Placer A / Placer B
 
 ## Administration
 
+Depuis 0.2.0 : [bibliothèque persistante de pièces 3D](../docs/room-library.md). La page joueur permet un relevé manuel AR du sol, des murs et des obstacles. Saisir le jeton administrateur dans la page joueur avant la session pour autoriser l'enregistrement. Les données sont conservées dans `/data/myroom/rooms.json`. L'administration permet de choisir parmi vingt pièces, d'en supprimer et d'exporter la bibliothèque. Attendre la confirmation d'enregistrement avant de quitter l'AR.
+
 Dans Configuration, renseigner `admin_token` avec un secret aléatoire d'au moins 16 caractères puis redémarrer l'add-on. L'administration est désactivée tant que cette valeur est vide ou trop courte. Ouvrir MyRoom puis cliquer **Administration de la salle**, ou visiter `/admin.html` sur la même origine.
 
 Saisir le jeton pour consulter les joueurs, les cent derniers événements applicatifs et l'état de l'énigme. La réinitialisation est diffusée à tous les joueurs ; la déconnexion d'un joueur l'empêche de revenir automatiquement, mais il peut recharger sa page. Ce n'est pas un bannissement.
@@ -43,6 +45,6 @@ Depuis 0.1.2, l'onglet **Journal** affiche les connexions et déconnexions (iden
 
 ## Limites du prototype
 
-Quatre connexions, une salle et un état d'énigme en mémoire ; pas de comptes joueurs, d'authentification des joueurs ou de persistance. L'accès admin est protégé par le jeton. Réserver l'accès au réseau de confiance. Les poses ne sont pas diffusées. Calibrage manuel horizontal à deux repères physiques, sans ancre spatiale partagée. Recalibrer après recentrage.
+Quatre connexions et une seule salle active ; les connexions et l'état d'énigme ne sont pas persistés. La bibliothèque de pièces 3D est enregistrée sur disque. Les joueurs n'ont pas de comptes ou d'authentification ; l'administration et les écritures de modèles demandent le jeton. Réserver l'accès au réseau de confiance. Les poses ne sont pas diffusées. Calibrage manuel horizontal à deux repères physiques, sans ancre spatiale partagée. Recalibrer après recentrage ou changement de pièce.
 
 Les validations sur Quest, Nginx déployé et HAOS/Raspberry Pi 5 restent à effectuer.
