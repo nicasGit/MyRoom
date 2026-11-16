@@ -3,12 +3,20 @@
 Ouvrir MyRoom en HTTPS sur un téléphone compatible et démarrer immersive-ar. La session demande le sol local et, en option, [DOM Overlay](https://www.w3.org/TR/webxr-dom-overlays-1/) pour les contrôles tactiles. La présence effective des contrôles est détectée via domOverlayState, pas via le modèle du téléphone.
 
 1. Choisir A puis B au sol, idéalement distants de 1 à 2 mètres, et identiques pour tous les appareils.
-2. Incliner le téléphone pour viser A avec la croix centrale. Un petit anneau cyan indique la projection sur le sol local ; le bouton s'active si le suivi fournit un point valide.
+2. Incliner le téléphone pour viser A avec la croix centrale. Un petit anneau cyan indique la projection sur le sol local. Depuis 0.1.5, le bouton reste actif tant que le calibrage n'est pas terminé afin qu'un appui affiche toujours un résultat, même si la visée est invalide.
 3. Toucher **Placer A**. Le point A reste visible en bleu.
 4. Viser B avec le centre de l'écran puis toucher **Placer B**. B apparaît en vert et la distance est affichée. Si B est trop proche (moins de 50 cm), viser plus loin et réessayer.
 5. **Recommencer** efface les deux points et redémarre à A. **Quitter l'AR** termine la session. La fin de session et le recentrage invalident le calibrage.
 
 Un appui sur un bouton ne produit pas en plus une sélection XR : beforexrselect est annulé dans le panneau. Le placement tactile est effectué à l'image XR suivante avec la pose courante, sans conserver un ancien point quand le suivi est perdu. Après validation des deux points, les appuis ne modifient plus les repères jusqu'à Recommencer.
+
+## Diagnostic d'un appui sans résultat — 0.1.5
+
+Après mise à jour, quitter l'ancienne session et recharger la page ; le diagnostic doit afficher **Version client : 0.1.5**. Un appui affiche immédiatement « Appui reçu pour A/B ». À l'image XR suivante, il affiche soit la validation, soit la raison du refus (suivi absent, sol local trop haut, visée horizontale ou trop lointaine, B trop proche). Si aucune image XR n'arrive sous 1,5 seconde, l'appui est annulé et un délai est signalé.
+
+Le petit état « Journal serveur » distingue un événement en cours d'envoi, un accusé de réception et une connexion hors ligne. Le serveur enregistre ces diagnostics sous `client_xr`, avec l'identifiant et la place du joueur : `placement_requested`, puis `placement_accepted`, `placement_rejected` ou `placement_timeout`. Les changements de suivi sont limités à un événement par deux secondes et ne sont pas diffusés à chaque image. En cas de perte réseau, au plus vingt événements attendent la reconnexion ; ce journal n'est pas une trace exhaustive.
+
+Si le refus indique une hauteur ≤ 0, le plan local-floor ne permet pas la projection actuelle. Recommencer la session peut rétablir le référentiel ; il ne s'agit pas d'une correction garantie. Aucun sol fictif n'est ajouté pour masquer cette erreur.
 
 ## Limites et repli
 

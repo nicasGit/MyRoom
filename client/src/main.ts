@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { makeCalibration, toRoom, projectToFloor } from './calibration';
 import './style.css';
+import { bindPress } from './press';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -12,6 +13,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
+diagnostic('Version client', '0.1.5');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -29,14 +31,33 @@ const calibrationStatus = element('calibration');
 const overlay = element('xr-overlay');
 const instruction = element('xr-instruction');
 const place = element<HTMLButtonElement>('xr-place');
+const feedback = element('xr-feedback');
+const logStatus = element('xr-log-status');
+const xrQueue: string[] = [];
+function xrEvent(event: string, details: Record<string, unknown> = {}) {
+  const message = JSON.stringify({ type: 'xr_event', event, details });
+  console.info('[MyRoom XR]', event, details);
+  if (typeof socket !== 'undefined' && socket.readyState === WebSocket.OPEN) {
+    socket.send(message); logStatus.textContent = `Journal serveur : envoi de ${event}…`;
+  } else {
+    if (xrQueue.length === 20) xrQueue.shift();
+    xrQueue.push(message); logStatus.textContent = 'Journal serveur hors ligne : événements en attente de connexion.';
+  }
+}
+function rejectPlacement(reason: string, details: Record<string, unknown> = {}) {
+  feedback.textContent = reason;
+  xrEvent('placement_rejected', { step: firstPoint ? 'B' : 'A', reason: reason.slice(0, 160), ...details });
+}
 let resetScene = () => {};
 function calibrationMessage(text: string) {
   calibrationStatus.textContent = text; instruction.textContent = text;
 }
 function resetCalibration() {
   firstPoint = undefined; calibration = undefined;
-  place.textContent = 'Placer A'; place.disabled = true;
+  place.textContent = 'Placer A'; place.disabled = false;
   resetScene();
+  feedback.textContent = 'En attente d’un appui sur Placer A.';
+  xrEvent('calibration_reset');
   calibrationMessage('Visez le repère A au sol : centre de l’écran + bouton Placer A, ou gâchette du contrôleur.');
 }
 element('reset').onclick = resetCalibration;
@@ -48,6 +69,7 @@ overlay.addEventListener('beforexrselect', event => {
 enter.onclick = async () => {
   if (!navigator.xr) return;
   enter.disabled = true;
+  xrEvent('session_requested');
   let session: XRSession | undefined;
   let disposeScene = () => {};
   try {
@@ -61,10 +83,12 @@ enter.onclick = async () => {
       requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay'], domOverlay: { root: overlay },
     });
     const touchOverlay = !!session.domOverlayState;
+    xrEvent('session_started', { overlay: touchOverlay });
     diagnostic('Commandes tactiles DOM dans cette session', touchOverlay ? 'disponibles' : 'indisponibles ; sélection XR native si proposée par le navigateur');
     overlay.hidden = !touchOverlay;
     element('xr-exit').onclick = () => { void session?.end().catch(error => calibrationMessage(String(error))); };
     session.addEventListener('end', () => {
+      xrEvent('session_ended');
       renderer?.setAnimationLoop(null); resetCalibration(); enter.disabled = false;
       overlay.hidden = true; disposeScene(); resetScene = () => {};
       element('xr-exit').onclick = null; place.onclick = null;
@@ -84,8 +108,10 @@ enter.onclick = async () => {
     target.rotation.x = -Math.PI / 2;
     scene.add(markerA, markerB, target);
     let pendingPlacement = false;
-    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; pendingPlacement = false; };
-    disposeScene = () => { reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); };
+    let placementTimer: ReturnType<typeof setTimeout> | undefined;
+    let unbindPlace = () => {};
+    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; pendingPlacement = false; clearTimeout(placementTimer); };
+    disposeScene = () => { clearTimeout(placementTimer); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -93,6 +119,8 @@ enter.onclick = async () => {
       if (!firstPoint) {
         firstPoint = point.clone(); markerA.position.copy(point); markerA.visible = true;
         place.textContent = 'Placer B';
+        feedback.textContent = '✓ A placé. Passez au repère B.';
+        xrEvent('placement_accepted', { step: 'A', x: point.x, y: point.y, z: point.z });
         calibrationMessage('A enregistré (bleu). Visez le repère B au sol, à au moins 50 cm, puis placez B.');
       } else {
         try {
@@ -100,14 +128,28 @@ enter.onclick = async () => {
           markerB.position.copy(point); markerB.visible = true;
           const roomPoint = toRoom(point, calibration);
           place.textContent = 'Calibrage terminé'; place.disabled = true;
+          feedback.textContent = '✓ B placé. Calibrage terminé.';
+          xrEvent('placement_accepted', { step: 'B', x: point.x, y: point.y, z: point.z });
+          xrEvent('calibration_completed', { distance: calibration.distance });
           calibrationMessage(`Calibré : A → B = ${calibration.distance.toFixed(2)} m ; B dans la pièce = (${roomPoint.x.toFixed(2)}, ${roomPoint.z.toFixed(2)}). Recommencez pour changer les repères.`);
-        } catch (error) { calibrationMessage(`${String(error)} Visez B plus loin de A.`); }
+        } catch (error) { rejectPlacement(`${String(error)} Visez B plus loin de A.`); }
       }
     }
     function floorFromPose(pose: XRPose) {
       return projectToFloor(new THREE.Vector3().copy(pose.transform.position), new THREE.Vector3(0, 0, -1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));
     }
-    place.onclick = () => { pendingPlacement = true; };
+    unbindPlace = bindPress(place, () => {
+      if (calibration || pendingPlacement) return;
+      pendingPlacement = true;
+      feedback.textContent = `Appui reçu pour ${firstPoint ? 'B' : 'A'} : vérification de la position…`;
+      xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A' });
+      placementTimer = setTimeout(() => {
+        if (!pendingPlacement) return;
+        pendingPlacement = false;
+        feedback.textContent = 'Aucune image XR reçue depuis l’appui. Revenez à la session AR active et réessayez.';
+        xrEvent('placement_timeout', { step: firstPoint ? 'B' : 'A', reason: 'no_xr_frame' });
+      }, 1500);
+    });
     session.addEventListener('select', event => {
       if (calibration) return;
       // With DOM controls, screen taps are handled only by the explicit place button.
@@ -115,26 +157,38 @@ enter.onclick = async () => {
       const pose = event.frame.getPose(event.inputSource.targetRaySpace, reference);
       const point = pose && floorFromPose(pose);
       if (point) selectPoint(point);
-      else calibrationMessage('Visez un repère au sol, à moins de 10 mètres.');
+      else rejectPlacement('Visez un repère au sol, à moins de 10 mètres.');
     });
+    let trackingReason = '';
+    let trackingLoggedAt = -Infinity;
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
       const point = pose && floorFromPose(pose);
       const valid = !!point && !calibration;
-      place.disabled = !valid;
+      // Invalid tracking must still allow a press and an explanation.
+      place.disabled = !!calibration;
+      const reason = !pose ? 'Suivi AR indisponible. Déplacez doucement le téléphone.'
+        : pose.transform.position.y <= 0 ? 'La caméra est au niveau ou sous le sol (hauteur ≤ 0). Recommencez la session pour rétablir le sol local.'
+        : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';
+      if (reason !== trackingReason && performance.now() - trackingLoggedAt >= 2000) {
+        trackingReason = reason; trackingLoggedAt = performance.now();
+        xrEvent('tracking_changed', { reason: reason.slice(0, 160), ...(pose ? { viewerHeight: pose.transform.position.y } : {}) });
+      }
       target.visible = valid;
       if (point) target.position.copy(point).setY(0.005);
       if (pendingPlacement) {
         pendingPlacement = false;
+        clearTimeout(placementTimer);
         if (point && !calibration) selectPoint(point);
-        else if (!calibration) calibrationMessage('Sol non visé ou suivi indisponible. Inclinez le téléphone vers le sol et réessayez.');
+        else if (!calibration) rejectPlacement(reason, pose ? { viewerHeight: pose.transform.position.y } : {});
       }
-      if (!point && !calibration) instruction.textContent = 'Inclinez le téléphone vers le sol, à moins de 10 mètres. Le bouton s’active quand le suivi permet de placer le repère.';
+      if (!point && !calibration) instruction.textContent = reason;
       else instruction.textContent = calibrationStatus.textContent;
       renderer!.render(scene, camera);
     });
     status.textContent = touchOverlay ? 'Session AR active : visez au centre puis utilisez Placer A / Placer B.' : 'Session AR active : gâchette ou sélection tactile XR native si disponible. Commandes DOM indisponibles.';
   } catch (error) {
+    xrEvent('session_error', { reason: String(error).slice(0, 160) });
     if (session) await session.end().catch(() => {});
     overlay.hidden = true;
     status.textContent = `Démarrage XR impossible : ${String(error)}`; enter.disabled = false;
@@ -156,11 +210,16 @@ function showPlayers(players: { id: string; slot: number }[]) {
 showPlayers([]);
 function connect() {
   socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
-  socket.onopen = () => { status.textContent = 'Connecté à la salle.'; };
+  socket.onopen = () => {
+    status.textContent = 'Connecté à la salle.';
+    logStatus.textContent = 'Journal serveur connecté.';
+    for (const message of xrQueue.splice(0)) socket.send(message);
+  };
   socket.onmessage = event => {
     try {
       const message = JSON.parse(String(event.data));
       if (message.type === 'welcome') ownId = message.id;
+      if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
         showPlayers(message.players); revision = message.puzzle.revision;
         element('puzzle').textContent = `Démo : ${message.puzzle.solved ? 'résolue' : 'à résoudre'} · révision ${revision}`;
@@ -171,6 +230,7 @@ function connect() {
   };
   socket.onclose = event => {
     solve.disabled = true; showPlayers([]);
+    logStatus.textContent = 'Journal serveur déconnecté. Les prochains événements restent en attente.';
     status.textContent = event.code === 1008 ? event.reason : 'Déconnecté. Reconnexion dans 2 secondes…';
     if (event.code !== 1008) retry = setTimeout(connect, 2000);
   };

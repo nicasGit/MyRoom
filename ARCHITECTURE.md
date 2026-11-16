@@ -18,6 +18,8 @@ Une salle en mémoire, quatre connexions maximum. Chaque connexion reçoit un UU
 | serveur → tous | `{ "type": "state", "players": [{"id":"uuid","slot":1}], "puzzle": {"id":"demo","solved":false,"revision":0} }` | Instantané complet après connexion, départ ou commande |
 | client → serveur | `{ "type": "solve", "revision": 0 }` | Résoudre la démo si révision courante |
 | serveur → client | `{ "type": "error", "message": "Message invalide" }` | JSON ou commande invalide |
+| client → serveur | `{ "type": "xr_event", "event": "placement_requested", "details": {"step":"A"} }` | Diagnostic navigateur, nom et champs limités ; ne modifie pas la salle |
+| serveur → client | `{ "type": "xr_ack", "event": "placement_requested" }` | Diagnostic reçu et journalisé sous client_xr avec identité serveur |
 
 Le serveur est autoritaire ; une commande périmée reçoit l'état courant sans mutation. La résolution est idempotente. Taille limitée à 4 Kio, 30 messages par fenêtre de 10 s, heartbeat ping/pong et contrôle d'origine. Pas de persistance ni d'authentification : prototype pour réseau de confiance. Un bouton peut résoudre la démo sans calibrage ; les futures énigmes devront valider leurs conditions côté serveur.
 

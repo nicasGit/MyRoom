@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { Room } from './room.js';
 import { log } from './logger.js';
 import { admin, type Connection } from './admin.js';
+import { parseXREvent } from './xr-events.js';
 
 const room = new Room();
 const connections = new Map<string, Connection>();
@@ -62,6 +63,12 @@ wss.on('connection', (ws, req) => {
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      const xr = parseXREvent(message);
+      if (xr) {
+        log('client_xr', { id, slot, action: xr.event, details: xr.details });
+        ws.send(JSON.stringify({ type: 'xr_ack', event: xr.event }));
+        return;
+      }
       if (!message || typeof message !== 'object' || !('type' in message) || message.type !== 'solve' || !('revision' in message) || !Number.isSafeInteger(message.revision)) throw new Error('Message invalide');
       const accepted = room.solve(message.revision as number);
       log('puzzle_solve', { id, slot, accepted, requestedRevision: message.revision, revision: room.revision });

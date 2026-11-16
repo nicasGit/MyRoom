@@ -8,3 +8,5 @@ a { color: #67e8f9; }
 .xr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .xr-actions button { min-height: 48px; margin: 0; touch-action: manipulation; }
 #xr-place { background: #67e8f9; color: #102030; font-weight: 700; flex: 1; }
+#xr-feedback { border-left: 3px solid #67e8f9; padding-left: 10px; font-weight: 600; }
+#xr-log-status { display: block; color: #c3d8eb; margin-bottom: 12px; overflow-wrap: anywhere; }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Placement tactile réactif même si la visée est invalide, retour immédiat et motif du refus.
+- Appuis pointerup/click dédoublonnés et délai signalé en l'absence d'image XR.
+- Événements AR du navigateur validés et remontés au journal HAOS et à l'administration.
+
 ## 0.1.4
 
 - Commandes tactiles AR sur navigateur compatible DOM Overlay : placer A/B, recommencer, quitter.
