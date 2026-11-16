@@ -10,6 +10,8 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const clients: WebSocket[] = [];
+  let output = '';
+  child.stdout.on('data', chunk => { output += String(chunk); });
   try {
     await Promise.race([
       once(child.stdout, 'data'),
@@ -35,8 +37,19 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     const bad = new WebSocket('ws://localhost:13017/ws', { origin: 'https://other.test' });
     clients.push(bad);
     await new Promise<void>(resolve => bad.once('error', () => resolve()));
+    const disconnected = once(clients[0], 'close');
+    clients[0].close(1000, 'Test terminé');
+    await disconnected;
   } finally {
     for (const ws of clients) ws.terminate();
-    child.kill(); await once(child, 'exit');
+    const closed = once(child, 'close');
+    child.kill(); await closed;
   }
+  const events = output.trim().split(/\r?\n/).map(line => JSON.parse(line));
+  assert.equal(events.filter(event => event.event === 'player_connected').length, 4);
+  assert.ok(events.some(event => event.event === 'connection_rejected' && event.reason === 'room_full'));
+  assert.ok(events.some(event => event.event === 'connection_rejected' && event.reason === 'origin_not_allowed'));
+  assert.ok(events.some(event => event.event === 'puzzle_solve' && event.accepted === true));
+  assert.ok(events.some(event => event.event === 'player_disconnected' && event.code === 1000));
+  assert.ok(events.every(event => typeof event.timestamp === 'string'));
 });

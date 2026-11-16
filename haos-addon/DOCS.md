@@ -25,6 +25,10 @@ Ouvrir quatre onglets dans Chrome pour voir les quatre joueurs, puis résoudre l
 
 Sur une adresse LAN en HTTP, WebXR peut être absent et immersive-ar indisponible : les tests joueurs/énigme restent possibles. Pour l'AR, utiliser le proxy HTTPS avec certificat reconnu et remettre `public_origin` sur cette origine HTTPS. Le bouton LAN reste un raccourci de diagnostic HTTP ; ouvrir directement l'URL HTTPS pour les casques. Aucun test physique HAOS ou Quest n'a été réalisé.
 
+## Journal
+
+Depuis 0.1.2, l'onglet **Journal** affiche les connexions et déconnexions (identifiant, place, nombre de joueurs), refus et actions d'énigme, avec horodatage UTC. Les accès et erreurs Nginx sont également affichés. Voir [les événements et leurs limites](../docs/logging.md). L'identifiant est celui d'une connexion, pas un compte utilisateur.
+
 ## Limites du prototype
 
 Quatre connexions, une salle et un état d'énigme en mémoire ; pas de comptes, d'authentification ou de persistance. Réserver l'accès au réseau de confiance. Les poses ne sont pas diffusées. Calibrage manuel horizontal à deux repères physiques, sans ancre spatiale partagée. Recalibrer après recentrage.
