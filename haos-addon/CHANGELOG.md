@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Commandes tactiles AR sur navigateur compatible DOM Overlay : placer A/B, recommencer, quitter.
+- Instructions dans la vue AR, viseur central et deux marqueurs de calibrage distincts.
+
 ## 0.1.3
 
 - Interface d'administration /admin.html : joueurs, état, journal et disponibilité serveur.

@@ -10,11 +10,19 @@
     <p id="status" role="status"></p>
     <h2>Joueurs (4 places)</h2><ol id="players"></ol>
     <h2>Calibrage manuel</h2>
-    <p>Dans chaque casque, visez successivement les mêmes repères A puis B au sol, séparés d'au moins 50 cm. Orientez la tête vers le repère et utilisez la gâchette : le rayon est projeté sur le sol local (y = 0). Le repère A définit l'origine et A → B l'axe +X.</p>
+    <p>Choisissez les mêmes repères A puis B au sol, séparés d'au moins 50 cm. Sur téléphone, visez avec le centre de l'écran et touchez « Placer A » puis « Placer B ». Sur casque, visez avec le contrôleur et utilisez la gâchette. Le rayon est projeté sur le sol local (y = 0) ; A définit l'origine et A → B l'axe +X.</p>
     <button id="reset">Recommencer le calibrage</button><p id="calibration">Non calibré</p>
     <h2>Énigme de démonstration</h2><p id="puzzle"></p>
     <button id="solve" disabled>Résoudre l'énigme partagée</button>
     <p>Aucune validation physique sur casque effectuée. Le calibrage est expérimental et doit être refait après recentrage.</p>
   </main>
+  <div id="xr-overlay" hidden>
+    <div class="xr-crosshair" aria-hidden="true">+</div>
+    <section class="xr-panel" aria-label="Commandes AR tactiles">
+      <strong>Calibrage de la pièce</strong>
+      <p id="xr-instruction" role="status" aria-live="polite">Visez le repère A au sol avec le centre de l'écran.</p>
+      <div class="xr-actions"><button id="xr-place" disabled>Placer A</button><button id="xr-reset">Recommencer</button><button id="xr-exit">Quitter l'AR</button></div>
+    </section>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body></html>

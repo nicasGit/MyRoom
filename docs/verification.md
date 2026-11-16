@@ -13,4 +13,6 @@ Le test réseau démarre un vrai serveur Node sur le port 13017, vérifie `/heal
 
 Version 0.1.3 : typecheck et compilation réussis ; les trois tests incluent maintenant l'authentification admin (jeton absent/incorrect), le refus d'une origine différente, la réinitialisation diffusée avec une nouvelle révision, la validation des identifiants et la déconnexion d'un joueur. Vérification manuelle dans le navigateur intégré : connexion admin, affichage joueur/journal et réinitialisation visible dans un onglet joueur. Pas d'essai physique HAOS ou Quest pour cette interface.
 
+Version 0.1.4 : six tests logiciels, dont trois nouveaux tests de projection du rayon sur le sol (intersection, entrées invalides, horizon, distance) et de transformation à deux points. Les commandes tactiles DOM Overlay nécessitent encore un essai physique sur téléphone compatible ; elles ne sont pas validées par ces tests mathématiques. Voir [le parcours mobile](mobile-ar.md).
+
 Non vérifiés : affichage navigateur, sessions WebXR, Quest 2 / 3 / 3S, précision du calibrage, image Docker ARM64, Nginx en exécution et installation HAOS. Docker n'est pas disponible dans cet environnement. Voir [la procédure matérielle](quest-validation.md) et [le déploiement](deployment.md).

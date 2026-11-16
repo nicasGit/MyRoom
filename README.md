@@ -36,6 +36,6 @@ Administration : ouvrir `/admin.html` ou le lien sur la page joueur. Configurer 
 - Quatre places synchronisées, reconnexion réseau, énigme de démonstration autoritaire en mémoire.
 - Calibrage manuel horizontal à deux points au sol via gâchette, communs à tous les casques.
 
-Quest 2, Quest 3 et Quest 3S sont des cibles prévues. **Aucun test WebXR sur ces casques n'a été effectué.** Disponibilité AR, interface de calibrage et précision doivent être vérifiées sur chaque appareil et version du navigateur. Les casques n'affichent pas forcément la page DOM pendant la session : le prototype n'a pas encore de panneau XR interactif. Retirer le casque ou terminer la session pour consulter les résultats de calibrage sur la page.
+Quest 2, Quest 3 et Quest 3S sont des cibles prévues. **Aucun test WebXR sur ces casques n'a été effectué.** Disponibilité AR, interface de calibrage et précision doivent être vérifiées sur chaque appareil et version du navigateur. Sur téléphone compatible DOM Overlay, des commandes tactiles permettent de placer A/B avec le rayon central, de recommencer et de quitter la session. Le support est détecté pendant la session, sans supposer qu'un navigateur le fournit. Voir [le guide tactile](docs/mobile-ar.md). Sur casque sans DOM Overlay, utiliser la gâchette ; il n'y a pas encore de panneau 3D d'instructions dans le casque.
 
 L'état est perdu au redémarrage du serveur. Les poses joueurs ne sont pas encore diffusées. Pas d'authentification, de gestion de comptes ou d'ancres persistantes.

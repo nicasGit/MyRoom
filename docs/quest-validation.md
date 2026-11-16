@@ -12,4 +12,4 @@ Pour chaque modèle, relever la version système, la version du navigateur, l'UR
 - Recentrage et fin de session : calibrage invalidé puis refait.
 - Perte Wi-Fi, casque en veille, redémarrage serveur et absence de persistance annoncée.
 
-Le rayon suppose un sol local y=0 correctement estimé. Ne pas utiliser ce prototype pour guider des déplacements : les limites physiques de la pièce restent celles du système de sécurité du casque. Une interface XR pour les instructions, la confirmation visuelle des deux repères et l'écart de calibrage reste à développer.
+Le rayon suppose un sol local y=0 correctement estimé. Ne pas utiliser ce prototype pour guider des déplacements : les limites physiques de la pièce restent celles du système de sécurité du casque. Les commandes et instructions DOM Overlay sont disponibles si le navigateur les accepte ; un panneau d'instructions 3D pour les casques sans DOM Overlay reste à développer. Les deux repères sont visualisés, mais l'écart de calibrage entre appareils n'est pas encore mesuré.

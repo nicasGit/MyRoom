@@ -25,6 +25,10 @@ Ouvrir quatre onglets dans Chrome pour voir les quatre joueurs, puis résoudre l
 
 Sur une adresse LAN en HTTP, WebXR peut être absent et immersive-ar indisponible : les tests joueurs/énigme restent possibles. Pour l'AR, utiliser le proxy HTTPS avec certificat reconnu et remettre `public_origin` sur cette origine HTTPS. Le bouton LAN reste un raccourci de diagnostic HTTP ; ouvrir directement l'URL HTTPS pour les casques. Aucun test physique HAOS ou Quest n'a été réalisé.
 
+## Téléphone en AR
+
+Depuis 0.1.4, un navigateur compatible DOM Overlay affiche **Placer A / Placer B**, **Recommencer** et **Quitter l'AR** pendant la session. Viser les repères avec le centre de l'écran ; incliner vers le sol pour activer le placement. Voir [le guide tactile et les limites](../docs/mobile-ar.md). Utiliser HTTPS. Aucun essai physique de ces nouvelles commandes n'a été effectué par l'agent.
+
 ## Administration
 
 Dans Configuration, renseigner `admin_token` avec un secret aléatoire d'au moins 16 caractères puis redémarrer l'add-on. L'administration est désactivée tant que cette valeur est vide ou trop courte. Ouvrir MyRoom puis cliquer **Administration de la salle**, ou visiter `/admin.html` sur la même origine.
