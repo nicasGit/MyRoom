@@ -278,7 +278,7 @@ enter.onclick = async () => {
         if(gameGroup&&!survey.hasDraft()){
           const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference),viewer=event.frame.getViewerPose(reference);
           adventure.updatePosition(viewer?new THREE.Vector3().copy(viewer.transform.position):undefined);
-          if(ray)adventure.raycast(gameGroup,new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)));
+          if(ray)adventure.raycast(gameGroup,new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)),renderer!.xr.getCamera());
         }
         return;
       }

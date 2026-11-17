@@ -6,8 +6,18 @@ import { RoomStore } from './room-store.js';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import * as THREE from 'three';
+import { pickAdventureAction } from '../../client/src/adventure-view.js';
 
 function fixture(){const room:RoomModel={id:'puzzles',name:'Salon',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:6},{x:0,z:6}],height:2.5,obstacles:[],openings:[]};room.puzzles=suggestPuzzleLayout(room);return room;}
+test('sélection 3D : un rayon utilise la caméra pour toucher un panneau Sprite',()=>{
+  const group=new THREE.Group(),sprite=new THREE.Sprite(new THREE.SpriteMaterial());
+  sprite.userData.action={action:'discover_symbol',target:'sun'};sprite.position.set(2,1,-2);group.add(sprite);
+  const camera=new THREE.PerspectiveCamera();camera.position.set(2,1,0);camera.updateMatrixWorld(true);
+  assert.deepEqual(pickAdventureAction(group,camera.position,new THREE.Vector3(0,0,-1),camera),sprite.userData.action);
+  assert.equal(pickAdventureAction(group,camera.position,new THREE.Vector3(1,0,0),camera),undefined);
+  sprite.material.dispose();
+});
 function game(){const room=fixture(),adventure=new Adventure();adventure.configure(room);return {room,adventure,act(action:AdventureCommand['action'],target:string,extra:Partial<AdventureCommand>={}){const point=action==='press_symbol'?'chest':action==='choose_card'?'table':target as keyof typeof room.puzzles.points;return adventure.act(parseAdventureCommand({type:'adventure_action',revision:adventure.snapshot().revision,libraryRevision:1,action,target,position:room.puzzles!.points[point],simulation:false,...extra}),room,1);}};}
 test('actions réseau : schéma strict, valeurs et cibles bornées',()=>{
   const command={type:'adventure_action',revision:1,libraryRevision:1,action:'discover_symbol',target:'sun',position:{x:1,z:1},simulation:false};

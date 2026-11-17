@@ -3,7 +3,7 @@ import { toRoom,type makeCalibration } from './calibration';
 import type { AdventureCommand,AdventureState,SymbolId,CardId } from '../../server/src/adventure.js';
 import { PUZZLE_ITEMS,type Point2,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
 import { drawMap,ITEM_NAMES } from './adventure-map';
-import { SYMBOL_NAMES,CARD_NAMES,CARD_CLUES } from './adventure-view';
+import { SYMBOL_NAMES,CARD_NAMES,CARD_CLUES,pickAdventureAction } from './adventure-view';
 type Panel={root:HTMLElement;status:HTMLElement;body:HTMLElement};
 export class AdventureClient {
   private model:RoomModel|null=null;
@@ -55,10 +55,8 @@ export class AdventureClient {
   private unlockSound(){try{this.audio??=new AudioContext();void this.audio.resume().catch(()=>{});}catch{/* Audio is optional. */}}
   private chime(){try{if(!this.audio||this.audio.state!=='running')return;const oscillator=this.audio.createOscillator(),gain=this.audio.createGain();oscillator.connect(gain);gain.connect(this.audio.destination);gain.gain.setValueAtTime(0.06,this.audio.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,this.audio.currentTime+0.6);oscillator.frequency.setValueAtTime(523,this.audio.currentTime);oscillator.frequency.setValueAtTime(784,this.audio.currentTime+0.2);oscillator.start();oscillator.stop(this.audio.currentTime+0.6);}catch{/* No audio must never block the puzzle. */}}
   hint(){return this.state?.phase==='symbols'?'Énigme : trouvez les balises, puis visez les symboles du coffre et utilisez la gâchette.':this.state?.phase==='blackjack'?'Énigme : trouvez les trois cartes, puis choisissez à la table avec la gâchette.':this.state?.phase==='complete'?'Les deux énigmes sont réussies. Clé obtenue : 7.':'';}
-  raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3){
-    group.updateMatrixWorld(true);const ray=new THREE.Raycaster(origin,direction.normalize(),0,8),hits=ray.intersectObject(group,true);
-    const hit=hits.find(item=>item.object.userData.action);if(!hit)return;
-    const command=hit.object.userData.action as {action:AdventureCommand['action'];target:string};
+  raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera){
+    const command=pickAdventureAction(group,origin,direction,camera);if(!command)return;
     const button=this.buttons.find(item=>item.action===command.action&&item.id===command.target&&item.ready);
     if(button)this.perform(button.action,button.id,button.target);
   }

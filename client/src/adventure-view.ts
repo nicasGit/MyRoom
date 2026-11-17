@@ -5,6 +5,11 @@ export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'}
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};
 export const CARD_CLUES={four:'Mes quatre coins gardent quatre saisons.',eight:'Deux fois les saisons de l’année.',king:'Je porte une couronne ; ma valeur est dix.'};
 type Action={action:'discover_symbol'|'press_symbol'|'discover_card'|'choose_card';target:string};
+export function pickAdventureAction(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera):Action|undefined{
+  group.updateMatrixWorld(true);
+  const ray=new THREE.Raycaster(origin,direction.clone().normalize(),0,8);ray.camera=camera;
+  return ray.intersectObject(group,true).find(hit=>hit.object.userData.action)?.object.userData.action as Action|undefined;
+}
 function label(text:string,color:string){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#0c1727';ctx.fillRect(0,0,512,160);ctx.strokeStyle=color;ctx.lineWidth=8;ctx.strokeRect(4,4,504,152);ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 42px sans-serif';ctx.fillText(text,256,80,480);
