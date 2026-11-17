@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+
+- Suppression des émissions `tracking_changed` dans le client, sans modifier le viseur ni le suivi AR.
+- Filtrage de ces événements côté serveur pour les pages plus anciennes encore ouvertes ; accusé de réception conservé, sans journal HAOS ni tampon admin.
+- Les connexions, erreurs, placements, calibrages et diagnostics de sauvegarde restent journalisés.
+
 ## 0.3.3
 
 - Saisie/correction du jeton administrateur dans le panneau AR, sans quitter le relevé.

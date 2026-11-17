@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.2**, version **0.3.3 en préparation**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.2**, versions **0.3.3 et 0.3.4 en cours de publication**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -290,3 +290,9 @@ Typecheck et compilation exécutés avec succès après correction d’une incom
 La cause précise du refus sur l’appareil utilisateur n’est pas encore établie. Le réglage local peut aider un décalage stable, mais ne corrige ni la dérive du suivi ni une estimation incorrecte du sol. L’utilisateur a également indiqué que le redémarrage complet de Chrome avait levé son blocage d’installation précédent ; cela ne constitue pas une validation indépendante du certificat ou de l’installation Android.
 
 La confirmation de sauvegarde valide aussi le schéma de la bibliothèque reçue et la présence de la pièce avant de supprimer le brouillon. Dans Chrome, réponses HTML HTTP 502, bibliothèque invalide et panne réseau simulées : message adapté, brouillon conservé et bouton de nouveau utilisable.
+
+## 17. Nettoyage des journaux — 0.3.4
+
+À la demande de l’utilisateur qui indique que la visée fonctionne, suppression des émissions `tracking_changed` côté client. Le serveur valide et accuse encore réception de ces événements pour les anciennes pages ouvertes, mais ne les écrit ni dans stdout/HAOS ni dans le tampon du journal admin. Le viseur et les messages à l’écran restent actifs, ainsi que les journaux de connexion, erreur, calibrage, placement et sauvegarde. Les lignes historiques HAOS ne sont pas effacées.
+
+Le test d’intégration HTTP/WebSocket vérifie l’accusé de réception d’un ancien client et l’absence de cet événement dans les logs admin et stdout, tout en conservant les autres diagnostics. La version 0.3.4 comprend les améliorations de sauvegarde et d’alignement développées pour 0.3.3.

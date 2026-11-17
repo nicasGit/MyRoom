@@ -18,7 +18,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.3.3');
+diagnostic('Version client', '0.3.4');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -260,8 +260,6 @@ enter.onclick = async () => {
       if (point) selectPoint(point);
       else rejectPlacement('Visez un repère au sol, à moins de 10 mètres.');
     });
-    let trackingReason = '';
-    let trackingLoggedAt = -Infinity;
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
       if(frame)updateScan(frame,pose??null);
@@ -282,10 +280,6 @@ enter.onclick = async () => {
         : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';
       lastTrackingReason = reason;
       overlay.classList.toggle('xr-tracking-valid', valid);
-      if (reason !== trackingReason && performance.now() - trackingLoggedAt >= 2000) {
-        trackingReason = reason; trackingLoggedAt = performance.now();
-        xrEvent('tracking_changed', { reason: reason.slice(0, 160), ...(pose ? { viewerHeight: pose.transform.position.y } : {}) });
-      }
       target.visible = valid;
       if (point) target.position.copy(point).setY(0.005);
       const ready = placement.update(point?.clone());

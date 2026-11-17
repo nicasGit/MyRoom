@@ -49,6 +49,9 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     const xrAck = messageOfType(clients[0], 'xr_ack');
     clients[0].send(JSON.stringify({ type: 'xr_event', event: 'placement_rejected', details: { step: 'A', reason: 'Suivi indisponible' } }));
     assert.deepEqual(await xrAck, { type: 'xr_ack', event: 'placement_rejected' });
+    const trackingAck=messageOfType(clients[0],'xr_ack');
+    clients[0].send(JSON.stringify({type:'xr_event',event:'tracking_changed',details:{reason:'Visée valide'}}));
+    assert.deepEqual(await trackingAck,{type:'xr_ack',event:'tracking_changed'});
     const invalidXR = messageOfType(clients[0], 'error');
     clients[0].send(JSON.stringify({ type: 'xr_event', event: 'server_started', details: {} }));
     assert.equal((await invalidXR).type, 'error');
@@ -66,6 +69,7 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     assert.ok(overview.logs.some((entry: {event: string; action: string; id: string}) => entry.event === 'client_xr' && entry.action === 'placement_rejected' && entry.id === overview.players.find((p: {slot: number}) => p.slot === 1).id));
     assert.ok(!JSON.stringify(overview).includes('test-admin-token-not-for-production'));
     assert.ok(overview.logs.length <= 100);
+    assert.ok(!overview.logs.some((entry:{action?:string})=>entry.action==='tracking_changed'));
     const resetStates = clients.slice(0, 4).map(ws => messageOfType(ws, 'state', 2));
     assert.equal((await fetch(`${adminUrl}reset`, { method: 'POST', headers, body: '{}' })).status, 200);
     for (const state of await Promise.all(resetStates)) {
@@ -106,6 +110,7 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
   assert.ok(events.some(event => event.event === 'connection_rejected' && event.reason === 'origin_not_allowed'));
   assert.ok(events.some(event => event.event === 'puzzle_solve' && event.accepted === true));
   assert.ok(events.some(event => event.event === 'client_xr' && event.action === 'placement_rejected' && event.slot === 1));
+  assert.ok(!events.some(event=>event.event==='client_xr'&&event.action==='tracking_changed'));
   assert.ok(events.some(event => event.event === 'player_disconnected' && event.code === 1000));
   assert.ok(events.every(event => typeof event.timestamp === 'string'));
 });

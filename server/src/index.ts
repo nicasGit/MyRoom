@@ -68,7 +68,8 @@ wss.on('connection', (ws, req) => {
       const message: unknown = JSON.parse(raw.toString());
       const xr = parseXREvent(message);
       if (xr) {
-        log('client_xr', { id, slot, action: xr.event, details: xr.details });
+        // Older pages may still send tracking diagnostics: acknowledge without log noise.
+        if(xr.event!=='tracking_changed')log('client_xr', { id, slot, action: xr.event, details: xr.details });
         ws.send(JSON.stringify({ type: 'xr_ack', event: xr.event }));
         return;
       }
