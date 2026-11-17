@@ -25,6 +25,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
       puzzle: room.snapshot().puzzle,
       library:store.snapshot(),
+      adventure:room.snapshot().adventure,
       players: [...room.players].map(([id, slot]) => {
         const connection = connections.get(id);
         return { id, slot, address: connection?.address, userAgent: connection?.userAgent, connectedAt: connection?.connectedAt };
@@ -32,7 +33,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/adventure/reset','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -52,6 +53,12 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     }
     const body: unknown = JSON.parse(Buffer.concat(chunks).toString());
     if (!body || typeof body !== 'object' || Array.isArray(body)) { reply(res, 400, { error: 'Objet JSON attendu.' }); return; }
+    if(req.url?.startsWith('/api/admin/adventure/')){
+      room.adventure.configure(room.model);
+      if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.reset();}
+      else {if(Object.keys(body).length!==1||!('enabled' in body)||typeof body.enabled!=='boolean')throw new Error('Booléen attendu');room.adventure.setTestMode(body.enabled);}
+      log('adventure_admin',{action:req.url.split('/').at(-1),testMode:room.adventure.snapshot().testMode});broadcast();reply(res,200,{ok:true});return;
+    }
     if(req.url?.startsWith('/api/admin/rooms/')) {
       const command=body as Record<string,unknown>;
       const action=req.url.split('/').at(-1) as 'save'|'activate'|'delete';

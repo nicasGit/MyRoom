@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Coffre des quatre symboles, puis blackjack à une carte avec As souple et progression coopérative.
+- Placement des neuf éléments sur le plan admin, enregistré avec chaque pièce.
+- Objets AR, commandes tactiles et gâchette ; simulation PC autorisée explicitement par l’administrateur.
+- Validation serveur des actions, révisions et proximité déclarée ; progression en mémoire et logs HAOS.
+- Aucun essai matériel sur téléphone ou Quest réalisé par l’agent.
+
 ## 0.3.4
 
 - Suppression des émissions `tracking_changed` dans le client, sans modifier le viseur ni le suivi AR.

@@ -1,5 +1,9 @@
 # Architecture MyRoom
 
+## Énigmes coopératives
+
+Le modèle de pièce peut contenir neuf points d’énigmes validés et persistés dans sa bibliothèque. Le serveur maintient une progression commune en mémoire : symboles, combinaison du coffre, cartes et choix unique au blackjack. Chaque action transporte les révisions de partie et de bibliothèque, une position horizontale bornée et un indicateur de simulation. Le serveur vérifie phase, découvertes, proximité et règles ; une position déclarée ne prouve pas la présence physique. La simulation PC nécessite une autorisation admin temporaire. Voir le [guide des énigmes](docs/first-puzzles.md).
+
 Navigateur Quest → HTTPS/WSS → Nginx frontal (TLS) → Nginx add-on :8080 → serveur Node.js :3000 pour /ws. Nginx sert les fichiers du client Three.js compilés avec Vite. En développement Vite relaie /ws vers Node.
 
 ## Client

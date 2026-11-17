@@ -1,8 +1,10 @@
 import './admin.css';
 import { createPreview } from './model-view';
 import { area,type RoomLibrary } from '../../server/src/scene-schema.js';
+import { AdventureEditor } from './adventure-editor';
+import type { AdventureState } from '../../server/src/adventure.js';
 type Player = { id: string; slot: number; address?: string; userAgent?: string; connectedAt: string };
-type State = { players: Player[]; puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary };
+type State = { players: Player[]; puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let token = '';
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -14,10 +16,12 @@ const notice = el('notice');
 let library:RoomLibrary|undefined;
 let libraryRevision=-1;
 const preview=createPreview(el('admin-room-preview'));
+const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)=>api('rooms/save',{room,revision}),()=>{void refresh();});
 function logout() {
   session++; token = ''; clearTimeout(timer); el<HTMLInputElement>('token').value = '';
   previousPlayers = '';
   library=undefined;libraryRevision=-1;el('rooms').replaceChildren();preview(null);
+  adventureEditor.receive(null,0);
   el('dashboard').hidden = true; el('login-panel').hidden = false;
   el('players').replaceChildren(); el('logs').replaceChildren();
   el('connection').textContent = 'Non connecté'; el('connection').className = 'badge';
@@ -42,6 +46,9 @@ function node(tag: string, text: string, className?: string) {
 }
 function render(state: State) {
   library=state.library;
+  adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);
+  el('adventure-overview').textContent=`${state.adventure.phase} · révision ${state.adventure.revision} · ${state.adventure.message}`;
+  el<HTMLInputElement>('adventure-test').checked=state.adventure.testMode;
   if(library.revision!==libraryRevision){
     libraryRevision=library.revision;
     const active=library.rooms.find(room=>room.id===library!.activeId)??null;
@@ -115,6 +122,8 @@ el('login').onsubmit = event => {
 el('reset').onclick = () => { if (confirm('Réinitialiser l’énigme pour tous les joueurs ?')) void action('reset', {}); };
 el('refresh').onclick = () => { void refresh(); };
 el('logout').onclick = () => { logout(); notice.textContent = ''; };
+el('adventure-reset').onclick=()=>{if(confirm('Recommencer le coffre et le blackjack pour toute l’équipe ?'))void action('adventure/reset',{});};
+el<HTMLInputElement>('adventure-test').onchange=()=>{void action('adventure/test-mode',{enabled:el<HTMLInputElement>('adventure-test').checked});};
 el('rooms-export').onclick=()=>{
   if(!library)return;
   const url=URL.createObjectURL(new Blob([JSON.stringify(library,null,2)],{type:'application/json'}));

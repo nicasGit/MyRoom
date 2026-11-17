@@ -4,6 +4,20 @@
 
 ## 1. Projet et architecture
 
+### Ajout du 17 novembre 2026 — deux énigmes, version 0.4.0
+
+- Coffre des quatre symboles : quatre découvertes partagées, combinaison Soleil → Arbre → Lune → Étoile, erreur récupérable et ouverture animée.
+- Blackjack débloqué après le coffre : As + 6, découverte des cartes 4/8/Roi, un choix par essai, As souple, explication des erreurs et récompense clé virtuelle/chiffre 7. Aucun pari.
+- Placement de neuf éléments dans l’administration, proposition géométrique, ajustement sur plan ou coordonnées et enregistrement indépendant dans chaque pièce. Anciennes pièces compatibles sans configuration d’énigmes.
+- Objets Three.js, textes et rayons de visée, interaction à la gâchette et boutons tactiles. Affichage et proximité liés au calibrage A/B ; jeu suspendu pendant le relevé.
+- Serveur autoritaire : validation stricte des actions, cibles, révisions, phase, découvertes et proximité déclarée. Actions et commandes admin journalisées sans réintroduire `tracking_changed`.
+- Simulation solo PC autorisée explicitement par l’administrateur ; progression commune jusqu’à quatre joueurs, remise à zéro admin. Placements persistés, partie et autorisation de simulation en mémoire uniquement.
+- Guide : [les deux premières énigmes](first-puzzles.md).
+
+Vérifications exécutées : typecheck et compilation réussis ; 33 tests réussis, dont six nouveaux tests sur règles, validation et stockage, et extension du test HTTP/WebSocket vérifiant la diffusion aux quatre joueurs, les révisions et les protections admin. Dans Chrome local : proposition et sauvegarde des placements depuis l’administration, parcours complet en simulation avec erreur de combinaison, cartes 8 et Roi incorrectes puis 4 gagnant, construction/libération de la scène 3D finale. Pièce temporaire supprimée et simulation serveur désactivée après le test.
+
+Limites : aucun essai physique téléphone/Quest par l’agent ; pas de preuve de position physique, d’ancre partagée, d’occultation du mobilier réel ou de vérification automatique des passages. La proposition des positions doit être vérifiée dans la pièce. L’audio dépend de son autorisation par le navigateur. Avertissement Vite conservé pour le bloc Three.js supérieur à 500 kB. Publication 0.4.0 non encore confirmée à cette étape.
+
 Ce récapitulatif doit être actualisé à chaque modification du projet, dans le même ensemble de changements. Cette règle est inscrite dans les [consignes du dépôt](../AGENTS.md) et couvre aussi la configuration, le déploiement et la documentation. Les vérifications rapportées doivent correspondre à celles effectivement exécutées ; une version ou publication ne doit pas être annoncée avant confirmation.
 
 - Création du squelette et des dossiers [client](../client/), [server](../server/), [haos-addon](../haos-addon/) et [docs](./).

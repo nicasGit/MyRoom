@@ -44,7 +44,7 @@ export function disposeGroup(group: THREE.Object3D) {
     const mesh=object as THREE.Mesh;
     mesh.geometry?.dispose();
     const materials=mesh.material ? (Array.isArray(mesh.material)?mesh.material:[mesh.material]) : [];
-    materials.forEach(material=>material.dispose());
+    materials.forEach(material=>{(material as THREE.MeshBasicMaterial).map?.dispose();material.dispose();});
   });
   group.removeFromParent();
 }

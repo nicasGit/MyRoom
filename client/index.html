@@ -27,6 +27,12 @@
     <h2>Énigme de démonstration</h2><p id="puzzle"></p>
     <button id="solve" disabled>Résoudre l'énigme partagée</button>
     <p>Aucune validation physique sur casque effectuée. Le calibrage est expérimental et doit être refait après recentrage.</p>
+    <section aria-label="Les deux énigmes">
+      <h2>Les énigmes de la pièce</h2>
+      <label><input id="adventure-simulation" type="checkbox" disabled>Simulation PC (autorisation administrateur requise)</label>
+      <canvas id="adventure-map" width="800" height="420" hidden style="width:100%;max-width:800px" aria-label="Plan des énigmes"></canvas>
+      <div id="adventure-desktop"></div>
+    </section>
   </main>
   <div id="xr-overlay" hidden>
     <div class="xr-crosshair" aria-hidden="true">+</div>
@@ -37,6 +43,7 @@
         <p id="xr-instruction" role="status" aria-live="polite">Visez le repère A au sol avec le centre de l'écran.</p>
         <small id="xr-log-status">Journal serveur : connexion en attente.</small>
       </details>
+      <details><summary>Jouer aux énigmes</summary><div id="adventure-ar"></div></details>
       <section id="survey-panel" hidden>
         <p id="quest-scan-status" role="status">Import Quest : en attente de session.</p>
         <button id="quest-import" disabled>Importer les surfaces du Quest</button>

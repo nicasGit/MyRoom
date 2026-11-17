@@ -6,6 +6,7 @@ import { log } from './logger.js';
 import { admin, type Connection } from './admin.js';
 import { parseXREvent } from './xr-events.js';
 import { RoomStore } from './room-store.js';
+import { parseAdventureCommand } from './adventure.js';
 
 const room = new Room();
 const store = new RoomStore(process.env.DATA_DIR ?? 'data');
@@ -66,6 +67,13 @@ wss.on('connection', (ws, req) => {
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      if(message&&typeof message==='object'&&'type' in message&&message.type==='adventure_action'){
+        const command=parseAdventureCommand(message),result=room.adventure.act(command,room.model,room.libraryRevision);
+        log('adventure_action',{id,slot,action:command.action,target:command.target,simulation:command.simulation,accepted:result.changed,message:result.message});
+        ws.send(JSON.stringify({type:'adventure_result',...result}));
+        if(result.changed)broadcast();else ws.send(JSON.stringify(room.snapshot()));
+        return;
+      }
       const xr = parseXREvent(message);
       if (xr) {
         // Older pages may still send tracking diagnostics: acknowledge without log noise.

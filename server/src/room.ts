@@ -1,5 +1,7 @@
 import type { RoomModel } from './scene-schema.js';
+import { Adventure } from './adventure.js';
 export class Room {
+  adventure=new Adventure();
   model: RoomModel | null = null;
   libraryRevision = 0;
   players = new Map<string, number>();
@@ -15,7 +17,8 @@ export class Room {
     this.solved = true; this.revision++; return true;
   }
   snapshot() {
-    return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision };
+    this.adventure.configure(this.model);
+    return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:this.adventure.snapshot() };
   }
   reset() { this.solved = false; this.revision++; }
 }

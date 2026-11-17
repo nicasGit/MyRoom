@@ -2,7 +2,10 @@
 export type Point2 = { x: number; z: number };
 export type Obstacle = { name: string; x: number; z: number; width: number; depth: number; height: number };
 export type Opening = { name:string; kind:'door'|'window'; wall:number; offset:number; width:number; height:number; sill:number };
-export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[] };
+export const PUZZLE_ITEMS=['chest','sun','tree','moon','star','table','four','eight','king'] as const;
+export type PuzzleItem=typeof PUZZLE_ITEMS[number];
+export type PuzzleLayout={points:Record<PuzzleItem,Point2>};
+export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[]; puzzles?:PuzzleLayout };
 export type RoomLibrary = { version: 1; revision: number; activeId: string | null; rooms: RoomModel[] };
 const number = (n: unknown, min: number, max: number): n is number => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
 const text = (n: unknown): n is string => typeof n === 'string' && n.trim().length > 0 && n.length <= 64;
@@ -82,7 +85,38 @@ export function parseRoom(value: unknown): RoomModel {
     const a=openings[i],b=openings[j];
     if(a.wall===b.wall&&Math.min(a.offset+a.width,b.offset+b.width)-Math.max(a.offset,b.offset)>1e-8&&Math.min(a.sill+a.height,b.sill+b.height)-Math.max(a.sill,b.sill)>1e-8)throw new Error('Deux ouvertures se chevauchent sur le même mur.');
   }
-  return {id:r.id,name:r.name.trim(),floor,height:r.height,obstacles,openings};
+  const room:RoomModel={id:r.id,name:r.name.trim(),floor,height:r.height,obstacles,openings};
+  if(r.puzzles!==undefined){
+    const layout=object(r.puzzles),raw=object(layout.points);
+    if(Object.keys(layout).length!==1||Object.keys(raw).length!==PUZZLE_ITEMS.length)throw new Error('Placer les neuf éléments des énigmes.');
+    const points={} as Record<PuzzleItem,Point2>;
+    for(const id of PUZZLE_ITEMS){
+      const p=object(raw[id]);
+      if(Object.keys(p).length!==2||!number(p.x,-30,30)||!number(p.z,-30,30)||!canPlacePuzzlePoint({x:p.x,z:p.z},room))throw new Error(`Position invalide pour ${id} : rester dans la pièce, hors des obstacles, avec 20 cm de marge.`);
+      points[id]={x:p.x,z:p.z};
+      for(const other of Object.values(points))if(other!==points[id]&&Math.hypot(other.x-p.x,other.z-p.z)<0.6)throw new Error('Écarter les éléments des énigmes d’au moins 60 cm.');
+    }
+    room.puzzles={points};
+  }
+  return room;
+}
+export function canPlacePuzzlePoint(p:Point2,room:Pick<RoomModel,'floor'|'obstacles'>){
+  return [-0.2,0.2].every(x=>[-0.2,0.2].every(z=>inside({x:p.x+x,z:p.z+z},room.floor)))&&inside(p,room.floor)&&!room.obstacles.some(o=>Math.abs(p.x-o.x)<o.width/2+0.2&&Math.abs(p.z-o.z)<o.depth/2+0.2);
+}
+export function suggestPuzzleLayout(room:RoomModel):PuzzleLayout{
+  const xs=room.floor.map(p=>p.x),zs=room.floor.map(p=>p.z),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
+  const step=Math.max(0.35,Math.max(maxX-minX,maxZ-minZ)/60),candidates:Point2[]=[];
+  for(let x=minX+0.25;x<maxX;x+=step)for(let z=minZ+0.25;z<maxZ;z+=step){const p={x:Number(x.toFixed(3)),z:Number(z.toFixed(3))};if(canPlacePuzzlePoint(p,room))candidates.push(p);}
+  const chosen:Point2[]=[],center={x:(minX+maxX)/2,z:(minZ+maxZ)/2},points={} as Record<PuzzleItem,Point2>;
+  for(const id of PUZZLE_ITEMS){
+    candidates.sort((a,b)=>{
+      const score=(p:Point2)=>chosen.length?Math.min(...chosen.map(q=>Math.hypot(q.x-p.x,q.z-p.z))):-Math.hypot(p.x-center.x,p.z-center.z);
+      return score(b)-score(a);
+    });
+    const p=candidates.shift();if(!p||chosen.some(q=>Math.hypot(q.x-p.x,q.z-p.z)<0.6))throw new Error('Pas assez de place libre pour neuf éléments. Replacer les obstacles ou choisir une pièce plus grande.');
+    chosen.push(p);points[id]=p;
+  }
+  return parseRoom({...room,puzzles:{points}}).puzzles!;
 }
 // Solid rectangular panels around holes, in wall-local coordinates (x from first corner).
 export function wallPanels(length:number,height:number,openings:Opening[]){

@@ -7,6 +7,8 @@ import { PlacementRequest } from './placement';
 import { Survey } from './survey';
 import { modelGroup, disposeGroup } from './model-view';
 import { capturePlanes,importSurfaces,QuestButtons } from './quest-scan';
+import { AdventureClient } from './adventure-client';
+import { adventureGroup,animateAdventure } from './adventure-view';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -18,7 +20,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.3.4');
+diagnostic('Version client', '0.4.0');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -56,8 +58,10 @@ function rejectPlacement(reason: string, details: Record<string, unknown> = {}) 
 }
 let resetScene = () => {};
 let updateSurveyScene = () => {};
+let updateAdventureScene = () => {};
 const survey = new Survey(()=>calibration, message=>{feedback.textContent=message;}, ()=>updateSurveyScene(), ()=>{if(calibration)resetCalibration();}, (event,reason)=>xrEvent(event,{reason:reason.slice(0,160)}));
 function calibrationMessage(text: string) {
+  updateAdventureScene();
   calibrationStatus.textContent = text; instruction.textContent = text;
 }
 function resetCalibration() {
@@ -109,11 +113,13 @@ enter.onclick = async () => {
       requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection'], domOverlay: { root: overlay },
     });
     const touchOverlay = !!session.domOverlayState;
+    adventure.setXRActive(true);
     xrEvent('session_started', { overlay: touchOverlay });
     diagnostic('Commandes tactiles DOM dans cette session', touchOverlay ? 'disponibles' : 'indisponibles ; sélection XR native si proposée par le navigateur');
     overlay.hidden = !touchOverlay;
     element('xr-exit').onclick = () => { void session?.end().catch(error => calibrationMessage(String(error))); };
     session.addEventListener('end', () => {
+      adventure.setXRActive(false);
       xrEvent('session_ended');
       renderer?.setAnimationLoop(null); resetCalibration(); enter.disabled = false;
       overlay.hidden = true; disposeScene(); resetScene = () => {};
@@ -124,7 +130,23 @@ enter.onclick = async () => {
     const reference = renderer.xr.getReferenceSpace();
     if (!reference) throw new Error('Référentiel XR indisponible');
     const scene = new THREE.Scene();
+    let gameGroup:THREE.Group|undefined;
+    let gameKey='';
+    updateAdventureScene=()=>{
+      const view=adventure.viewState(),key=JSON.stringify([view,calibration,survey.hasDraft()]);
+      if(key===gameKey)return;gameKey=key;
+      if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
+      if(!calibration||!view||survey.hasDraft())return;
+      gameGroup=adventureGroup(view.model,view.state);
+      gameGroup.position.copy(calibration.origin);gameGroup.rotation.y=-calibration.yaw;scene.add(gameGroup);
+    };
     const camera = new THREE.PerspectiveCamera();
+    const rays:THREE.Line[]=[];
+    for(let index=0;index<2;index++){
+      const controller=renderer.xr.getController(index);
+      const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,-3)]),new THREE.LineBasicMaterial({color:0x67e8f9}));
+      controller.add(line);scene.add(controller);rays.push(line);
+    }
     const scanStatus=element('quest-scan-status'),importButton=element<HTMLButtonElement>('quest-import');
     let importRequested=false,importTimeout:ReturnType<typeof setTimeout>|undefined;
     const requestImport=()=>{
@@ -167,7 +189,7 @@ enter.onclick = async () => {
       }
       if(!touchOverlay&&pose){
         hud.position.set(0,0.32,-1.2).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)).add(new THREE.Vector3().copy(pose.transform.position));
-        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${scanStatus.textContent}\n${feedback.textContent}`;
+        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${adventure.story()||scanStatus.textContent}\n${feedback.textContent}`;
         if(text!==hudKey){
           hudKey=text;hudContext.fillStyle='rgba(9,20,34,0.94)';hudContext.fillRect(0,0,1024,512);hudContext.fillStyle='#ffffff';hudContext.font='30px sans-serif';
           let y=42;for(const paragraph of text.split('\n')){let line='';for(const word of paragraph.split(' ')){if(hudContext.measureText(line+word).width>970){hudContext.fillText(line,24,y);y+=38;line='';}line+=word+' ';}hudContext.fillText(line,24,y);y+=45;}
@@ -186,6 +208,7 @@ enter.onclick = async () => {
     let surveyGroup:THREE.Group|undefined;
     let surveyKey='';
     updateSurveyScene=()=> {
+      updateAdventureScene();
       const model=survey.current();
       const key=JSON.stringify({model,calibration,closed:survey.closed(),corner:survey.pendingCorner()});
       if(key===surveyKey)return;surveyKey=key;
@@ -206,7 +229,7 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);updateSurveyScene=()=>{}; };
+    disposeScene = () => { clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -251,7 +274,14 @@ enter.onclick = async () => {
       }, 1500);
     });
     session.addEventListener('select', event => {
-      if (calibration&&!survey.collecting) return;
+      if(calibration&&!survey.collecting){
+        if(gameGroup&&!survey.hasDraft()){
+          const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference),viewer=event.frame.getViewerPose(reference);
+          adventure.updatePosition(viewer?new THREE.Vector3().copy(viewer.transform.position):undefined);
+          if(ray)adventure.raycast(gameGroup,new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)));
+        }
+        return;
+      }
       // Native screen selection is a fallback outside the panel; suppress duplicates.
       if (placement.pending || (event.inputSource.targetRayMode === 'screen' && performance.now() - lastPlacementPress < 700)) return;
       xrEvent('placement_requested', { step: firstPoint ? 'B' : 'A', reason: `xr_select_${event.inputSource.targetRayMode}` });
@@ -262,6 +292,8 @@ enter.onclick = async () => {
     });
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
+      adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
+      if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);
       if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
@@ -295,6 +327,7 @@ enter.onclick = async () => {
   } catch (error) {
     xrEvent('session_error', { reason: String(error).slice(0, 160) });
     if (session) await session.end().catch(() => {});
+    adventure.setXRActive(false);
     overlay.hidden = true;
     status.textContent = `Démarrage XR impossible : ${String(error)}`; enter.disabled = false;
   }
@@ -303,6 +336,7 @@ enter.onclick = async () => {
 let ownId = '';
 let revision = 0;
 let socket: WebSocket;
+const adventure=new AdventureClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
 let retry: ReturnType<typeof setTimeout>;
 function showPlayers(players: { id: string; slot: number }[]) {
   element('players').replaceChildren(...[1, 2, 3, 4].map(slot => {
@@ -316,6 +350,7 @@ showPlayers([]);
 function connect() {
   socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
   socket.onopen = () => {
+    adventure.setConnected(true);
     status.textContent = 'Connecté à la salle.';
     logStatus.textContent = 'Journal serveur connecté.';
     for (const message of xrQueue.splice(0)) socket.send(message);
@@ -324,10 +359,12 @@ function connect() {
     try {
       const message = JSON.parse(String(event.data));
       if (message.type === 'welcome') ownId = message.id;
+      if (message.type === 'adventure_result') adventure.result(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
         showPlayers(message.players); revision = message.puzzle.revision;
         survey.receive(message.model??null,message.libraryRevision??0);
+        if(message.adventure)adventure.receive(message.model??null,message.adventure,message.libraryRevision??0);
         element('puzzle').textContent = `Démo : ${message.puzzle.solved ? 'résolue' : 'à résoudre'} · révision ${revision}`;
         solve.disabled = message.puzzle.solved;
       }
@@ -335,6 +372,7 @@ function connect() {
     } catch { status.textContent = 'Réponse serveur invalide.'; }
   };
   socket.onclose = event => {
+    adventure.setConnected(false);
     solve.disabled = true; showPlayers([]);
     logStatus.textContent = 'Journal serveur déconnecté. Les prochains événements restent en attente.';
     status.textContent = event.code === 1008 ? event.reason : 'Déconnecté. Reconnexion dans 2 secondes…';
