@@ -1,5 +1,7 @@
 # Consignes MyRoom
 
+- À chaque modification du projet (code, configuration, déploiement ou documentation), mettre à jour [docs/RECAPITULATIF.md](docs/RECAPITULATIF.md) dans le même ensemble de changements, avant de terminer la tâche. Y refléter les changements réalisés, les vérifications effectivement exécutées et les limites connues. Actualiser la date et les versions/commits lorsqu'ils existent, sans annoncer une publication ou un essai matériel non vérifié.
+
 - Conserver le client en TypeScript / Three.js / WebXR et le serveur en TypeScript / Node.js / WebSocket.
 - Le serveur est autoritaire pour les places joueurs (quatre maximum) et l'état des énigmes. Valider toutes les entrées réseau.
 - Ne jamais annoncer de test sur Quest sans essai physique documenté. Séparer compilation, tests logiciels et validation casque.
