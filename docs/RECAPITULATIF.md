@@ -1,10 +1,12 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.0**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.1**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
 ### Ajout du 17 novembre 2026 — préparation et placements, 0.4.1
+
+Publication confirmée : commit `181ed20`, workflow GitHub Actions `44138561838` réussi et manifeste ARM64 0.4.1 disponible dans GHCR après ce workflow. Vérification logicielle supplémentaire : cent variantes d’une pièce 4 × 3 m avec obstacle central ont toutes produit un placement validé. Cela ne valide pas les passages physiques ni l’exécution sur HAOS.
 
 - Nouvelle proposition aléatoire ordonnée : centre libre pour le coffre, table proche et sept autres éléments dans des secteurs angulaires avec rotation et rayon variables. Coordonnées validées contre le contour, les obstacles et l’espacement minimal ; repli vers les positions libres lorsque le centre des limites est indisponible.
 - Déplacement des repères par glissement souris/tactile dans le plan admin. Modifications non sauvegardées empêchant le départ local.
@@ -12,7 +14,7 @@
 - En AR tactile, choix d’un élément et placement au viseur après A/B, avec jeton admin en mémoire uniquement. Endpoint spécifique protégé : préparation requise, révisions de jeu et bibliothèque contrôlées, géométrie de la pièce conservée. Positions enregistrées et diffusées aux joueurs ; déplacement refusé après départ.
 - En préparation, tous les éléments 3D sont visibles avec leur identité pour faciliter le placement. Aucun système de prise libre aux contrôleurs ajouté ; sur casque sans panneau tactile, préparation depuis le plan admin d’un autre appareil.
 
-Vérifications : typecheck et compilation réussis, 36 tests réussis après correction d’un placement de test dirigé dans un obstacle. Deux nouveaux tests couvrent préparation/départ et vingt variantes de répartition valides avec principaux centraux ; le test réseau couvre placement autorisé, jeton absent, révision périmée et refus après départ. Dans Chrome : glissement réel à la souris d’un repère et sauvegarde, blocage du départ avec modifications non sauvegardées, départ admin ; contrôleur tactile testé avec calibrage et visée synthétiques, sauvegarde effective et champ de jeton vidé. Pièce temporaire supprimée après les vérifications. Aucun essai physique AR sur téléphone ou Quest effectué par l’agent. Guide des énigmes et changelog actualisés. Publication 0.4.1 à confirmer.
+Vérifications : typecheck et compilation réussis, 36 tests réussis après correction d’un placement de test dirigé dans un obstacle. Deux nouveaux tests couvrent préparation/départ et vingt variantes de répartition valides avec principaux centraux ; le test réseau couvre placement autorisé, jeton absent, révision périmée et refus après départ. Dans Chrome : glissement réel à la souris d’un repère et sauvegarde, blocage du départ avec modifications non sauvegardées, départ admin ; contrôleur tactile testé avec calibrage et visée synthétiques, sauvegarde effective et champ de jeton vidé. Pièce temporaire supprimée après les vérifications. Aucun essai physique AR sur téléphone ou Quest effectué par l’agent. Guide des énigmes et changelog actualisés.
 
 ### Ajout du 17 novembre 2026 — deux énigmes, version 0.4.0
 
