@@ -17,7 +17,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.3.0');
+diagnostic('Version client', '0.3.1');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -252,8 +252,10 @@ enter.onclick = async () => {
       const canPlace=!calibration||survey.collecting;
       const valid = !!point && canPlace;
       // Invalid tracking must still allow a press and an explanation.
-      place.hidden = !canPlace; place.disabled = !canPlace;
-      if(calibration&&survey.collecting)place.textContent=survey.label;
+      // Keep the touched button in the layout through pointerup. Removing it after
+      // pointerdown on B can move the exit button underneath the finger.
+      place.hidden = false; place.disabled = !canPlace;
+      if(calibration)place.textContent=survey.collecting?survey.label:'Calibrage terminé';
       const reason = !pose ? 'Suivi AR indisponible. Déplacez doucement le téléphone.'
         : pose.transform.position.y <= 0 ? 'La caméra est au niveau ou sous le sol (hauteur ≤ 0). Recommencez la session pour rétablir le sol local.'
         : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';

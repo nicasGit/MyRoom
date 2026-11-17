@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- Le bouton de placement reste visible et désactivé après B, afin de conserver sa place dans la barre de commandes jusqu’au relâchement du doigt.
+- Largeur réservée pour empêcher le libellé « Calibrage terminé » de réorganiser les commandes sur petit écran.
+- Évite le déplacement du bouton Quitter l’AR sous le contact lors de la fin du calibrage tactile.
+- Cause matérielle du signalement à confirmer ; aucun essai physique téléphone ou Quest effectué par l’agent.
+
 ## 0.3.0
 
 - Import expérimental des surfaces WebXR, destiné au Quest 3 : contour du sol, hauteur estimée et boîtes de meubles identifiés.

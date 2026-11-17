@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **16 novembre 2026**, fonctionnalités jusqu’à **0.3.0**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités publiées jusqu’à **0.3.0**, correction **0.3.1 en préparation**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -55,6 +55,10 @@ Un seul joueur peut tester le prototype : il n’est pas nécessaire d’occuper
 Tous les appareils doivent retrouver les mêmes repères, dans le même ordre. Ce mécanisme **n’est pas une ancre spatiale partagée** et ne reconnaît pas automatiquement les repères lors d’une nouvelle session.
 
 ## 5. Commandes tactiles et corrections du placement
+
+Correction 0.3.1 en préparation : après B, le bouton de placement reste dans la barre, désactivé et libellé « Calibrage terminé ». Une largeur minimale réserve aussi la place de ce libellé. Auparavant, il disparaissait dans la boucle XR : la barre pouvait alors se réorganiser pendant l’appui tactile et déplacer « Quitter l’AR » sous le doigt. Cette cause possible de la sortie signalée après les deux repères doit encore être confirmée sur l’appareil de l’utilisateur. Le correctif évite ce changement de disposition ; il ne prétend pas résoudre une fermeture système du navigateur ou du casque.
+
+Vérifications du 17 novembre : typecheck et compilation réussis, 26 tests réussis. Dans Chrome, passage simulé « Placer B » → « Calibrage terminé » : position de Quitter inchangée sur 320×568, 390×844, 640×320 et 844×390. Un appui souris simulé avec le gestionnaire de placement réel produit un seul placement et aucune action Quitter. Aucune session XR réelle effectuée pour ce correctif.
 
 - Panneau DOM Overlay, si proposé par le navigateur : **Placer A/B**, **Recommencer**, **Quitter l’AR**, puis commandes du relevé.
 - Viseur central et indication verte lorsque la projection de placement est valide.
