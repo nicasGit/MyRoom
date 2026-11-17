@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { toRoom,type makeCalibration } from './calibration';
 import type { AdventureCommand,AdventureState,SymbolId,CardId } from '../../server/src/adventure.js';
-import { PUZZLE_ITEMS,type Point2,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
+import { PUZZLE_ITEMS,parseRoom,parseLibrary,type Point2,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
 import { drawMap,ITEM_NAMES } from './adventure-map';
 import { SYMBOL_NAMES,CARD_NAMES,CARD_CLUES,pickAdventureAction } from './adventure-view';
 type Panel={root:HTMLElement;status:HTMLElement;body:HTMLElement};
@@ -21,6 +21,10 @@ export class AdventureClient {
   private lastPositionUpdate=-Infinity;
   private key='';
   private audio:AudioContext|undefined;
+  private aim:Point2|undefined;
+  private aimAt=0;
+  private placementToken='';
+  private moving=false;
   constructor(private send:(message:AdventureCommand)=>boolean,private calibration:()=>ReturnType<typeof makeCalibration>|undefined,private changed:()=>void,private notify:(message:string)=>void){
     for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!,status=document.createElement('p'),body=document.createElement('div');status.setAttribute('role','status');root.append(status,body);this.panels.push({root,status,body});}
     const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;
@@ -37,7 +41,22 @@ export class AdventureClient {
     if(changed){this.render(true);this.changed();}
   }
   viewState(){return this.model&&this.state?{model:this.model,state:this.state}:undefined;}
-  story(){return this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au coffre avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
+  updateAim(local:THREE.Vector3|undefined){const calibration=this.calibration();this.aim=local&&calibration?toRoom(local,calibration):undefined;this.aimAt=performance.now();}
+  private async movePrepared(id:PuzzleItem,input:HTMLInputElement){
+    if(!this.model?.puzzles||this.state?.running||!this.xrActive||!this.calibration()||this.moving)return;
+    if(!this.aim||performance.now()-this.aimAt>250){this.result('Visez le sol avec un suivi valide, puis réessayez.');return;}
+    this.placementToken=input.value.trim()||this.placementToken;input.value='';
+    if(!this.placementToken){this.result('Saisissez le jeton administrateur pour déplacer un élément.');return;}
+    this.moving=true;
+    try{
+      const model=structuredClone(this.model);model.puzzles!.points[id]={x:this.aim.x,z:this.aim.z};parseRoom(model);
+      const response=await fetch('/api/admin/adventure/place',{method:'POST',headers:{Authorization:`Bearer ${this.placementToken}`,'Content-Type':'application/json'},body:JSON.stringify({revision:this.libraryRevision,gameRevision:this.state!.revision,points:model.puzzles!.points}),signal:AbortSignal.timeout(8000)});
+      if(response.status===401)this.placementToken='';
+      const data=await response.json();if(!response.ok)throw new Error(data.error??`HTTP ${response.status}`);
+      parseLibrary(data.library);this.result('Élément déplacé et enregistré. Vérifiez sa position avant le départ.');
+    }catch(error){this.result(`Déplacement non enregistré : ${String(error)}`);}finally{this.moving=false;}
+  }
+  story(){return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au coffre avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
   result(message:string){this.pending=false;clearTimeout(this.requestTimer);for(const panel of this.panels)panel.status.textContent=message;this.notify(message);this.updateButtons();}
   updatePosition(local:THREE.Vector3|undefined){
     const calibration=this.calibration();this.position=local&&calibration?toRoom(local,calibration):undefined;
@@ -46,7 +65,7 @@ export class AdventureClient {
   private currentPosition(){return this.simulation&&!this.xrActive?this.virtual:this.position;}
   private closeTo(target:PuzzleItem){const p=this.currentPosition(),q=this.model?.puzzles?.points[target];return !!p&&!!q&&Math.hypot(p.x-q.x,p.z-q.z)<=1.3;}
   private perform(action:AdventureCommand['action'],id:string,target:PuzzleItem){
-    const position=this.currentPosition();if(!position||!this.state||!this.model?.puzzles||this.pending||!this.connected||!this.closeTo(target))return;
+    const position=this.currentPosition();if(!position||!this.state?.running||!this.model?.puzzles||this.pending||!this.connected||!this.closeTo(target))return;
     this.unlockSound();this.pending=true;this.updateButtons();
     const message:AdventureCommand={type:'adventure_action',revision:this.state.revision,libraryRevision:this.libraryRevision,action,target:id,position:{x:position.x,z:position.z},simulation:this.simulation&&!this.xrActive};
     if(!this.send(message)){this.result('Connexion serveur indisponible.');return;}
@@ -61,7 +80,7 @@ export class AdventureClient {
     if(button)this.perform(button.action,button.id,button.target);
   }
   private updateButtons(){
-    for(const item of this.buttons)item.button.disabled=!this.connected||this.pending||!item.ready||!this.closeTo(item.target);
+    for(const item of this.buttons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo(item.target);
     const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;toggle.disabled=!this.state?.testMode||this.xrActive;toggle.checked=this.simulation;
   }
   private addAction(panel:Panel,label:string,action:AdventureCommand['action'],id:string,target:PuzzleItem,ready:boolean){
@@ -77,6 +96,16 @@ export class AdventureClient {
       const text=(message:string)=>{const p=document.createElement('p');p.textContent=message;panel.body.append(p);};
       if(!this.model?.puzzles||!this.state||this.state.phase==='unconfigured'){text('Activer une pièce et placer les énigmes depuis l’administration.');continue;}
       const state=this.state;
+      if(!state.running){
+        text('Préparation : ajustez les éléments, puis commencez la partie depuis l’administration.');
+        if(panel===this.panels[1]&&this.xrActive){
+          const select=document.createElement('select');select.setAttribute('aria-label','Élément à déplacer');
+          for(const id of PUZZLE_ITEMS){const option=document.createElement('option');option.value=id;option.textContent=ITEM_NAMES[id];select.append(option);}
+          const token=document.createElement('input');token.type='password';token.autocomplete='off';token.placeholder='Jeton administrateur';token.setAttribute('aria-label','Jeton pour le placement');
+          const place=document.createElement('button');place.textContent='Placer cet élément au viseur';place.onclick=()=>{void this.movePrepared(select.value as PuzzleItem,token);};
+          text('Sélectionnez un élément, visez sa nouvelle position au sol, puis placez-le. Chaque déplacement est enregistré sur le serveur.');panel.body.append(select,token,place);
+        }
+      }
       if(state.phase==='symbols'){
         text('Le coffre des quatre symboles');text('« Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. »');
         text(`Balises découvertes : ${state.symbols.found.length}/4 · combinaison : ${state.symbols.entered.map(id=>SYMBOL_NAMES[id]).join(' → ')||'vide'} · erreurs : ${state.symbols.attempts}`);

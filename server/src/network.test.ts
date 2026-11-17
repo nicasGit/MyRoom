@@ -93,6 +93,19 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     assert.equal((await fetch(`${adminUrl}adventure/test-mode`,{method:'POST',headers,body:'{"enabled":"yes"}'})).status,400);
     assert.equal((await fetch(`${adminUrl}adventure/test-mode`,{method:'POST',headers:{...headers,Origin:'https://other.test'},body:'{"enabled":true}'})).status,403);
     assert.equal((await fetch(`${adminUrl}adventure/test-mode`,{method:'POST',headers,body:'{"enabled":true}'})).status,200);
+    const preparation=(await (await fetch(`${adminUrl}state`,{headers})).json()).adventure;
+    let points=structuredClone(configured.puzzles!.points);
+    for(const offset of [{x:0.05,z:0},{x:-0.05,z:0},{x:0,z:0.05},{x:0,z:-0.05}]){
+      const candidate=structuredClone(points);candidate.chest.x+=offset.x;candidate.chest.z+=offset.z;
+      try{parseRoom({...configured,puzzles:{points:candidate}});points=candidate;break;}catch{/* Try the other direction around the obstacle. */}
+    }
+    const placement={revision:4,gameRevision:preparation.revision,points};
+    assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(placement)})).status,401);
+    assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify(placement)})).status,200);
+    assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify(placement)})).status,400);
+    assert.equal((await fetch(`${adminUrl}adventure/start`,{method:'POST',headers,body:'{}'})).status,200);
+    const started=(await (await fetch(`${adminUrl}state`,{headers})).json()).adventure;
+    assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify({revision:5,gameRevision:started.revision,points})})).status,400);
     const gameState=(await (await fetch(`${adminUrl}state`,{headers})).json()).adventure;
     const shared=clients.slice(0,4).map(ws=>new Promise<any>((resolve,reject)=>{
       const timeout=setTimeout(()=>{ws.off('message',receive);reject(new Error('État partagé des énigmes absent'));},3000);
@@ -100,7 +113,7 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
       ws.on('message',receive);
     }));
     const result=messageOfType(clients[0],'adventure_result');
-    const command={type:'adventure_action',revision:gameState.revision,libraryRevision:4,action:'discover_symbol',target:'sun',position:configured.puzzles!.points.sun,simulation:true};
+    const command={type:'adventure_action',revision:gameState.revision,libraryRevision:5,action:'discover_symbol',target:'sun',position:configured.puzzles!.points.sun,simulation:true};
     clients[0].send(JSON.stringify(command));assert.equal((await result).changed,true);
     for(const state of await Promise.all(shared))assert.deepEqual(state.adventure.symbols.found,['sun']);
     const stale=messageOfType(clients[1],'adventure_result');clients[1].send(JSON.stringify(command));assert.equal((await stale).changed,false);

@@ -4,6 +4,16 @@
 
 ## 1. Projet et architecture
 
+### Ajout du 17 novembre 2026 — préparation et placements, 0.4.1
+
+- Nouvelle proposition aléatoire ordonnée : centre libre pour le coffre, table proche et sept autres éléments dans des secteurs angulaires avec rotation et rayon variables. Coordonnées validées contre le contour, les obstacles et l’espacement minimal ; repli vers les positions libres lorsque le centre des limites est indisponible.
+- Déplacement des repères par glissement souris/tactile dans le plan admin. Modifications non sauvegardées empêchant le départ local.
+- Phase de préparation et bouton **Commencer les énigmes** ; actions de jeu refusées avant le départ. Réinitialisation et modification du modèle actif retournent en préparation.
+- En AR tactile, choix d’un élément et placement au viseur après A/B, avec jeton admin en mémoire uniquement. Endpoint spécifique protégé : préparation requise, révisions de jeu et bibliothèque contrôlées, géométrie de la pièce conservée. Positions enregistrées et diffusées aux joueurs ; déplacement refusé après départ.
+- En préparation, tous les éléments 3D sont visibles avec leur identité pour faciliter le placement. Aucun système de prise libre aux contrôleurs ajouté ; sur casque sans panneau tactile, préparation depuis le plan admin d’un autre appareil.
+
+Vérifications : typecheck et compilation réussis, 36 tests réussis après correction d’un placement de test dirigé dans un obstacle. Deux nouveaux tests couvrent préparation/départ et vingt variantes de répartition valides avec principaux centraux ; le test réseau couvre placement autorisé, jeton absent, révision périmée et refus après départ. Dans Chrome : glissement réel à la souris d’un repère et sauvegarde, blocage du départ avec modifications non sauvegardées, départ admin ; contrôleur tactile testé avec calibrage et visée synthétiques, sauvegarde effective et champ de jeton vidé. Pièce temporaire supprimée après les vérifications. Aucun essai physique AR sur téléphone ou Quest effectué par l’agent. Guide des énigmes et changelog actualisés. Publication 0.4.1 à confirmer.
+
 ### Ajout du 17 novembre 2026 — deux énigmes, version 0.4.0
 
 - Coffre des quatre symboles : quatre découvertes partagées, combinaison Soleil → Arbre → Lune → Étoile, erreur récupérable et ouverture animée.

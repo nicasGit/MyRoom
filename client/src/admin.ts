@@ -17,6 +17,8 @@ let library:RoomLibrary|undefined;
 let libraryRevision=-1;
 const preview=createPreview(el('admin-room-preview'));
 const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)=>api('rooms/save',{room,revision}),()=>{void refresh();});
+const startAdventure=document.createElement('button');startAdventure.textContent='Commencer les énigmes';startAdventure.id='adventure-start';el('adventure-reset').after(startAdventure);
+startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de commencer.';return;}void action('adventure/start',{});};
 function logout() {
   session++; token = ''; clearTimeout(timer); el<HTMLInputElement>('token').value = '';
   previousPlayers = '';
@@ -45,9 +47,10 @@ function node(tag: string, text: string, className?: string) {
   return value;
 }
 function render(state: State) {
+  startAdventure.disabled=state.adventure.running||state.adventure.phase==='unconfigured';
   library=state.library;
   adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);
-  el('adventure-overview').textContent=`${state.adventure.phase} · révision ${state.adventure.revision} · ${state.adventure.message}`;
+  el('adventure-overview').textContent=`${state.adventure.running?'Partie en cours':'Préparation'} · ${state.adventure.phase} · ${state.adventure.message}`;
   el<HTMLInputElement>('adventure-test').checked=state.adventure.testMode;
   if(library.revision!==libraryRevision){
     libraryRevision=library.revision;

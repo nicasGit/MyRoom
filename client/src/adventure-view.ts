@@ -25,18 +25,18 @@ export function adventureGroup(model:RoomModel,state:AdventureState){
   hinge.userData.targetAngle=state.phase==='blackjack'||state.phase==='complete'?-1.45:0;group.userData.lid=hinge;
   const heading=label(state.phase==='symbols'?'Le coffre':'Coffre ouvert','#ffe082');heading.position.y=1.05;chest.add(heading);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
-    const found=state.symbols.found.includes(id),node=at(id),pole=box(0.05,0.65,0.05,0x64748b);pole.position.y=0.325;node.add(pole);
+    const found=!state.running||state.symbols.found.includes(id),node=at(id),pole=box(0.05,0.65,0.05,0x64748b);pole.position.y=0.325;node.add(pole);
     const sign=actionLabel(found?SYMBOL_NAMES[id]:`Balise ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_symbol',target:id});sign.position.y=0.85;node.add(sign);
     if(state.phase==='symbols'){
       const button=actionLabel(SYMBOL_NAMES[id],'#ffe082',{action:'press_symbol',target:id});button.scale.set(0.32,0.1,1);button.position.set((i%2-0.5)*0.37,0.72-Math.floor(i/2)*0.16,0.3);chest.add(button);
     }
   }
-  if(state.phase!=='blackjack'&&state.phase!=='complete')return group;
+  if(state.running&&state.phase!=='blackjack'&&state.phase!=='complete')return group;
   const table=at('table'),felt=new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.55,0.07,24),new THREE.MeshBasicMaterial({color:0x126b54}));felt.position.y=0.74;table.add(felt);
   const leg=box(0.1,0.7,0.1,0x755038);leg.position.y=0.35;table.add(leg);
   const title=label(state.phase==='complete'?'21 · Clé obtenue · 7':'As + 6 · Objectif 21','#ffe082');title.position.y=1.25;table.add(title);
   for(const [i,id] of (['four','eight','king'] as const).entries()){
-    const found=state.blackjack.found.includes(id),node=at(id),card=actionLabel(found?CARD_NAMES[id]:`Carte ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_card',target:id});card.position.y=0.85;node.add(card);
+    const found=!state.running||state.blackjack.found.includes(id),node=at(id),card=actionLabel(found?CARD_NAMES[id]:`Carte ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_card',target:id});card.position.y=0.85;node.add(card);
     if(state.phase==='blackjack'){const button=actionLabel(CARD_NAMES[id],'#ffffff',{action:'choose_card',target:id});button.scale.set(0.27,0.15,1);button.position.set((i-1)*0.32,0.95,0.1);table.add(button);}
   }
   if(state.phase==='complete'){

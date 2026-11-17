@@ -17,10 +17,22 @@ export class AdventureEditor {
     this.get('[data-reload]').onclick=()=>{if(this.dirty&&!confirm('Abandonner les placements non enregistrés ?'))return;this.dirty=false;this.stale=false;this.layout=this.model?.puzzles?structuredClone(this.model.puzzles):undefined;this.draw();this.message('Placements rechargés.');};
     this.get('[data-position]').onclick=()=>this.move({x:Number(this.get<HTMLInputElement>('[data-x]').value),z:Number(this.get<HTMLInputElement>('[data-z]').value)});
     this.get<HTMLCanvasElement>('[data-map]').onclick=event=>{const canvas=this.get<HTMLCanvasElement>('[data-map]'),rect=canvas.getBoundingClientRect();this.move(this.mapPoint((event.clientX-rect.left)*800/rect.width,(event.clientY-rect.top)*420/rect.height));};
+    const canvas=this.get<HTMLCanvasElement>('[data-map]');canvas.style.touchAction='none';
+    canvas.onpointerdown=event=>{
+      if(!this.layout||this.busy||this.stale)return;
+      const rect=canvas.getBoundingClientRect(),point=this.mapPoint((event.clientX-rect.left)*800/rect.width,(event.clientY-rect.top)*420/rect.height);
+      const nearest=PUZZLE_ITEMS.find(id=>Math.hypot(this.layout!.points[id].x-point.x,this.layout!.points[id].z-point.z)<0.35);
+      if(nearest){select.value=nearest;this.draw();}canvas.setPointerCapture(event.pointerId);
+    };
+    canvas.onpointerup=event=>{
+      if(!canvas.hasPointerCapture(event.pointerId))return;canvas.releasePointerCapture(event.pointerId);
+      const rect=canvas.getBoundingClientRect();this.move(this.mapPoint((event.clientX-rect.left)*800/rect.width,(event.clientY-rect.top)*420/rect.height));
+    };
     this.get('[data-save]').onclick=()=>{void this.commit(false);};
     this.get('[data-remove]').onclick=()=>{if(confirm('Retirer les deux énigmes de cette pièce ?'))void this.commit(true);};
   }
   private get<T extends HTMLElement=HTMLElement>(selector:string){return this.root.querySelector(selector) as T;}
+  hasChanges(){return this.dirty||this.stale||this.busy;}
   private message(text:string){this.get('[data-message]').textContent=text;}
   receive(model:RoomModel|null,revision:number){
     const key=JSON.stringify(model);

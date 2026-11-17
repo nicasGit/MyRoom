@@ -4,7 +4,7 @@ export const CARDS=['four','eight','king'] as const;
 export type SymbolId=typeof SYMBOLS[number];
 export type CardId=typeof CARDS[number];
 export type AdventureCommand={type:'adventure_action';revision:number;libraryRevision:number;action:'discover_symbol'|'press_symbol'|'discover_card'|'choose_card';target:string;position:Point2;simulation:boolean};
-export type AdventureState={revision:number;phase:'unconfigured'|'symbols'|'blackjack'|'complete';testMode:boolean;symbols:{found:SymbolId[];entered:SymbolId[];attempts:number};blackjack:{found:CardId[];chosen:CardId|null;total:number;ace:number;attempts:number};message:string};
+export type AdventureState={running:boolean;revision:number;phase:'unconfigured'|'symbols'|'blackjack'|'complete';testMode:boolean;symbols:{found:SymbolId[];entered:SymbolId[];attempts:number};blackjack:{found:CardId[];chosen:CardId|null;total:number;ace:number;attempts:number};message:string};
 export function parseAdventureCommand(value:unknown):AdventureCommand{
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Action attendue.');
   const v=value as Record<string,unknown>,p=v.position as Record<string,unknown>|null;
@@ -16,17 +16,19 @@ export function parseAdventureCommand(value:unknown):AdventureCommand{
 export function blackjackScore(values:number[]){let total=values.reduce((sum,v)=>sum+(v===1?11:v),0),aces=values.filter(v=>v===1).length;while(total>21&&aces>0){total-=10;aces--;}return {total,ace:aces>0?11:1};}
 export class Adventure {
   private key='';
-  private state:AdventureState={revision:0,phase:'unconfigured',testMode:false,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:'Configurer les énigmes dans l’administration.'};
+  private state:AdventureState={running:false,revision:0,phase:'unconfigured',testMode:false,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:'Configurer les énigmes dans l’administration.'};
   configure(model:RoomModel|null){const key=JSON.stringify(model);if(key!==this.key){this.key=key;this.reset(!!model?.puzzles);}}
   reset(configured=this.state.phase!=='unconfigured'){
-    this.state={revision:this.state.revision+1,phase:configured?'symbols':'unconfigured',testMode:this.state.testMode,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:configured?'Retrouvez les quatre balises, puis entrez les symboles au coffre.':'Configurer les énigmes dans l’administration.'};
+    this.state={running:false,revision:this.state.revision+1,phase:configured?'symbols':'unconfigured',testMode:this.state.testMode,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:configured?'Retrouvez les quatre balises, puis entrez les symboles au coffre.':'Configurer les énigmes dans l’administration.'};
   }
+  start(){if(this.state.phase==='unconfigured')throw new Error('Configurez les placements avant de commencer.');if(!this.state.running){this.state.running=true;this.state.revision++;}}
   setTestMode(enabled:boolean){if(enabled!==this.state.testMode){this.state.testMode=enabled;this.state.revision++;}}
   snapshot():AdventureState{return structuredClone(this.state);}
   act(command:AdventureCommand,model:RoomModel|null,libraryRevision:number):{changed:boolean;message:string}{
     this.configure(model);
     const reject=(message:string)=>({changed:false,message});
     if(!model?.puzzles)return reject('Les énigmes ne sont pas encore placées.');
+    if(!this.state.running)return reject('La partie est en preparation. Attendez le depart.');
     if(command.revision!==this.state.revision||command.libraryRevision!==libraryRevision)return reject('La partie a changé. Réessayez avec le nouvel état.');
     if(command.simulation&&!this.state.testMode)return reject('Le test PC doit être autorisé par l’administrateur.');
     if(!inside(command.position,model.floor))return reject('Position déclarée hors de la pièce. Refaites le calibrage A/B.');

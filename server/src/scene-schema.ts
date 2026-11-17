@@ -103,14 +103,18 @@ export function parseRoom(value: unknown): RoomModel {
 export function canPlacePuzzlePoint(p:Point2,room:Pick<RoomModel,'floor'|'obstacles'>){
   return [-0.2,0.2].every(x=>[-0.2,0.2].every(z=>inside({x:p.x+x,z:p.z+z},room.floor)))&&inside(p,room.floor)&&!room.obstacles.some(o=>Math.abs(p.x-o.x)<o.width/2+0.2&&Math.abs(p.z-o.z)<o.depth/2+0.2);
 }
-export function suggestPuzzleLayout(room:RoomModel):PuzzleLayout{
+export function suggestPuzzleLayout(room:RoomModel,random:()=>number=Math.random):PuzzleLayout{
   const xs=room.floor.map(p=>p.x),zs=room.floor.map(p=>p.z),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
   const step=Math.max(0.35,Math.max(maxX-minX,maxZ-minZ)/60),candidates:Point2[]=[];
   for(let x=minX+0.25;x<maxX;x+=step)for(let z=minZ+0.25;z<maxZ;z+=step){const p={x:Number(x.toFixed(3)),z:Number(z.toFixed(3))};if(canPlacePuzzlePoint(p,room))candidates.push(p);}
   const chosen:Point2[]=[],center={x:(minX+maxX)/2,z:(minZ+maxZ)/2},points={} as Record<PuzzleItem,Point2>;
-  for(const id of PUZZLE_ITEMS){
+  const rotation=random()*Math.PI*2;
+  const ordered:PuzzleItem[]=['chest','table','sun','tree','moon','star','four','eight','king'];
+  for(const [index,id] of ordered.entries()){
+    const angle=rotation+(index-2)*Math.PI*2/7,radius=0.65+random()*0.2;
+    const target=index<2?center:{x:center.x+Math.cos(angle)*(maxX-minX)*radius/2,z:center.z+Math.sin(angle)*(maxZ-minZ)*radius/2};
     candidates.sort((a,b)=>{
-      const score=(p:Point2)=>chosen.length?Math.min(...chosen.map(q=>Math.hypot(q.x-p.x,q.z-p.z))):-Math.hypot(p.x-center.x,p.z-center.z);
+      const score=(p:Point2)=>chosen.some(q=>Math.hypot(q.x-p.x,q.z-p.z)<(id==='table'?1.2:0.6))?-Infinity:-Math.hypot(p.x-target.x,p.z-target.z);
       return score(b)-score(a);
     });
     const p=candidates.shift();if(!p||chosen.some(q=>Math.hypot(q.x-p.x,q.z-p.z)<0.6))throw new Error('Pas assez de place libre pour neuf éléments. Replacer les obstacles ou choisir une pièce plus grande.');

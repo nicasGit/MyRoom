@@ -20,7 +20,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.4.0');
+diagnostic('Version client', '0.4.1');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -297,11 +297,13 @@ enter.onclick = async () => {
       if(frame)updateScan(frame,pose??null);
       if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
+      adventure.updateAim(point??undefined);
       const canPlace=!calibration||survey.collecting;
       element('xr-alignment').hidden=!calibration||!survey.current();
       for(const button of alignmentButtons)button.disabled=survey.hasDraft();
       element('alignment-status').textContent=survey.hasDraft()?'Enregistrez ou annulez le brouillon avant de modifier l’alignement.':'Réglage fin local ; pour une dérive du suivi, refaites le calibrage A/B.';
-      const valid = !!point && canPlace;
+      const preparing=!!adventure.viewState()?.model.puzzles&&!adventure.viewState()?.state.running&&!survey.hasDraft();
+      const valid = !!point && (canPlace||preparing);
       // Invalid tracking must still allow a press and an explanation.
       // Keep the touched button in the layout through pointerup. Removing it after
       // pointerdown on B can move the exit button underneath the finger.

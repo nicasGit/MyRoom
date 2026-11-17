@@ -33,7 +33,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/adventure/reset','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -55,7 +55,15 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     if (!body || typeof body !== 'object' || Array.isArray(body)) { reply(res, 400, { error: 'Objet JSON attendu.' }); return; }
     if(req.url?.startsWith('/api/admin/adventure/')){
       room.adventure.configure(room.model);
-      if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.reset();}
+      if(req.url.endsWith('/place')){
+        if(!room.model||room.adventure.snapshot().running||!('gameRevision' in body)||body.gameRevision!==room.adventure.snapshot().revision||Object.keys(body).sort().join(',')!=='gameRevision,points,revision')throw new Error('Placement impossible : actualisez la préparation.');
+        const command=body as Record<string,unknown>;
+        const library=store.change('save',command.revision,{...room.model,puzzles:{points:command.points}});
+        room.model=store.active();room.libraryRevision=library.revision;
+        log('adventure_placement',{revision:library.revision,activeId:library.activeId});broadcast();reply(res,200,{library});return;
+      }
+      if(req.url.endsWith('/start')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.start();}
+      else if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.reset();}
       else {if(Object.keys(body).length!==1||!('enabled' in body)||typeof body.enabled!=='boolean')throw new Error('Booléen attendu');room.adventure.setTestMode(body.enabled);}
       log('adventure_admin',{action:req.url.split('/').at(-1),testMode:room.adventure.snapshot().testMode});broadcast();reply(res,200,{ok:true});return;
     }

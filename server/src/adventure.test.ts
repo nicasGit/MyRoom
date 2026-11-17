@@ -18,7 +18,7 @@ test('sélection 3D : un rayon utilise la caméra pour toucher un panneau Sprite
   assert.equal(pickAdventureAction(group,camera.position,new THREE.Vector3(1,0,0),camera),undefined);
   sprite.material.dispose();
 });
-function game(){const room=fixture(),adventure=new Adventure();adventure.configure(room);return {room,adventure,act(action:AdventureCommand['action'],target:string,extra:Partial<AdventureCommand>={}){const point=action==='press_symbol'?'chest':action==='choose_card'?'table':target as keyof typeof room.puzzles.points;return adventure.act(parseAdventureCommand({type:'adventure_action',revision:adventure.snapshot().revision,libraryRevision:1,action,target,position:room.puzzles!.points[point],simulation:false,...extra}),room,1);}};}
+function game(){const room=fixture(),adventure=new Adventure();adventure.configure(room);adventure.start();return {room,adventure,act(action:AdventureCommand['action'],target:string,extra:Partial<AdventureCommand>={}){const point=action==='press_symbol'?'chest':action==='choose_card'?'table':target as keyof typeof room.puzzles.points;return adventure.act(parseAdventureCommand({type:'adventure_action',revision:adventure.snapshot().revision,libraryRevision:1,action,target,position:room.puzzles!.points[point],simulation:false,...extra}),room,1);}};}
 test('actions réseau : schéma strict, valeurs et cibles bornées',()=>{
   const command={type:'adventure_action',revision:1,libraryRevision:1,action:'discover_symbol',target:'sun',position:{x:1,z:1},simulation:false};
   assert.deepEqual(parseAdventureCommand(command),command);
@@ -71,4 +71,21 @@ test('les placements survivent au rechargement du stockage des pièces',()=>{
   const directory=mkdtempSync(join(tmpdir(),'myroom-adventure-'));
   try{const room=fixture(),store=new RoomStore(directory);store.change('save',0,room);assert.deepEqual(new RoomStore(directory).active(),room);}
   finally{rmSync(directory,{recursive:true,force:true});}
+});
+test('préparation : aucun jeu avant le départ et retour en préparation après déplacement',()=>{
+  const g=game();g.adventure.reset();assert.equal(g.adventure.snapshot().running,false);
+  assert.equal(g.act('discover_symbol','sun').changed,false);g.adventure.start();
+  assert.equal(g.act('discover_symbol','sun').changed,true);
+  g.adventure.configure({...g.room,puzzles:suggestPuzzleLayout(g.room,()=>0.25)});
+  assert.equal(g.adventure.snapshot().running,false);assert.deepEqual(g.adventure.snapshot().symbols.found,[]);
+  assert.throws(()=>{const game=new Adventure();game.start();});
+});
+test('répartition aléatoire ordonnée : principaux centraux, neuf points valides et variantes',()=>{
+  const room=fixture(),variants=new Set<string>();
+  for(let seed=0;seed<20;seed++){
+    const layout=suggestPuzzleLayout(room,()=>seed/20);parseRoom({...room,puzzles:layout});variants.add(JSON.stringify(layout));
+    assert.ok(Math.hypot(layout.points.chest.x-4,layout.points.chest.z-3)<0.5);
+    assert.ok(Math.hypot(layout.points.table.x-4,layout.points.table.z-3)<1.7);
+  }
+  assert.ok(variants.size>10);
 });

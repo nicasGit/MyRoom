@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Proposition aléatoire répartie par secteurs, coffre près du centre libre et table à proximité.
+- Glissement des éléments sur le plan administrateur et repositionnement au viseur AR tactile pendant la préparation.
+- Départ explicite administrateur, jeu bloqué avant le départ et déplacement tactile bloqué en cours de partie.
+- Placements partagés et persistés, contrôles des obstacles et révisions ; pas de prise libre aux contrôleurs.
+
 ## 0.4.0
 
 - Coffre des quatre symboles, puis blackjack à une carte avec As souple et progression coopérative.

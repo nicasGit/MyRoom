@@ -1,8 +1,14 @@
-# Les deux premières énigmes — 0.4.0
+# Les deux premières énigmes — 0.4.1
 
 ## Préparer une pièce
 
 Dans l’administration, activer une pièce enregistrée puis ouvrir **Les deux énigmes AR**. Cliquer **Proposer des positions**, sélectionner chaque élément et ajuster sa position par clic sur le plan ou avec X/Z en mètres. Cliquer **Enregistrer les placements**. Les neuf emplacements sont conservés dans la bibliothèque du serveur, indépendamment pour chaque pièce.
+
+Depuis 0.4.1, la proposition varie à chaque clic : coffre au plus près du centre libre, table à proximité, puis balises et cartes réparties dans des secteurs autour, avec rotation et distances variables. Le centre visé est celui des limites du contour ; s’il tombe dans un obstacle ou hors d’une pièce concave, une position valide voisine est choisie. La répartition reste approximative dans une pièce étroite ou encombrée.
+
+Le plan permet aussi de saisir un repère et de le glisser à sa nouvelle place, à la souris ou au doigt. Enregistrer les changements avant de cliquer **Commencer les énigmes**. Avant ce départ explicite, le serveur refuse les actions de jeu. **Recommencer les deux énigmes** revient en préparation.
+
+Sur téléphone en AR, après A/B, ouvrir **Jouer aux énigmes**, choisir l’élément à déplacer, saisir le jeton administrateur dans le champ de placement, viser le sol et toucher **Placer cet élément au viseur**. Le viseur doit disposer d’une position valide très récente. Chaque déplacement est validé et enregistré sur le serveur, puis partagé ; le jeton reste en mémoire de page et n’est pas journalisé. Cette commande est refusée si la partie a commencé ou si une révision a changé. Sur casque sans DOM Overlay, utiliser pour cette version le plan admin depuis un autre appareil ; la prise d’objet libre aux contrôleurs n’est pas implémentée.
 
 Les éléments doivent être dans le contour, espacés d’au moins 60 cm et éloignés des obstacles déclarés. La proposition géométrique ne vérifie pas les passages réels : contrôler les positions et leur accessibilité. Une pièce trop petite ou encombrée peut être refusée. Pour modifier un obstacle qui recouvre un emplacement existant, déplacer cet emplacement ou retirer les énigmes avant le nouveau relevé.
 
