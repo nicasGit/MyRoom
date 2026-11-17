@@ -1,4 +1,4 @@
-# Les deux premières énigmes — 0.4.1
+# Les deux premières énigmes — 0.4.2
 
 ## Préparer une pièce
 
@@ -30,7 +30,15 @@ Le calibrage est local à chaque appareil, en mètres, avec alignement horizonta
 
 ## Le coffre des quatre symboles
 
-Trouver les quatre balises pour découvrir leurs symboles à toute l’équipe. Lire : « Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. » Entrer les symboles au coffre. Une erreur efface seulement la combinaison. La réussite ouvre le coffre animé et donne accès au blackjack. Un son accompagne la réussite lorsque le navigateur a autorisé l’audio.
+Trouver les quatre balises pour découvrir leurs symboles à toute l’équipe. Lire : « Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. » S’approcher du **panneau mural des symboles**, puis choisir les éléments dans l’ordre : chaque choix remplit un des quatre logements. Sur téléphone, toucher les boutons du panneau de commande AR ; sur casque, viser les tuiles du panneau mural et utiliser la gâchette. Une erreur efface seulement la combinaison. La réussite retire la serrure, ouvre le coffre et donne accès au blackjack. Un son accompagne la réussite lorsque le navigateur a autorisé l’audio.
+
+Le coffre comporte un corps creux avec planches et veinage de bois généré, un couvercle bombé articulé, des ferrures, rivets, poignées et une serrure. L’éclairage local sert la lisibilité ; il ne reproduit pas l’éclairage réel de la pièce.
+
+Le panneau mesure environ 1 × 0,8 m et son centre est à 1,35 m du sol, orienté vers l’intérieur du mur déclaré. Il possède quatre logements numérotés et quatre tuiles illustrées (soleil, arbre, lune, étoile). La validation serveur exige d’être à moins de 1,3 m du panneau, au lieu du coffre.
+
+Dans l’administration, sélectionner **Panneau mural des symboles**, puis cliquer/glisser sur le plan ou modifier X/Z. La position est rapprochée d’un segment mural libre, puis enregistrée avec la pièce. Le panneau peut aussi être déplacé au viseur pendant la préparation tactile AR : viser le sol près du mur souhaité. Il reste à hauteur fixe ; aucun glissement libre de tuiles aux contrôleurs n’est ajouté. Les ouvertures qui recouvrent sa zone et les obstacles déclarés sont exclus ; un mur doit mesurer au moins 1,2 m et la pièce au moins 1,8 m de haut. Le départ est refusé si aucun segment libre n’est disponible.
+
+Les anciennes pièces avec neuf points d’énigmes restent compatibles : un panneau est proposé automatiquement sur un mur libre, sans modifier les neuf points. Son emplacement normalisé est stocké lors de la prochaine sauvegarde de la bibliothèque. Le panneau utilise les murs du modèle et ne détecte pas lui-même le mur physique.
 
 ## La table du dernier As
 

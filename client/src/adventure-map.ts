@@ -1,6 +1,7 @@
-import type { Point2,RoomModel } from '../../server/src/scene-schema.js';
+import { puzzlePanel,type Point2,type RoomModel } from '../../server/src/scene-schema.js';
 export const ITEM_NAMES={chest:'Coffre',sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile',table:'Table de blackjack',four:'Carte 4',eight:'Carte 8',king:'Carte Roi'};
 export function drawMap(canvas:HTMLCanvasElement,model:RoomModel,markers:{point:Point2;label:string;color?:string}[],player?:Point2){
+  const panel=model.puzzles&&puzzlePanel(model);if(panel)markers=[...markers,{point:panel.position,label:'Panneau mural',color:'#c4a7ff'}];
   const context=canvas.getContext('2d')!;canvas.width=800;canvas.height=420;
   const xs=model.floor.map(p=>p.x),zs=model.floor.map(p=>p.z),minX=Math.min(...xs)-0.5,maxX=Math.max(...xs)+0.5,minZ=Math.min(...zs)-0.5,maxZ=Math.max(...zs)+0.5;
   const scale=Math.min(740/(maxX-minX),360/(maxZ-minZ)),ox=(800-(maxX-minX)*scale)/2,oz=(420-(maxZ-minZ)*scale)/2;

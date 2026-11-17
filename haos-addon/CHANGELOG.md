@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2
+
+- Coffre détaillé en bois : corps creux, couvercle bombé, ferrures, poignées, rivets et serrure retirée à l’ouverture.
+- Combinaison transférée sur un panneau mural avec tuiles illustrées et quatre logements synchronisés.
+- Position/orientation du panneau validées contre murs, portes, fenêtres et obstacles, avec déplacement depuis le plan ou le viseur tactile.
+- Compatibilité des anciennes pièces ; proximité serveur désormais contrôlée au panneau.
+
 ## 0.4.1
 
 - Proposition aléatoire répartie par secteurs, coffre près du centre libre et table à proximité.

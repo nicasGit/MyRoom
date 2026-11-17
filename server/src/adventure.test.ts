@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Adventure,parseAdventureCommand,blackjackScore,type AdventureCommand,SYMBOLS,CARDS } from './adventure.js';
-import { parseRoom,suggestPuzzleLayout,type RoomModel } from './scene-schema.js';
+import { parseRoom,suggestPuzzleLayout,puzzlePanel,panelPose,findPuzzlePanel,type RoomModel } from './scene-schema.js';
 import { RoomStore } from './room-store.js';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -18,7 +18,7 @@ test('sélection 3D : un rayon utilise la caméra pour toucher un panneau Sprite
   assert.equal(pickAdventureAction(group,camera.position,new THREE.Vector3(1,0,0),camera),undefined);
   sprite.material.dispose();
 });
-function game(){const room=fixture(),adventure=new Adventure();adventure.configure(room);adventure.start();return {room,adventure,act(action:AdventureCommand['action'],target:string,extra:Partial<AdventureCommand>={}){const point=action==='press_symbol'?'chest':action==='choose_card'?'table':target as keyof typeof room.puzzles.points;return adventure.act(parseAdventureCommand({type:'adventure_action',revision:adventure.snapshot().revision,libraryRevision:1,action,target,position:room.puzzles!.points[point],simulation:false,...extra}),room,1);}};}
+function game(){const room=fixture(),adventure=new Adventure();adventure.configure(room);adventure.start();return {room,adventure,act(action:AdventureCommand['action'],target:string,extra:Partial<AdventureCommand>={}){const point=action==='press_symbol'?puzzlePanel(room)!.position:room.puzzles!.points[action==='choose_card'?'table':target as keyof typeof room.puzzles.points];return adventure.act(parseAdventureCommand({type:'adventure_action',revision:adventure.snapshot().revision,libraryRevision:1,action,target,position:point,simulation:false,...extra}),room,1);}};}
 test('actions réseau : schéma strict, valeurs et cibles bornées',()=>{
   const command={type:'adventure_action',revision:1,libraryRevision:1,action:'discover_symbol',target:'sun',position:{x:1,z:1},simulation:false};
   assert.deepEqual(parseAdventureCommand(command),command);
@@ -88,4 +88,29 @@ test('répartition aléatoire ordonnée : principaux centraux, neuf points valid
     assert.ok(Math.hypot(layout.points.table.x-4,layout.points.table.z-3)<1.7);
   }
   assert.ok(variants.size>10);
+});
+test('panneau mural : anciennes pièces compatibles, position valide et persistée',()=>{
+  const room=fixture(),automatic=puzzlePanel(room);assert.ok(automatic);
+  assert.equal(automatic.height,1.35);assert.ok(Number.isFinite(automatic.yaw));
+  room.puzzles!.panel=automatic.panel;assert.deepEqual(parseRoom(room),room);
+  const directory=mkdtempSync(join(tmpdir(),'myroom-panel-'));
+  try{new RoomStore(directory).change('save',0,room);assert.deepEqual(new RoomStore(directory).active()?.puzzles?.panel,automatic.panel);}
+  finally{rmSync(directory,{recursive:true,force:true});}
+  assert.throws(()=>parseRoom({...room,puzzles:{...room.puzzles,panel:{wall:-1,offset:2}}}));
+  assert.throws(()=>panelPose(room,{wall:0,offset:0.1}));
+  const moved=findPuzzlePanel(room,{x:7.9,z:3});assert.equal(moved?.wall,1);
+});
+test('panneau mural : refuse ouvertures, obstacles et murs trop bas',()=>{
+  const room=fixture();
+  room.openings=[{name:'Porte',kind:'door',wall:0,offset:2,width:2,height:2.1,sill:0}];
+  assert.throws(()=>panelPose(room,{wall:0,offset:3}));
+  assert.ok(findPuzzlePanel(room));
+  room.openings=[];room.obstacles=[{name:'Meuble',x:3,z:0.5,width:1,depth:1,height:2}];
+  assert.throws(()=>panelPose(room,{wall:0,offset:3}));
+  assert.equal(findPuzzlePanel({...room,height:1.6}),undefined);
+});
+test('le coffre ne reçoit plus les symboles : il faut approcher le panneau',()=>{
+  const g=game();for(const id of SYMBOLS)g.act('discover_symbol',id);
+  assert.equal(g.act('press_symbol','sun',{position:g.room.puzzles!.points.chest}).changed,false);
+  assert.equal(g.act('press_symbol','sun').changed,true);
 });

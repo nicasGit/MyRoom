@@ -6,7 +6,7 @@ import { WebSocket } from 'ws';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join,resolve,dirname } from 'node:path';
-import { parseRoom,suggestPuzzleLayout } from './scene-schema.js';
+import { parseRoom,suggestPuzzleLayout,findPuzzlePanel } from './scene-schema.js';
 
 function messageOfType(ws: WebSocket, type: string, revision?: number,modelId?:string|null): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -99,7 +99,8 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
       const candidate=structuredClone(points);candidate.chest.x+=offset.x;candidate.chest.z+=offset.z;
       try{parseRoom({...configured,puzzles:{points:candidate}});points=candidate;break;}catch{/* Try the other direction around the obstacle. */}
     }
-    const placement={revision:4,gameRevision:preparation.revision,points};
+    const placement={revision:4,gameRevision:preparation.revision,points,panel:findPuzzlePanel(configured)};
+    assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify({...placement,panel:{wall:0,offset:0.01}})})).status,400);
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(placement)})).status,401);
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify(placement)})).status,200);
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify(placement)})).status,400);

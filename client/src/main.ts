@@ -20,7 +20,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.4.1');
+diagnostic('Version client', '0.4.2');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -135,9 +135,13 @@ enter.onclick = async () => {
     updateAdventureScene=()=>{
       const view=adventure.viewState(),key=JSON.stringify([view,calibration,survey.hasDraft()]);
       if(key===gameKey)return;gameKey=key;
+      const previousLid=gameGroup?.userData.lid as THREE.Group|undefined;
+      const previousAngle=previousLid?.rotation.x,previousTarget=previousLid?.userData.targetAngle;
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
       if(!calibration||!view||survey.hasDraft())return;
       gameGroup=adventureGroup(view.model,view.state);
+      const lid=gameGroup.userData.lid as THREE.Group|undefined;
+      if(lid&&previousAngle!==undefined&&previousTarget===lid.userData.targetAngle)lid.rotation.x=previousAngle;
       gameGroup.position.copy(calibration.origin);gameGroup.rotation.y=-calibration.yaw;scene.add(gameGroup);
     };
     const camera = new THREE.PerspectiveCamera();

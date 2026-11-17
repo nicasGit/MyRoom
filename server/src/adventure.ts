@@ -1,4 +1,4 @@
-import { inside,type Point2,type RoomModel } from './scene-schema.js';
+import { inside,puzzlePanel,type Point2,type RoomModel } from './scene-schema.js';
 export const SYMBOLS=['sun','tree','moon','star'] as const;
 export const CARDS=['four','eight','king'] as const;
 export type SymbolId=typeof SYMBOLS[number];
@@ -19,7 +19,7 @@ export class Adventure {
   private state:AdventureState={running:false,revision:0,phase:'unconfigured',testMode:false,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:'Configurer les énigmes dans l’administration.'};
   configure(model:RoomModel|null){const key=JSON.stringify(model);if(key!==this.key){this.key=key;this.reset(!!model?.puzzles);}}
   reset(configured=this.state.phase!=='unconfigured'){
-    this.state={running:false,revision:this.state.revision+1,phase:configured?'symbols':'unconfigured',testMode:this.state.testMode,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:configured?'Retrouvez les quatre balises, puis entrez les symboles au coffre.':'Configurer les énigmes dans l’administration.'};
+    this.state={running:false,revision:this.state.revision+1,phase:configured?'symbols':'unconfigured',testMode:this.state.testMode,symbols:{found:[],entered:[],attempts:0},blackjack:{found:[],chosen:null,total:17,ace:11,attempts:0},message:configured?'Retrouvez les quatre balises, puis entrez les symboles au panneau mural.':'Configurer les énigmes dans l’administration.'};
   }
   start(){if(this.state.phase==='unconfigured')throw new Error('Configurez les placements avant de commencer.');if(!this.state.running){this.state.running=true;this.state.revision++;}}
   setTestMode(enabled:boolean){if(enabled!==this.state.testMode){this.state.testMode=enabled;this.state.revision++;}}
@@ -32,8 +32,9 @@ export class Adventure {
     if(command.revision!==this.state.revision||command.libraryRevision!==libraryRevision)return reject('La partie a changé. Réessayez avec le nouvel état.');
     if(command.simulation&&!this.state.testMode)return reject('Le test PC doit être autorisé par l’administrateur.');
     if(!inside(command.position,model.floor))return reject('Position déclarée hors de la pièce. Refaites le calibrage A/B.');
-    const points=model.puzzles.points,target=command.action==='press_symbol'?'chest':command.action==='choose_card'?'table':command.target as SymbolId|CardId;
-    if(Math.hypot(command.position.x-points[target].x,command.position.z-points[target].z)>1.3)return reject('Approchez-vous à moins de 1,3 m de cet élément.');
+    const points=model.puzzles.points,target=command.action==='press_symbol'?puzzlePanel(model)?.position:points[command.action==='choose_card'?'table':command.target as SymbolId|CardId];
+    if(!target)return reject('Aucun emplacement mural libre : configurez le panneau.');
+    if(Math.hypot(command.position.x-target.x,command.position.z-target.z)>1.3)return reject('Approchez-vous à moins de 1,3 m de cet élément.');
     if(command.action==='discover_symbol'){
       const id=command.target as SymbolId;if(this.state.phase!=='symbols')return reject('Le coffre est déjà ouvert.');
       if(this.state.symbols.found.includes(id))return reject('Cette balise est déjà découverte.');

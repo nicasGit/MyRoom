@@ -4,6 +4,7 @@ import type { WebSocket } from 'ws';
 import type { Room } from './room.js';
 import { log, recentLogs } from './logger.js';
 import type { RoomStore } from './room-store.js';
+import { puzzlePanel } from './scene-schema.js';
 
 export type Connection = { socket: WebSocket; address?: string; userAgent?: string; connectedAt: string };
 const started = Date.now();
@@ -56,13 +57,14 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     if(req.url?.startsWith('/api/admin/adventure/')){
       room.adventure.configure(room.model);
       if(req.url.endsWith('/place')){
-        if(!room.model||room.adventure.snapshot().running||!('gameRevision' in body)||body.gameRevision!==room.adventure.snapshot().revision||Object.keys(body).sort().join(',')!=='gameRevision,points,revision')throw new Error('Placement impossible : actualisez la préparation.');
+        if(!room.model||room.adventure.snapshot().running||!('gameRevision' in body)||body.gameRevision!==room.adventure.snapshot().revision||!['gameRevision,points,revision','gameRevision,panel,points,revision'].includes(Object.keys(body).sort().join(',')))throw new Error('Placement impossible : actualisez la préparation.');
         const command=body as Record<string,unknown>;
-        const library=store.change('save',command.revision,{...room.model,puzzles:{points:command.points}});
+        const panel=command.panel??room.model.puzzles?.panel??puzzlePanel(room.model)?.panel;
+        const library=store.change('save',command.revision,{...room.model,puzzles:{points:command.points,...(panel===undefined?{}:{panel})}});
         room.model=store.active();room.libraryRevision=library.revision;
         log('adventure_placement',{revision:library.revision,activeId:library.activeId});broadcast();reply(res,200,{library});return;
       }
-      if(req.url.endsWith('/start')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.start();}
+      if(req.url.endsWith('/start')){if(Object.keys(body).length)throw new Error('Objet vide attendu');if(!room.model||!puzzlePanel(room.model)){reply(res,400,{error:'Aucun mur libre pour le panneau des symboles.'});return;}room.adventure.start();}
       else if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.reset();}
       else {if(Object.keys(body).length!==1||!('enabled' in body)||typeof body.enabled!=='boolean')throw new Error('Booléen attendu');room.adventure.setTestMode(body.enabled);}
       log('adventure_admin',{action:req.url.split('/').at(-1),testMode:room.adventure.snapshot().testMode});broadcast();reply(res,200,{ok:true});return;

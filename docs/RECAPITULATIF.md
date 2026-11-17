@@ -4,6 +4,17 @@
 
 ## 1. Projet et architecture
 
+### Ajout du 17 novembre 2026 — coffre détaillé et panneau mural, 0.4.2
+
+Contrôles 3D complémentaires dans Chrome : rayon synthétique sur une tuile du panneau correctement résolu en action `press_symbol` ; ouverture du couvercle convergeant vers −1,5 radian après 120 images simulées et serrure invisible après réussite. Pièce temporaire supprimée et simulation serveur désactivée à la fin des essais. Ces contrôles logiciels ne constituent pas un essai WebXR sur casque.
+
+- Coffre Three.js avec corps creux, planches et texture de veinage générée en Canvas, couvercle bombé articulé, sangles métalliques, rivets, poignées et serrure retirée à la réussite. Matériaux bois/métal avec éclairage local ; conservation de l’angle du couvercle lors des mises à jour de partie pour éviter de répéter l’ouverture.
+- Combinaison déplacée sur un panneau mural : quatre tuiles illustrées et quatre logements montrant les choix partagés. Saisie par boutons tactiles ou sélection du panneau 3D à la gâchette ; il faut désormais approcher le panneau pour entrer les symboles.
+- Panneau de 1 × 0,8 m à hauteur centrale fixe de 1,35 m, orienté vers l’intérieur ; validation du mur, des marges aux coins, des ouvertures et obstacles. Proposition automatique pour les anciennes pièces, sans déplacement de leurs neuf points. Position mur/décalage persistée à la sauvegarde.
+- Sélection et déplacement du panneau sur le plan administrateur et au viseur tactile pendant la préparation. Départ bloqué si aucun mur libre ; aucune prise libre de tuiles ajoutée.
+
+Vérifications : typecheck, compilation et 39 tests réussis. Trois nouveaux tests couvrent migration/stockage du panneau, placement et exclusions géométriques, et refus de saisir les symboles depuis le coffre ; test réseau étendu pour accepter un panneau valide et refuser un placement mural invalide. Dans Chrome local, rendu du coffre fermé et du panneau inspecté ; panneau déplacé sur un autre mur depuis l’administration et sauvegardé ; parcours en simulation avec erreur de combinaison, puis ordre correct débloquant le blackjack. Aucun essai physique sur téléphone ou Quest, pas de détection automatique des murs réels ni de restitution de leur éclairage. Guide, architecture et changelog actualisés. Publication 0.4.2 à confirmer.
+
 ### Ajout du 17 novembre 2026 — préparation et placements, 0.4.1
 
 Publication confirmée : commit `181ed20`, workflow GitHub Actions `44138561838` réussi et manifeste ARM64 0.4.1 disponible dans GHCR après ce workflow. Vérification logicielle supplémentaire : cent variantes d’une pièce 4 × 3 m avec obstacle central ont toutes produit un placement validé. Cela ne valide pas les passages physiques ni l’exécution sur HAOS.

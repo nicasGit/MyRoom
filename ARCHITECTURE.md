@@ -2,6 +2,8 @@
 
 ## Énigmes coopératives
 
+Depuis 0.4.2, `puzzles.panel` ajoute facultativement un mur et un décalage le long de celui-ci. Les anciennes pièces reçoivent une proposition normalisée, persistée à leur prochaine sauvegarde. Le panneau est orienté vers l’intérieur et centré à 1,35 m du sol ; sa zone est validée contre les ouvertures et obstacles déclarés. Les actions `press_symbol` utilisent sa position horizontale pour la proximité. Les logements reflètent `symbols.entered` ; la géométrie du coffre et son animation n’autorisent aucune résolution locale.
+
 Le modèle de pièce peut contenir neuf points d’énigmes validés et persistés dans sa bibliothèque. Le serveur maintient une progression commune en mémoire : symboles, combinaison du coffre, cartes et choix unique au blackjack. Chaque action transporte les révisions de partie et de bibliothèque, une position horizontale bornée et un indicateur de simulation. Le serveur vérifie phase, découvertes, proximité et règles ; une position déclarée ne prouve pas la présence physique. La simulation PC nécessite une autorisation admin temporaire. Voir le [guide des énigmes](docs/first-puzzles.md).
 
 Navigateur Quest → HTTPS/WSS → Nginx frontal (TLS) → Nginx add-on :8080 → serveur Node.js :3000 pour /ws. Nginx sert les fichiers du client Three.js compilés avec Vite. En développement Vite relaie /ws vers Node.

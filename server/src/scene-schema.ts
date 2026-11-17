@@ -4,7 +4,8 @@ export type Obstacle = { name: string; x: number; z: number; width: number; dept
 export type Opening = { name:string; kind:'door'|'window'; wall:number; offset:number; width:number; height:number; sill:number };
 export const PUZZLE_ITEMS=['chest','sun','tree','moon','star','table','four','eight','king'] as const;
 export type PuzzleItem=typeof PUZZLE_ITEMS[number];
-export type PuzzleLayout={points:Record<PuzzleItem,Point2>};
+export type WallPanel={wall:number;offset:number};
+export type PuzzleLayout={points:Record<PuzzleItem,Point2>;panel?:WallPanel};
 export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[]; puzzles?:PuzzleLayout };
 export type RoomLibrary = { version: 1; revision: number; activeId: string | null; rooms: RoomModel[] };
 const number = (n: unknown, min: number, max: number): n is number => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
@@ -88,7 +89,7 @@ export function parseRoom(value: unknown): RoomModel {
   const room:RoomModel={id:r.id,name:r.name.trim(),floor,height:r.height,obstacles,openings};
   if(r.puzzles!==undefined){
     const layout=object(r.puzzles),raw=object(layout.points);
-    if(Object.keys(layout).length!==1||Object.keys(raw).length!==PUZZLE_ITEMS.length)throw new Error('Placer les neuf éléments des énigmes.');
+    if(Object.keys(layout).some(key=>!['points','panel'].includes(key))||Object.keys(raw).length!==PUZZLE_ITEMS.length)throw new Error('Placer les neuf éléments des énigmes.');
     const points={} as Record<PuzzleItem,Point2>;
     for(const id of PUZZLE_ITEMS){
       const p=object(raw[id]);
@@ -97,12 +98,44 @@ export function parseRoom(value: unknown): RoomModel {
       for(const other of Object.values(points))if(other!==points[id]&&Math.hypot(other.x-p.x,other.z-p.z)<0.6)throw new Error('Écarter les éléments des énigmes d’au moins 60 cm.');
     }
     room.puzzles={points};
+    if(layout.panel!==undefined){
+      const panel=object(layout.panel);
+      if(Object.keys(panel).sort().join(',')!=='offset,wall'||!Number.isSafeInteger(panel.wall)||!number(panel.offset,0,100))throw new Error('Position du panneau mural invalide.');
+      room.puzzles.panel={wall:panel.wall as number,offset:panel.offset};
+      panelPose(room,room.puzzles.panel);
+    }else{const proposed=findPuzzlePanel(room);if(proposed)room.puzzles.panel=proposed;}
   }
   return room;
 }
 export function canPlacePuzzlePoint(p:Point2,room:Pick<RoomModel,'floor'|'obstacles'>){
   return [-0.2,0.2].every(x=>[-0.2,0.2].every(z=>inside({x:p.x+x,z:p.z+z},room.floor)))&&inside(p,room.floor)&&!room.obstacles.some(o=>Math.abs(p.x-o.x)<o.width/2+0.2&&Math.abs(p.z-o.z)<o.depth/2+0.2);
 }
+// A one-metre panel centred 1.35 m above the floor, facing the room interior.
+export function panelPose(room:RoomModel,panel:WallPanel){
+  const a=room.floor[panel.wall],b=room.floor[(panel.wall+1)%room.floor.length];
+  if(!a||!b||room.height<1.8)throw new Error('Mur trop bas ou introuvable pour le panneau.');
+  const length=Math.hypot(b.x-a.x,b.z-a.z),ux=(b.x-a.x)/length,uz=(b.z-a.z)/length;
+  if(panel.offset<0.6||panel.offset>length-0.6)throw new Error('Le panneau doit rester à 60 cm des coins du mur.');
+  const mid={x:a.x+ux*panel.offset,z:a.z+uz*panel.offset};
+  let nx=-uz,nz=ux;if(!inside({x:mid.x+nx*0.08,z:mid.z+nz*0.08},room.floor)){nx=-nx;nz=-nz;}
+  const position={x:mid.x+nx*0.08,z:mid.z+nz*0.08};
+  if(![-0.5,0,0.5].every(d=>inside({x:position.x+ux*d,z:position.z+uz*d},room.floor)))throw new Error('Panneau hors du contour.');
+  if(room.openings.some(o=>o.wall===panel.wall&&Math.min(o.offset+o.width,panel.offset+0.5)>Math.max(o.offset,panel.offset-0.5)&&Math.min(o.sill+o.height,1.75)>Math.max(o.sill,0.95)))throw new Error('Le panneau chevauche une porte ou une fenêtre.');
+  if([-0.5,0,0.5].some(d=>room.obstacles.some(o=>Math.abs(position.x+ux*d-o.x)<o.width/2+0.15&&Math.abs(position.z+uz*d-o.z)<o.depth/2+0.15)))throw new Error('Le panneau rencontre un obstacle déclaré.');
+  return {position,yaw:Math.atan2(nx,nz),height:1.35};
+}
+export function findPuzzlePanel(room:RoomModel,target:Point2=room.puzzles?.points.chest??room.floor[0]):WallPanel|undefined{
+  const candidates:{panel:WallPanel;distance:number}[]=[];
+  room.floor.forEach((a,wall)=>{
+    const b=room.floor[(wall+1)%room.floor.length],length=Math.hypot(b.x-a.x,b.z-a.z);
+    const projection=((target.x-a.x)*(b.x-a.x)+(target.z-a.z)*(b.z-a.z))/length;
+    const offsets=[Math.max(0.6,Math.min(length-0.6,projection))];
+    for(let offset=0.6;offset<=length-0.6;offset+=0.25)offsets.push(offset);
+    for(const offset of offsets){const panel={wall,offset:Number(offset.toFixed(3))};try{const pose=panelPose(room,panel);candidates.push({panel,distance:Math.hypot(pose.position.x-target.x,pose.position.z-target.z)});}catch{/* Try another unobstructed wall segment. */}}
+  });
+  return candidates.sort((a,b)=>a.distance-b.distance)[0]?.panel;
+}
+export function puzzlePanel(room:RoomModel){const panel=room.puzzles?.panel??findPuzzlePanel(room);return panel?{panel,...panelPose(room,panel)}:undefined;}
 export function suggestPuzzleLayout(room:RoomModel,random:()=>number=Math.random):PuzzleLayout{
   const xs=room.floor.map(p=>p.x),zs=room.floor.map(p=>p.z),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
   const step=Math.max(0.35,Math.max(maxX-minX,maxZ-minZ)/60),candidates:Point2[]=[];

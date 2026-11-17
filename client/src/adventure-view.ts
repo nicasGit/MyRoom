@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import type { AdventureState } from '../../server/src/adventure.js';
-import type { PuzzleItem,RoomModel } from '../../server/src/scene-schema.js';
+import type { AdventureState,SymbolId } from '../../server/src/adventure.js';
+import { puzzlePanel,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
+import { createChest } from './chest-view';
 export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'};
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};
 export const CARD_CLUES={four:'Mes quatre coins gardent quatre saisons.',eight:'Deux fois les saisons de l’année.',king:'Je porte une couronne ; ma valeur est dix.'};
@@ -17,19 +18,50 @@ function label(text:string,color:string){
 }
 function box(width:number,height:number,depth:number,color:number){return new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),new THREE.MeshBasicMaterial({color}));}
 function actionLabel(text:string,color:string,action:Action){const sprite=label(text,color);sprite.userData.action=action;return sprite;}
+function plaque(text:string,color:string,width:number,height:number){
+  const sprite=label(text,color),material=new THREE.MeshBasicMaterial({map:sprite.material.map});sprite.material.dispose();
+  return new THREE.Mesh(new THREE.PlaneGeometry(width,height),material);
+}
+function symbolTile(id:SymbolId|undefined,color:string,index:number){
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;const ctx=canvas.getContext('2d')!;
+  ctx.fillStyle='#182630';ctx.fillRect(0,0,256,256);ctx.strokeStyle=color;ctx.lineWidth=8;ctx.strokeRect(5,5,246,246);ctx.fillStyle=color;ctx.lineWidth=6;
+  if(id==='sun'){
+    ctx.beginPath();ctx.arc(128,105,33,0,Math.PI*2);ctx.fill();
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;ctx.beginPath();ctx.moveTo(128+44*Math.cos(a),105+44*Math.sin(a));ctx.lineTo(128+62*Math.cos(a),105+62*Math.sin(a));ctx.stroke();}
+  }else if(id==='tree'){
+    ctx.fillRect(118,130,20,45);ctx.beginPath();ctx.moveTo(128,40);ctx.lineTo(185,143);ctx.lineTo(71,143);ctx.closePath();ctx.fill();
+  }else if(id==='moon'){
+    ctx.beginPath();ctx.arc(125,106,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#182630';ctx.beginPath();ctx.arc(151,87,53,0,Math.PI*2);ctx.fill();
+  }else if(id==='star'){
+    ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2?27:63;const x=128+r*Math.cos(a),y=105+r*Math.sin(a);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);}ctx.closePath();ctx.fill();
+  }else{ctx.font='bold 80px sans-serif';ctx.textAlign='center';ctx.fillText(String(index+1),128,145);}
+  ctx.fillStyle=color;ctx.font='bold 30px sans-serif';ctx.textAlign='center';if(id)ctx.fillText(SYMBOL_NAMES[id],128,225);
+  const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(0.21,0.19),new THREE.MeshBasicMaterial({map}));
+}
+function wallConsole(model:RoomModel,state:AdventureState){
+  const pose=puzzlePanel(model);if(!pose)return;
+  const panel=new THREE.Group();panel.name='wall-symbol-panel';panel.position.set(pose.position.x,pose.height,pose.position.z);panel.rotation.y=pose.yaw;
+  const frame=box(1.04,0.8,0.065,0x705332);panel.add(frame);
+  const face=box(0.97,0.73,0.025,0x172630);face.position.z=0.045;panel.add(face);
+  const title=plaque(state.phase==='symbols'?'Sceaux du coffre':'Coffre déverrouillé','#ffe082',0.8,0.12);title.position.set(0,0.27,0.065);panel.add(title);
+  for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
+    const inserted=state.symbols.entered[i],slot=symbolTile(inserted,'#a7f3a0',i);slot.position.set((i-1.5)*0.235,0.08,0.065);panel.add(slot);
+    const button=symbolTile(id,state.symbols.found.length===4?'#ffe082':'#64748b',i);button.position.set((i-1.5)*0.235,-0.14,0.065);
+    button.userData.action={action:'press_symbol',target:id};panel.add(button);
+  }
+  const hint=plaque('Choisir les symboles dans le bon ordre','#c3d8eb',0.85,0.09);hint.position.set(0,-0.29,0.065);panel.add(hint);
+  return panel;
+}
 export function adventureGroup(model:RoomModel,state:AdventureState){
   const group=new THREE.Group();if(!model.puzzles)return group;
   const at=(id:PuzzleItem)=>{const p=model.puzzles!.points[id],node=new THREE.Group();node.position.set(p.x,0,p.z);group.add(node);return node;};
-  const chest=at('chest'),base=box(0.65,0.4,0.45,0x755038);base.position.y=0.22;chest.add(base);
-  const hinge=new THREE.Group();hinge.position.set(0,0.44,-0.225);const lid=box(0.69,0.1,0.48,0xc6984e);lid.position.set(0,0,0.24);hinge.add(lid);chest.add(hinge);
-  hinge.userData.targetAngle=state.phase==='blackjack'||state.phase==='complete'?-1.45:0;group.userData.lid=hinge;
+  const chest=at('chest'),crafted=createChest(state.phase==='blackjack'||state.phase==='complete');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
+  const panel=wallConsole(model,state);if(panel)group.add(panel);
   const heading=label(state.phase==='symbols'?'Le coffre':'Coffre ouvert','#ffe082');heading.position.y=1.05;chest.add(heading);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
     const found=!state.running||state.symbols.found.includes(id),node=at(id),pole=box(0.05,0.65,0.05,0x64748b);pole.position.y=0.325;node.add(pole);
     const sign=actionLabel(found?SYMBOL_NAMES[id]:`Balise ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_symbol',target:id});sign.position.y=0.85;node.add(sign);
-    if(state.phase==='symbols'){
-      const button=actionLabel(SYMBOL_NAMES[id],'#ffe082',{action:'press_symbol',target:id});button.scale.set(0.32,0.1,1);button.position.set((i%2-0.5)*0.37,0.72-Math.floor(i/2)*0.16,0.3);chest.add(button);
-    }
   }
   if(state.running&&state.phase!=='blackjack'&&state.phase!=='complete')return group;
   const table=at('table'),felt=new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.55,0.07,24),new THREE.MeshBasicMaterial({color:0x126b54}));felt.position.y=0.74;table.add(felt);
