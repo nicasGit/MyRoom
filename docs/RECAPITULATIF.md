@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.4**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.0**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -14,9 +14,11 @@
 - Simulation solo PC autorisée explicitement par l’administrateur ; progression commune jusqu’à quatre joueurs, remise à zéro admin. Placements persistés, partie et autorisation de simulation en mémoire uniquement.
 - Guide : [les deux premières énigmes](first-puzzles.md).
 
-Vérifications exécutées : typecheck et compilation réussis ; 33 tests réussis, dont six nouveaux tests sur règles, validation et stockage, dont un test de s?lection 3D des panneaux Sprite avec cam?ra explicite, et extension du test HTTP/WebSocket vérifiant la diffusion aux quatre joueurs, les révisions et les protections admin. Dans Chrome local : proposition et sauvegarde des placements depuis l’administration, parcours complet en simulation avec erreur de combinaison, cartes 8 et Roi incorrectes puis 4 gagnant, construction/libération de la scène 3D finale. Pièce temporaire supprimée et simulation serveur désactivée après le test.
+Vérifications exécutées : typecheck et compilation réussis ; 34 tests réussis, dont sept nouveaux tests sur règles, validation, stockage et sélection 3D des panneaux Sprite avec caméra explicite ; extension du test HTTP/WebSocket vérifiant la diffusion aux quatre joueurs, les révisions et les protections admin. Dans Chrome local : proposition et sauvegarde des placements depuis l’administration, parcours complet en simulation avec erreur de combinaison, cartes 8 et Roi incorrectes puis 4 gagnant, construction/libération de la scène 3D finale. Pièce temporaire supprimée et simulation serveur désactivée après le test.
 
-Limites : aucun essai physique téléphone/Quest par l’agent ; pas de preuve de position physique, d’ancre partagée, d’occultation du mobilier réel ou de vérification automatique des passages. La proposition des positions doit être vérifiée dans la pièce. L’audio dépend de son autorisation par le navigateur. Avertissement Vite conservé pour le bloc Three.js supérieur à 500 kB. Publication 0.4.0 non encore confirmée à cette étape.
+Limites : aucun essai physique téléphone/Quest par l’agent ; pas de preuve de position physique, d’ancre partagée, d’occultation du mobilier réel ou de vérification automatique des passages. La proposition des positions doit être vérifiée dans la pièce. L’audio dépend de son autorisation par le navigateur. Avertissement Vite conservé pour le bloc Three.js supérieur à 500 kB.
+
+Publication 0.4.0 confirmée le 17 novembre : fonctionnalités du commit `59f40b0`, correction de sélection 3D `a76ff4e`, workflow GitHub Actions `44133245925` réussi et manifeste ARM64 0.4.0 vérifié dans GHCR après ce workflow. Cette vérification confirme la disponibilité de l’image, pas son exécution sur HAOS ou un appareil physique. Le lien de récapitulatif du README a également été actualisé.
 
 Ce récapitulatif doit être actualisé à chaque modification du projet, dans le même ensemble de changements. Cette règle est inscrite dans les [consignes du dépôt](../AGENTS.md) et couvre aussi la configuration, le déploiement et la documentation. Les vérifications rapportées doivent correspondre à celles effectivement exécutées ; une version ou publication ne doit pas être annoncée avant confirmation.
 

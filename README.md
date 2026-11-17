@@ -2,7 +2,7 @@
 
 Deux énigmes coopératives : **Le coffre des quatre symboles**, puis **La table du dernier As**. Placement dans l’administration et simulation solo sur PC : [guide des énigmes](docs/first-puzzles.md).
 
-[Récapitulatif des réalisations jusqu’à la version 0.3.0](docs/RECAPITULATIF.md) : fonctionnalités, versions, utilisation et limites de validation.
+[Récapitulatif des réalisations](docs/RECAPITULATIF.md) : fonctionnalités, versions, utilisation et limites de validation.
 
 Squelette de jeu AR partagé pour quatre joueurs dans la même pièce : Three.js + TypeScript + WebXR, serveur Node.js + WebSocket, add-on Home Assistant OS pour Raspberry Pi 5 ARM64 et accès HTTPS par Nginx.
 
