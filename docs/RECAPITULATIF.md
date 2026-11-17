@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.1**, version **0.3.2 en préparation**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.2**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -201,6 +201,7 @@ Voir [le guide Quest et ses limites](quest-scan.md).
 | 0.2.2 | `3467c20` | Portes et fenêtres sauvegardées, avec découpes des murs |
 | 0.3.0 | `f23af74` | Import expérimental des surfaces Quest et commandes contrôleur |
 | 0.3.1 | `8c240bc` | Barre de commandes stable après B pour éviter une activation involontaire de Quitter |
+| 0.3.2 | `98dc09a` | Application web installable depuis Chrome avec icônes et lancement autonome |
 
 Voir aussi le [changelog de l’add-on](../haos-addon/CHANGELOG.md).
 
@@ -271,3 +272,5 @@ Le développement se consulte sur `http://localhost:5173/` ; l’administration 
 L’installation réelle sur un téléphone et l’AR depuis l’application installée restent à valider physiquement. L’installation n’ajoute pas les capacités WebXR absentes du téléphone et ne configure pas l’accès extérieur au serveur.
 
 Vérifications du 17 novembre : typecheck et compilation réussis après correction d’un conflit de déclaration TypeScript dans le nouveau module ; 26 tests existants réussis. Dans Chrome intégré, manifeste chargé et trois icônes décodées aux dimensions déclarées ; événements d’installation synthétiques vérifiant proposition, annulation, acceptation sans confirmation prématurée, confirmation et erreur du navigateur. Aucune installation Android réelle effectuée. Le type MIME Nginx est configuré mais n’a pas été essayé localement dans un conteneur.
+
+Publication 0.3.2 confirmée le 17 novembre : workflow du commit `98dc09a` terminé avec succès et manifeste de l’image ARM64 disponible dans GHCR. L’installation sur le téléphone de l’utilisateur reste à effectuer.
