@@ -22,7 +22,21 @@ Après avoir fermé le contour, ou via **Modifier la pièce active**, ouvrir **P
 
 Les ouvertures doivent tenir entièrement dans le mur, sans chevauchement. Maximum : 32 par pièce. Leur contour est vert pour une porte, jaune pour une fenêtre ; le mur est découpé dans l’aperçu et en AR. **Retirer** supprime une ouverture du brouillon ; **Enregistrer et activer** conserve toutes les modifications sur le serveur. Les anciennes pièces restent lisibles avec une liste d’ouvertures vide. Chaque ouverture stocke le mur, la distance au coin, les dimensions et la hauteur du bas. Pas de vantail animé, vitrage, collision ou détection automatique d’ouverture.
 
-## Plusieurs pièces
+## Sauvegarde sur téléphone — 0.3.3
+
+Fermer le contour avant **Enregistrer et activer**. Le message situé sous le bouton indique s’il reste un contour à fermer, un obstacle à terminer ou une ouverture à placer. Un contour invalide affiche aussi son erreur à cet endroit.
+
+Le jeton peut être saisi avant l’AR sur la page, ou directement dans **Autorisation d’enregistrement** dans le panneau AR. Il correspond à `admin_token` dans la configuration de l’add-on HAOS et comporte au moins 16 caractères. Le champ AR est prioritaire s’il est rempli ; les deux champs sont effacés après lecture et le jeton ne reste qu’en mémoire de page. Un refus d’authentification ouvre ce panneau pour corriger le jeton sans perdre le brouillon. Il n’est ni enregistré dans la pièce ni envoyé au journal.
+
+Les erreurs d’origine, d’autorisation ou de réponse du proxy sont affichées près du bouton. En cas de délai dépassé, vérifier la bibliothèque admin avant de réessayer : le serveur peut avoir reçu la sauvegarde même si la réponse manque. Les événements `survey_save_requested`, `survey_save_succeeded` et `survey_save_failed` permettent de suivre la tentative dans HAOS. Si aucun événement n’arrive, vérifier d’abord la connexion du journal.
+
+### Alignement local
+
+Après sauvegarde, déplier **Ajuster l’alignement sur cet appareil** : déplacer l’affichage de 5 cm sur l’axe A/B ou perpendiculairement, monter/descendre de 5 cm, tourner de 1°. **Annuler les ajustements** retrouve le calibrage A/B initial de cette session. Ce réglage est désactivé tant qu’un brouillon existe, pour ne pas changer de référentiel au milieu d’un relevé.
+
+La géométrie du serveur et les autres joueurs restent inchangés. Le réglage est perdu à la fin de session, au recentrage ou au changement de pièce active. Il aide pour un décalage stable ; il ne corrige pas la dérive du suivi, un sol estimé incorrect ou une forme mal relevée. Refaire A/B si nécessaire, avec les mêmes repères physiques et une séparation d’environ 1 à 2 m si la pièce le permet. Les commandes nécessitent le panneau DOM Overlay ; elles ne sont pas ajoutées aux boutons des contrôleurs Quest.
+
+## Gestion de plusieurs pièces
 
 L'administration affiche une bibliothèque de **20 pièces maximum**, leur surface, hauteur et nombre d'obstacles. **Activer** sélectionne une seule pièce pour la salle multijoueur ; cela ne crée pas plusieurs parties simultanées. Les clients présents reçoivent le modèle actif. Une activation avec changement d'identifiant invalide leur calibrage : ils doivent refaire A/B dans la pièce physique correspondante. Enregistrer son propre relevé conserve le calibrage de cet appareil.
 

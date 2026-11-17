@@ -3,6 +3,8 @@ const events = new Set([
   'placement_requested', 'placement_accepted', 'placement_rejected', 'placement_timeout',
   'calibration_reset', 'calibration_completed', 'tracking_changed',
   'scan_status','scan_imported','scan_error',
+  'survey_save_requested','survey_save_succeeded','survey_save_failed',
+  'calibration_adjusted',
 ]);
 export function parseXREvent(value: unknown): { event: string; details: Record<string, unknown> } | undefined {
   if (!value || typeof value !== 'object' || !('type' in value) || value.type !== 'xr_event' || !('event' in value) || typeof value.event !== 'string' || !events.has(value.event)) return;

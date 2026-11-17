@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Vector3 } from 'three';
-import { projectToFloor, makeCalibration, toRoom } from '../../client/src/calibration.ts';
+import { projectToFloor, makeCalibration, toRoom,nudgeCalibration } from '../../client/src/calibration.ts';
 
 test('projection tactile : intersection du rayon central avec le sol local', () => {
   const origin = new Vector3(1, 1.5, 2);
@@ -25,4 +25,16 @@ test('deux points : distance minimale et repère horizontal en mètres', () => {
   const calibration = makeCalibration(a, b);
   assert.ok(toRoom(a, calibration).length() < 1e-9);
   assert.ok(toRoom(b, calibration).distanceTo(new Vector3(2, 0, 0)) < 1e-9);
+});
+
+test('ajustement local : déplacement suivant A/B et rotation sans muter le calibrage initial',()=>{
+  const base=makeCalibration(new Vector3(3,0,4),new Vector3(3,0,6));
+  const offset=new Vector3(0.05,0.1,0);
+  const shifted=nudgeCalibration(base,offset,0);
+  assert.ok(shifted.origin.distanceTo(new Vector3(3,0.1,4.05))<1e-9);
+  assert.ok(base.origin.distanceTo(new Vector3(3,0,4))<1e-9);assert.equal(offset.x,0.05);
+  const rotated=nudgeCalibration(base,new Vector3(),Math.PI/180);
+  assert.ok(Math.abs(rotated.yaw-base.yaw-Math.PI/180)<1e-9);
+  assert.equal(rotated.distance,base.distance);
+  assert.throws(()=>nudgeCalibration(base,new Vector3(NaN,0,0),0));
 });

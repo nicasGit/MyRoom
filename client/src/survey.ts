@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { toRoom, type makeCalibration } from './calibration';
-import { parseFloor,parseRoom,area,type RoomModel,type RoomLibrary,type Point2 } from '../../server/src/scene-schema.js';
+import { parseFloor,parseRoom,parseLibrary,area,type RoomModel,type RoomLibrary,type Point2 } from '../../server/src/scene-schema.js';
 import { createPreview } from './model-view';
 type Calibration=ReturnType<typeof makeCalibration>;
 const el=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -12,12 +12,13 @@ export class Survey {
   private token='';
   private firstCorner:Point2|undefined;
   private saving=false;
+  private saveMessage='';
   private stage:'none'|'floor'|'ready'|'obstacle'|'opening'='none';
   private wallKey='';
   private edits:('opening'|'obstacle')[]=[];
   private preview=createPreview(el('room-preview'));
   private previewKey='';
-  constructor(private getCalibration:()=>Calibration|undefined,private feedback:(message:string)=>void,private changed:()=>void,private activeChanged:()=>void) {
+  constructor(private getCalibration:()=>Calibration|undefined,private feedback:(message:string)=>void,private changed:()=>void,private activeChanged:()=>void,private report:(event:string,reason:string)=>void=()=>{}) {
     el('survey-new').onclick=()=>this.begin(false);
     el('survey-edit').onclick=()=>this.begin(true);
     el('opening-kind').onchange=()=>{
@@ -30,8 +31,8 @@ export class Survey {
     el('survey-opening-aim').onclick=()=>{if(this.stage==='ready'&&!this.saving){this.stage='opening';this.feedback('Visez le sol au pied du centre de l’ouverture, sur le mur choisi.');this.refresh();}};
     el('survey-close').onclick=()=> {
       if(!this.draft||this.saving) return;
-      try { this.draft.floor=parseFloor(this.draft.floor);this.stage='ready';this.feedback('Contour fermé. Réglez la hauteur, puis ajoutez les obstacles.');this.refresh(); }
-      catch(error){this.feedback(String(error));}
+      try { this.draft.floor=parseFloor(this.draft.floor);this.stage='ready';this.saveMessage='';this.feedback('Contour fermé. Réglez la hauteur, puis ajoutez les obstacles.');this.refresh(); }
+      catch(error){this.saveMessage=String(error);this.feedback(this.saveMessage);this.refresh();}
     };
     el('survey-obstacle').onclick=()=> {
       if(this.stage!=='ready'||this.saving) return;
@@ -62,10 +63,11 @@ export class Survey {
   current(){return this.draft??this.model;}
   closed(){return this.stage!=='floor';}
   pendingCorner(){return this.firstCorner;}
+  hasDraft(){return this.draft!==null;}
   importRoom(room:RoomModel){
     if(!this.getCalibration()||this.saving)throw new Error('Terminez le calibrage A/B avant l’import.');
     if(this.draft)throw new Error('Enregistrez ou annulez le brouillon avant un nouvel import.');
-    this.draft=parseRoom(room);this.baseRevision=this.revision;this.stage='ready';this.edits=[];this.firstCorner=undefined;
+    this.draft=parseRoom(room);this.baseRevision=this.revision;this.stage='ready';this.edits=[];this.firstCorner=undefined;this.saveMessage='';
     el<HTMLInputElement>('survey-name').value=room.name;el<HTMLInputElement>('survey-height').value=String(room.height);
     this.refresh();
   }
@@ -80,12 +82,12 @@ export class Survey {
   }
   cancel(){
     if(this.saving)return;
-    this.draft=null;this.stage='none';this.firstCorner=undefined;
+    this.draft=null;this.stage='none';this.firstCorner=undefined;this.saveMessage='';
     this.feedback('Relevé annulé. Les pièces déjà enregistrées sont conservées.');this.refresh();
   }
   private begin(edit:boolean){
     if(!this.getCalibration()||this.saving)return;
-    this.baseRevision=this.revision;
+    this.baseRevision=this.revision;this.saveMessage='';
     this.draft=edit&&this.model?structuredClone(this.model):{id:crypto.randomUUID(),name:'Nouvelle pièce',height:2.5,floor:[],obstacles:[],openings:[]};
     this.draft.openings??=[];this.edits=[];
     this.stage=edit&&this.model?'ready':'floor';this.firstCorner=undefined;
@@ -138,6 +140,8 @@ export class Survey {
     el<HTMLButtonElement>('survey-close').disabled=this.stage!=='floor'||(this.draft?.floor.length??0)<3||this.saving;
     el<HTMLButtonElement>('survey-obstacle').disabled=this.stage!=='ready'||this.saving;
     el<HTMLButtonElement>('survey-save').disabled=this.stage!=='ready'||this.saving;
+    const saveReason=this.saving?'Enregistrement sur le serveur…':this.stage==='floor'?'Fermez le contour (au moins trois coins) avant d’enregistrer.':this.stage==='obstacle'?'Terminez les deux coins de l’obstacle, ou annulez cet ajout.':this.stage==='opening'?'Placez le centre de l’ouverture, ou annulez cet ajout.':this.draft?'Prêt à enregistrer. Un jeton administrateur valide est requis.':'';
+    el('survey-save-status').textContent=this.saveMessage||saveReason;
     for(const id of ['survey-opening','survey-opening-aim'])el<HTMLButtonElement>(id).disabled=this.stage!=='ready'||this.saving;
     const wallKey=JSON.stringify(this.draft?.floor);
     if(wallKey!==this.wallKey){
@@ -162,19 +166,30 @@ export class Survey {
   }
   private async save(){
     if(!this.draft||this.saving)return;
+    this.report('survey_save_requested',`Étape : ${this.stage}`);
+    this.saveMessage='';
     try{
+      if(this.stage!=='ready')throw new Error('Terminez le contour ou l’élément en cours avant d’enregistrer.');
       const room=parseRoom({...this.draft,name:el<HTMLInputElement>('survey-name').value,height:Number(el<HTMLInputElement>('survey-height').value)});
-      const field=el<HTMLInputElement>('room-admin-token');
-      if(field.value){this.token=field.value;field.value='';}
-      if(this.token.length<16)throw new Error('Renseignez le jeton administrateur sur la page avant de démarrer l’AR. Le brouillon reste disponible pendant cette session.');
+      const field=el<HTMLInputElement>('room-admin-token'),arField=el<HTMLInputElement>('survey-admin-token');
+      if(arField.value||field.value){this.token=arField.value||field.value;field.value='';arField.value='';}
+      if(this.token.length<16){el<HTMLDetailsElement>('survey-auth').open=true;throw new Error('Jeton administrateur manquant ou trop court : saisissez admin_token dans « Autorisation d’enregistrement », puis réessayez. Le brouillon est conservé.');}
       this.saving=true;this.feedback('Enregistrement sur le serveur…');this.refresh();
       const response=await fetch('/api/admin/rooms/save',{method:'POST',headers:{Authorization:`Bearer ${this.token}`,'Content-Type':'application/json'},body:JSON.stringify({revision:this.baseRevision,room}),signal:AbortSignal.timeout(10000)});
-      const result=await response.json() as {library?:RoomLibrary;error?:string};
-      if(!response.ok||!result.library){if(response.status===401)this.token='';throw new Error(result.error??'Enregistrement impossible.');}
+      const result=await response.json().catch(()=>({error:`Réponse non JSON du serveur (HTTP ${response.status}). Vérifiez le proxy HTTPS.`})) as {library?:RoomLibrary;error?:string};
+      if(!response.ok||!result?.library){if(response.status===401){this.token='';el<HTMLDetailsElement>('survey-auth').open=true;}throw new Error(result?.error??'Enregistrement impossible : réponse serveur invalide.');}
+      const library=parseLibrary(result.library);
+      if(!library.rooms.some(item=>item.id===room.id))throw new Error('La réponse du serveur ne confirme pas cette pièce. Vérifiez la bibliothèque admin avant de réessayer.');
       this.draft=null;this.stage='none';
-      if(result.library.revision>=this.revision){this.model=result.library.rooms.find(r=>r.id===result.library!.activeId)??null;this.revision=result.library.revision;}
+      if(library.revision>=this.revision){this.model=library.rooms.find(r=>r.id===library.activeId)??null;this.revision=library.revision;}
       this.feedback(this.model?.id===room.id?'Pièce enregistrée sur disque et activée. Elle sera conservée après redémarrage du serveur.':'Pièce enregistrée sur disque. Une autre pièce a été activée entre-temps ; refaites le calibrage pour celle-ci.');
-    }catch(error){this.feedback(String(error));}
+      this.saveMessage='Pièce enregistrée sur le serveur.';this.report('survey_save_succeeded','Écriture confirmée par le serveur.');
+    }catch(error){
+      this.saveMessage=error instanceof Error?error.message:String(error);
+      if(error instanceof Error&&(error.name==='TimeoutError'||error.name==='AbortError'))this.saveMessage='Délai dépassé. Vérifiez la bibliothèque admin avant de réessayer : la sauvegarde peut avoir été reçue. Brouillon conservé.';
+      else if(error instanceof TypeError)this.saveMessage='Serveur injoignable. Vérifiez le réseau et le proxy HTTPS. Brouillon conservé.';
+      this.feedback(this.saveMessage);this.report('survey_save_failed',this.saveMessage);el('survey-save-status').textContent=this.saveMessage;
+    }
     finally{this.saving=false;this.refresh();}
   }
 }

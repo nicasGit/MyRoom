@@ -18,3 +18,9 @@ export function makeCalibration(a: Vector3, b: Vector3) {
 export function toRoom(point: Vector3, calibration: ReturnType<typeof makeCalibration>) {
   return point.clone().sub(calibration.origin).applyAxisAngle(new Vector3(0, 1, 0), calibration.yaw);
 }
+
+// Adjust this device's alignment, leaving the stored room geometry untouched.
+export function nudgeCalibration(calibration:ReturnType<typeof makeCalibration>,offset:Vector3,angle:number){
+  if(![...offset.toArray(),angle].every(Number.isFinite))throw new Error('Ajustement invalide.');
+  return {...calibration,origin:calibration.origin.clone().add(offset.clone().applyAxisAngle(new Vector3(0,1,0),-calibration.yaw)),yaw:calibration.yaw+angle};
+}

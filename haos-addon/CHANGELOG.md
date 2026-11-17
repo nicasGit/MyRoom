@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.3
+
+- Saisie/correction du jeton administrateur dans le panneau AR, sans quitter le relevé.
+- Motif du bouton de sauvegarde désactivé et erreurs d’enregistrement affichés près du bouton ; brouillon conservé en cas d’échec.
+- Diagnostics HAOS des demandes, succès et échecs de sauvegarde, sans journaliser le jeton.
+- Réglage local de l’affichage après sauvegarde : translation par pas de 5 cm, rotation par pas de 1° et retour au calibrage initial.
+- Réglage bloqué pendant un brouillon, non persistant et sans modification de la pièce du serveur. Ne corrige pas une dérive du suivi AR.
+
 ## 0.3.2
 
 - Application web installable depuis Chrome : manifeste, icônes PNG et ouverture en mode application.

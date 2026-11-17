@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import './install';
-import { makeCalibration, toRoom, projectToFloor } from './calibration';
+import { makeCalibration, toRoom, projectToFloor,nudgeCalibration } from './calibration';
 import './style.css';
 import { bindPress } from './press';
 import { PlacementRequest } from './placement';
@@ -18,7 +18,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.3.2');
+diagnostic('Version client', '0.3.3');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -31,6 +31,7 @@ navigator.xr?.addEventListener('devicechange', () => { void checkXR(); });
 
 let renderer: THREE.WebGLRenderer | undefined;
 let calibration: ReturnType<typeof makeCalibration> | undefined;
+let baseCalibration: ReturnType<typeof makeCalibration> | undefined;
 let firstPoint: THREE.Vector3 | undefined;
 const calibrationStatus = element('calibration');
 const overlay = element('xr-overlay');
@@ -55,12 +56,12 @@ function rejectPlacement(reason: string, details: Record<string, unknown> = {}) 
 }
 let resetScene = () => {};
 let updateSurveyScene = () => {};
-const survey = new Survey(()=>calibration, message=>{feedback.textContent=message;}, ()=>updateSurveyScene(), ()=>{if(calibration)resetCalibration();});
+const survey = new Survey(()=>calibration, message=>{feedback.textContent=message;}, ()=>updateSurveyScene(), ()=>{if(calibration)resetCalibration();}, (event,reason)=>xrEvent(event,{reason:reason.slice(0,160)}));
 function calibrationMessage(text: string) {
   calibrationStatus.textContent = text; instruction.textContent = text;
 }
 function resetCalibration() {
-  firstPoint = undefined; calibration = undefined;
+  firstPoint = undefined; calibration = undefined;baseCalibration=undefined;
   place.textContent = 'Placer A'; place.disabled = false;
   resetScene();
   survey.cancel(); survey.refresh();
@@ -72,6 +73,21 @@ function resetCalibration() {
 }
 element('reset').onclick = resetCalibration;
 element('xr-reset').onclick = resetCalibration;
+const alignmentButtons=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-align]'));
+for(const button of alignmentButtons)button.onclick=()=>{
+  if(!calibration||!baseCalibration||survey.hasDraft())return;
+  const action=button.dataset.align!;
+  if(action==='reset')calibration={...baseCalibration,origin:baseCalibration.origin.clone()};
+  else{
+    const offset=new THREE.Vector3(),step=action.endsWith('+')?0.05:-0.05;
+    if(action.startsWith('x'))offset.x=step;
+    else if(action.startsWith('y'))offset.y=step;
+    else if(action.startsWith('z'))offset.z=step;
+    calibration=nudgeCalibration(calibration,offset,action.startsWith('rotate')?(step>0?1:-1)*Math.PI/180:0);
+  }
+  survey.refresh();feedback.textContent='Alignement local ajusté. La pièce enregistrée reste inchangée.';
+  xrEvent('calibration_adjusted',{reason:action});
+};
 overlay.addEventListener('beforexrselect', event => {
   // Touching a DOM control must not also place a point through the XR select event.
   if (event.target instanceof Element && event.target.closest('.xr-panel')) event.preventDefault();
@@ -204,6 +220,7 @@ enter.onclick = async () => {
       } else {
         try {
           calibration = makeCalibration(firstPoint, point);
+          baseCalibration={...calibration,origin:calibration.origin.clone()};
           markerB.position.copy(point); markerB.visible = true;
           const roomPoint = toRoom(point, calibration);
           place.textContent = 'Calibrage terminé'; place.disabled = true;
@@ -251,6 +268,9 @@ enter.onclick = async () => {
       if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
       const canPlace=!calibration||survey.collecting;
+      element('xr-alignment').hidden=!calibration||!survey.current();
+      for(const button of alignmentButtons)button.disabled=survey.hasDraft();
+      element('alignment-status').textContent=survey.hasDraft()?'Enregistrez ou annulez le brouillon avant de modifier l’alignement.':'Réglage fin local ; pour une dérive du suivi, refaites le calibrage A/B.';
       const valid = !!point && canPlace;
       // Invalid tracking must still allow a press and an explanation.
       // Keep the touched button in the layout through pointerup. Removing it after

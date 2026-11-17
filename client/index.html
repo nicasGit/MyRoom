@@ -49,6 +49,11 @@
           <label>Nom de l’obstacle <input id="obstacle-name" maxlength="64" placeholder="Table, canapé…"></label>
           <label>Hauteur mesurée de l’obstacle (m) <input id="obstacle-height" type="number" min="0.1" max="6" step="0.05" value="0.8"></label>
           <div class="xr-actions"><button id="survey-obstacle">Ajouter un obstacle</button><button id="survey-save">Enregistrer et activer</button><button id="survey-cancel">Annuler le relevé</button></div>
+          <p id="survey-save-status" role="status" aria-live="polite"></p>
+          <details id="survey-auth"><summary>Autorisation d’enregistrement</summary>
+            <p>Utilisez le jeton admin_token configuré dans l’add-on HAOS. Vous pouvez le saisir ici sans quitter l’AR. Il reste uniquement en mémoire de page.</p>
+            <label>Jeton administrateur <input id="survey-admin-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Jeton de l’add-on HAOS"></label>
+          </details>
           <details><summary>Portes et fenêtres</summary>
             <p>Choisir un mur entre deux coins consécutifs. Position mesurée depuis son premier coin, dans le sens du relevé.</p>
             <label>Mur <select id="opening-wall"></select></label>
@@ -63,6 +68,17 @@
           </details>
         </div>
       </section>
+      <details id="xr-alignment" hidden><summary>Ajuster l’alignement sur cet appareil</summary>
+        <p>Après sauvegarde, déplacez l’affichage sur l’axe A → B ou perpendiculairement. Pas de modification de la pièce enregistrée ; réglage perdu à la fin de la session.</p>
+        <p id="alignment-status" role="status"></p>
+        <div class="xr-actions">
+          <button data-align="x-">Axe A/B −5 cm</button><button data-align="x+">Axe A/B +5 cm</button>
+          <button data-align="z-">Perpendiculaire −5 cm</button><button data-align="z+">Perpendiculaire +5 cm</button>
+          <button data-align="y-">Descendre 5 cm</button><button data-align="y+">Monter 5 cm</button>
+          <button data-align="rotate-">Tourner −1°</button><button data-align="rotate+">Tourner +1°</button>
+          <button data-align="reset">Annuler les ajustements</button>
+        </div>
+      </details>
     </section>
   </div>
   <script type="module" src="/src/main.ts"></script>

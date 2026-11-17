@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.2**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.2**, version **0.3.3 en préparation**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -274,3 +274,19 @@ L’installation réelle sur un téléphone et l’AR depuis l’application ins
 Vérifications du 17 novembre : typecheck et compilation réussis après correction d’un conflit de déclaration TypeScript dans le nouveau module ; 26 tests existants réussis. Dans Chrome intégré, manifeste chargé et trois icônes décodées aux dimensions déclarées ; événements d’installation synthétiques vérifiant proposition, annulation, acceptation sans confirmation prématurée, confirmation et erreur du navigateur. Aucune installation Android réelle effectuée. Le type MIME Nginx est configuré mais n’a pas été essayé localement dans un conteneur.
 
 Publication 0.3.2 confirmée le 17 novembre : workflow du commit `98dc09a` terminé avec succès et manifeste de l’image ARM64 disponible dans GHCR. L’installation sur le téléphone de l’utilisateur reste à effectuer.
+
+## 16. Sauvegarde mobile et alignement local — 0.3.3
+
+Après le signalement d’une sauvegarde impossible et d’un modèle parfois mal placé sur téléphone :
+
+- Saisie du jeton administrateur possible dans le panneau AR, sans quitter la session et perdre le brouillon. Aucun jeton ajouté aux logs ou au stockage du modèle.
+- Explication près du bouton de sauvegarde lorsqu’un contour, obstacle ou ajout d’ouverture reste à terminer ; erreurs du contour également visibles à cet endroit.
+- Messages explicites pour jeton absent/refusé, réseau, délai dépassé ou réponse non JSON du proxy ; conservation du brouillon.
+- Traces de demande, succès et échec de sauvegarde dans HAOS, limitées aux messages de diagnostic.
+- Réglage local d’affichage après sauvegarde : décalages de 5 cm, hauteur, rotation de 1°, annulation vers le calibrage initial. Bloqué pendant un brouillon ; ne modifie pas la géométrie serveur et ne persiste pas après la session.
+
+Typecheck et compilation exécutés avec succès après correction d’une incompatibilité d’itération DOM ; 27 tests logiciels réussis, dont un nouveau test de déplacement/rotation sans mutation du calibrage initial. Dans Chrome avec quatre points synthétiques et réponses HTTP simulées : sauvegarde bloquée avant fermeture, jeton manquant expliqué, jeton refusé conservant le brouillon, correction dans le champ AR puis succès ; champs secrets vidés après lecture et diagnostics vérifiés. Les protections des diagnostics contre l’envoi du jeton sont testées. Aucun essai physique de sauvegarde ou de réglage AR réalisé par l’agent.
+
+La cause précise du refus sur l’appareil utilisateur n’est pas encore établie. Le réglage local peut aider un décalage stable, mais ne corrige ni la dérive du suivi ni une estimation incorrecte du sol. L’utilisateur a également indiqué que le redémarrage complet de Chrome avait levé son blocage d’installation précédent ; cela ne constitue pas une validation indépendante du certificat ou de l’installation Android.
+
+La confirmation de sauvegarde valide aussi le schéma de la bibliothèque reçue et la présence de la pièce avant de supprimer le brouillon. Dans Chrome, réponses HTML HTTP 502, bibliothèque invalide et panne réseau simulées : message adapté, brouillon conservé et bouton de nouveau utilisable.
