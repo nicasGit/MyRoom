@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités publiées jusqu’à **0.3.0**, correction **0.3.1 en préparation**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.1**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -56,9 +56,11 @@ Tous les appareils doivent retrouver les mêmes repères, dans le même ordre. C
 
 ## 5. Commandes tactiles et corrections du placement
 
-Correction 0.3.1 en préparation : après B, le bouton de placement reste dans la barre, désactivé et libellé « Calibrage terminé ». Une largeur minimale réserve aussi la place de ce libellé. Auparavant, il disparaissait dans la boucle XR : la barre pouvait alors se réorganiser pendant l’appui tactile et déplacer « Quitter l’AR » sous le doigt. Cette cause possible de la sortie signalée après les deux repères doit encore être confirmée sur l’appareil de l’utilisateur. Le correctif évite ce changement de disposition ; il ne prétend pas résoudre une fermeture système du navigateur ou du casque.
+Correction 0.3.1 (`8c240bc`) : après B, le bouton de placement reste dans la barre, désactivé et libellé « Calibrage terminé ». Une largeur minimale réserve aussi la place de ce libellé. Auparavant, il disparaissait dans la boucle XR : la barre pouvait alors se réorganiser pendant l’appui tactile et déplacer « Quitter l’AR » sous le doigt. Cette cause possible de la sortie signalée après les deux repères doit encore être confirmée sur l’appareil de l’utilisateur. Le correctif évite ce changement de disposition ; il ne prétend pas résoudre une fermeture système du navigateur ou du casque.
 
 Vérifications du 17 novembre : typecheck et compilation réussis, 26 tests réussis. Dans Chrome, passage simulé « Placer B » → « Calibrage terminé » : position de Quitter inchangée sur 320×568, 390×844, 640×320 et 844×390. Un appui souris simulé avec le gestionnaire de placement réel produit un seul placement et aucune action Quitter. Aucune session XR réelle effectuée pour ce correctif.
+
+Publication 0.3.1 confirmée le 17 novembre : workflow GitHub Actions du correctif terminé avec succès et manifeste ARM64 disponible dans GHCR. Cela ne confirme pas encore le résultat sur l’appareil de l’utilisateur.
 
 - Panneau DOM Overlay, si proposé par le navigateur : **Placer A/B**, **Recommencer**, **Quitter l’AR**, puis commandes du relevé.
 - Viseur central et indication verte lorsque la projection de placement est valide.
@@ -198,6 +200,7 @@ Voir [le guide Quest et ses limites](quest-scan.md).
 | 0.2.1 | `59c55c5` | Panneau mobile dégagé du viseur |
 | 0.2.2 | `3467c20` | Portes et fenêtres sauvegardées, avec découpes des murs |
 | 0.3.0 | `f23af74` | Import expérimental des surfaces Quest et commandes contrôleur |
+| 0.3.1 | `8c240bc` | Barre de commandes stable après B pour éviter une activation involontaire de Quitter |
 
 Voir aussi le [changelog de l’add-on](../haos-addon/CHANGELOG.md).
 
