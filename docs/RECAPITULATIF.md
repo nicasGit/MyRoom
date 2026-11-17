@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.2**, versions **0.3.3 et 0.3.4 en cours de publication**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.4**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -202,6 +202,8 @@ Voir [le guide Quest et ses limites](quest-scan.md).
 | 0.3.0 | `f23af74` | Import expérimental des surfaces Quest et commandes contrôleur |
 | 0.3.1 | `8c240bc` | Barre de commandes stable après B pour éviter une activation involontaire de Quitter |
 | 0.3.2 | `98dc09a` | Application web installable depuis Chrome avec icônes et lancement autonome |
+| 0.3.3 | `8eace08` | Jeton et erreurs de sauvegarde dans l’AR, réglage local de l’alignement |
+| 0.3.4 | `f359e57` | Retrait des logs répétitifs de suivi, filtrage des anciens clients |
 
 Voir aussi le [changelog de l’add-on](../haos-addon/CHANGELOG.md).
 
@@ -296,3 +298,5 @@ La confirmation de sauvegarde valide aussi le schéma de la bibliothèque reçue
 À la demande de l’utilisateur qui indique que la visée fonctionne, suppression des émissions `tracking_changed` côté client. Le serveur valide et accuse encore réception de ces événements pour les anciennes pages ouvertes, mais ne les écrit ni dans stdout/HAOS ni dans le tampon du journal admin. Le viseur et les messages à l’écran restent actifs, ainsi que les journaux de connexion, erreur, calibrage, placement et sauvegarde. Les lignes historiques HAOS ne sont pas effacées.
 
 Le test d’intégration HTTP/WebSocket vérifie l’accusé de réception d’un ancien client et l’absence de cet événement dans les logs admin et stdout, tout en conservant les autres diagnostics. La version 0.3.4 comprend les améliorations de sauvegarde et d’alignement développées pour 0.3.3.
+
+Vérifications finales : typecheck et compilation réussis, 27 tests réussis. Les workflows GitHub Actions 0.3.3 et 0.3.4 ont terminé avec succès ; le manifeste ARM64 0.3.4 a été vérifié dans GHCR. Aucun essai physique de cette version réalisé par l’agent.
