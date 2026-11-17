@@ -1,10 +1,12 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.1**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.2**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
 ### Ajout du 17 novembre 2026 — coffre détaillé et panneau mural, 0.4.2
+
+Publication confirmée le 17 novembre : commit `d97580c`, workflow GitHub Actions `44151206525` terminé avec succès et manifeste de l’image ARM64 0.4.2 vérifié dans GHCR après ce workflow. La disponibilité dans le registre ne constitue pas une validation d’exécution sur Raspberry Pi, téléphone ou casque.
 
 Contrôles 3D complémentaires dans Chrome : rayon synthétique sur une tuile du panneau correctement résolu en action `press_symbol` ; ouverture du couvercle convergeant vers −1,5 radian après 120 images simulées et serrure invisible après réussite. Pièce temporaire supprimée et simulation serveur désactivée à la fin des essais. Ces contrôles logiciels ne constituent pas un essai WebXR sur casque.
 
@@ -13,7 +15,7 @@ Contrôles 3D complémentaires dans Chrome : rayon synthétique sur une tuile du
 - Panneau de 1 × 0,8 m à hauteur centrale fixe de 1,35 m, orienté vers l’intérieur ; validation du mur, des marges aux coins, des ouvertures et obstacles. Proposition automatique pour les anciennes pièces, sans déplacement de leurs neuf points. Position mur/décalage persistée à la sauvegarde.
 - Sélection et déplacement du panneau sur le plan administrateur et au viseur tactile pendant la préparation. Départ bloqué si aucun mur libre ; aucune prise libre de tuiles ajoutée.
 
-Vérifications : typecheck, compilation et 39 tests réussis. Trois nouveaux tests couvrent migration/stockage du panneau, placement et exclusions géométriques, et refus de saisir les symboles depuis le coffre ; test réseau étendu pour accepter un panneau valide et refuser un placement mural invalide. Dans Chrome local, rendu du coffre fermé et du panneau inspecté ; panneau déplacé sur un autre mur depuis l’administration et sauvegardé ; parcours en simulation avec erreur de combinaison, puis ordre correct débloquant le blackjack. Aucun essai physique sur téléphone ou Quest, pas de détection automatique des murs réels ni de restitution de leur éclairage. Guide, architecture et changelog actualisés. Publication 0.4.2 à confirmer.
+Vérifications : typecheck, compilation et 39 tests réussis. Trois nouveaux tests couvrent migration/stockage du panneau, placement et exclusions géométriques, et refus de saisir les symboles depuis le coffre ; test réseau étendu pour accepter un panneau valide et refuser un placement mural invalide. Dans Chrome local, rendu du coffre fermé et du panneau inspecté ; panneau déplacé sur un autre mur depuis l’administration et sauvegardé ; parcours en simulation avec erreur de combinaison, puis ordre correct débloquant le blackjack. Aucun essai physique sur téléphone ou Quest, pas de détection automatique des murs réels ni de restitution de leur éclairage. Guide, architecture et changelog actualisés.
 
 ### Ajout du 17 novembre 2026 — préparation et placements, 0.4.1
 
