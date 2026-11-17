@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2
+
+- Application web installable depuis Chrome : manifeste, icônes PNG et ouverture en mode application.
+- Bouton d’installation proposé selon les capacités du navigateur, instructions de repli et confirmation d’installation.
+- Serveur HAOS toujours nécessaire ; aucun cache hors ligne de données ou de code AR.
+- Manifeste servi avec le type adapté et revalidation HTTP ; installation et WebXR sur téléphone physique restent à valider.
+
 ## 0.3.1
 
 - Le bouton de placement reste visible et désactivé après B, afin de conserver sa place dans la barre de commandes jusqu’au relâchement du doigt.

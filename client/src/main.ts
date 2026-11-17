@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import './install';
 import { makeCalibration, toRoom, projectToFloor } from './calibration';
 import './style.css';
 import { bindPress } from './press';
@@ -17,7 +18,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.3.1');
+diagnostic('Version client', '0.3.2');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;

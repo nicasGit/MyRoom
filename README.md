@@ -12,6 +12,8 @@ Ou ajouter `https://github.com/nicasgit/myroom` dans les dépôts de la boutique
 
 ## Développement
 
+Pour installer MyRoom sur un téléphone depuis Chrome, consulter [l’installation mobile](docs/installation-mobile.md). L’application ouvre le serveur HAOS en HTTPS et nécessite sa disponibilité.
+
 Prérequis : Node.js 22.12+ (ou 24 LTS) et npm.
 
 ```sh

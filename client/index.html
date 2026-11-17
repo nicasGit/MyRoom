@@ -1,9 +1,14 @@
 <!doctype html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MyRoom — Diagnostic WebXR</title></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#111827"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" href="/icons/myroom-192.png"><link rel="apple-touch-icon" href="/icons/myroom-192.png"><title>MyRoom — Diagnostic WebXR</title></head>
 <body>
   <main>
     <h1>MyRoom</h1><p>Prototype partagé · Quest 2 / Quest 3 / Quest 3S</p>
+    <section aria-label="Installer MyRoom">
+      <button id="install-app" hidden>Installer MyRoom sur cet appareil</button>
+      <p id="install-status" role="status"></p>
+      <p>L’application utilise cette adresse et nécessite une connexion à votre serveur MyRoom. L’installation ne garantit pas la disponibilité de l’AR sur le téléphone.</p>
+    </section>
     <p><a href="/admin.html">Administration de la salle →</a></p>
     <h2>Diagnostic WebXR</h2><ul id="diagnostics"></ul>
     <button id="enter" disabled>Démarrer immersive-ar</button>

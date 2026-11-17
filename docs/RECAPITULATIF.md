@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.1**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.3.1**, version **0.3.2 en préparation**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
@@ -258,3 +258,16 @@ npm test
 Le développement se consulte sur `http://localhost:5173/` ; l’administration sur `/admin.html`. Chrome peut tester les interfaces et la logique en local, mais la disponibilité d’immersive-ar dépend de l’appareil. Un téléphone ou casque sur le LAN doit accéder à une origine HTTPS avec certificat reconnu, via le proxy correctement configuré pour les WebSocket.
 
 `npm start` lance uniquement le serveur compilé ; en production, les fichiers du client sont servis par Nginx. Les secrets de configuration doivent rester hors de Git.
+
+## 15. Application installable depuis Chrome — 0.3.2
+
+- Manifeste d’application web avec identité stable, nom MyRoom, démarrage à la racine et affichage `standalone`.
+- Icônes PNG 192 et 512 px et variante maskable, générées par un script Node sans dépendance externe.
+- Bouton d’installation affiché quand Chrome le propose, prise en compte d’une annulation, des erreurs, de la confirmation `appinstalled` et du mode application.
+- Instructions via le menu Chrome si le bouton n’est pas disponible ; aucune prétention à détecter toutes les installations depuis un onglet ordinaire.
+- Ouverture de la même origine HTTPS HAOS depuis l’écran d’accueil. Le serveur reste nécessaire et aucun service worker/cache hors ligne n’est ajouté.
+- Configuration Nginx pour le type MIME du manifeste et sa revalidation ; guide [d’installation mobile](installation-mobile.md).
+
+L’installation réelle sur un téléphone et l’AR depuis l’application installée restent à valider physiquement. L’installation n’ajoute pas les capacités WebXR absentes du téléphone et ne configure pas l’accès extérieur au serveur.
+
+Vérifications du 17 novembre : typecheck et compilation réussis après correction d’un conflit de déclaration TypeScript dans le nouveau module ; 26 tests existants réussis. Dans Chrome intégré, manifeste chargé et trois icônes décodées aux dimensions déclarées ; événements d’installation synthétiques vérifiant proposition, annulation, acceptation sans confirmation prématurée, confirmation et erreur du navigateur. Aucune installation Android réelle effectuée. Le type MIME Nginx est configuré mais n’a pas été essayé localement dans un conteneur.
