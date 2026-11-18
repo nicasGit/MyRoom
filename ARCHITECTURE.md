@@ -1,12 +1,12 @@
 # Architecture MyRoom
 
-## Prises d’objets — évolution 0.7.0 en préparation
+## Prises d’objets — évolution version 0.7.0
 
 `ObjectManipulation` conserve des poses et baux séparés de la progression et du modèle enregistré. Les commandes WebSocket `object_action` sont validées côté serveur avec propriétaire, séquence monotone, proximité déclarée, nombre de prises et bornes. Les poses temporaires sont ajoutées à l’état public ; leur révision n’altère pas celle de l’énigme. Le rendu applique les poses sans reconstruire la scène à chaque déplacement. Les contrôles de proximité suivent les nouveaux emplacements sans changer A/B.
 
 Les mains suivies, lorsqu’exposées par WebXR, utilisent une pince avec hystérésis ; les contrôleurs utilisent la poignée. Les gros objets exigent les côtés gauche et droit. La perte de suivi ou de connexion annule la prise. Les cartes hybrides gardent leurs verrous et logements, avec aperçu de portage local. Une inscription fixe sous le coffre devient visible après soulèvement/déplacement. Les limites et sources primaires sont dans [le guide Quest](docs/quest-grabbing.md).
 
-La sauvegarde admin des poses est réservée à une partie arrêtée sans prise active ; `puzzles.poses` complète facultativement les neuf points avec hauteur et rotation horizontale, sans supprimer les anciens modèles. Les déplacements de jeu et baux ne sont pas persistés automatiquement. Pas de physique complète, de preuve de présence ou d’ancre spatiale partagée. Implémentation logicielle locale, sans validation matérielle Quest ; publication HAOS en préparation.
+La sauvegarde admin des poses est réservée à une partie arrêtée sans prise active ; `puzzles.poses` complète facultativement les neuf points avec hauteur et rotation horizontale, sans supprimer les anciens modèles. Les déplacements de jeu et baux ne sont pas persistés automatiquement. Pas de physique complète, de preuve de présence ou d’ancre spatiale partagée. Image HAOS 0.7.0 publiée et manifeste ARM64 vérifié, sans validation matérielle Quest.
 
 ## Blackjack hybride — Phase 2, version 0.6.0
 

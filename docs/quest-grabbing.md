@@ -1,6 +1,6 @@
 # Prendre et déplacer les objets avec le Quest
 
-Version 0.7.0 en préparation sur `feat/quest-two-hand-grabbing`, à partir de 0.6.0. Aucun essai physique sur casque annoncé.
+Version 0.7.0 publiée depuis `feat/quest-two-hand-grabbing`, à partir de 0.6.0. Aucun essai physique sur casque annoncé.
 
 Après calibrage A/B, approcher une main d’un objet (environ 15 cm de sa géométrie), puis pincer pouce/index. Avec les contrôleurs, maintenir la poignée latérale ; la gâchette conserve les actions d’énigme. Les mains suivies sont demandées via la capacité optionnelle `hand-tracking`, détectée à l’exécution. Les deux modes dépendent des sources d’entrée que le navigateur expose ; aucun modèle de Quest ne garantit la capacité.
 
