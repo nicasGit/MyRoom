@@ -1,8 +1,8 @@
 # Team Portal — préparation coopérative de session
 
-Implémentation en cours sur `feature/team-portal`. Aucun essai physique Quest effectué par l’agent. Le rituel ne constitue pas une énigme et n’ajoute aucune condition de victoire.
+Version 0.8.0 publiée depuis `feature/team-portal`. Aucun essai physique Quest effectué par l’agent. Le rituel ne constitue pas une énigme et n’ajoute aucune condition de victoire.
 
-**Préparation 0.8.0.** Le blocage initial de traversée a été corrigé : l’ouverture initialise le détecteur avec la dernière pose validée récente, pour reconnaître un premier pas immédiat. TypeScript, compilation et les 85 tests réussissent, dont le scénario réseau complet. La publication de l’image reste à confirmer. Aucun essai matériel n’est annoncé.
+**Version 0.8.0 publiée.** Le blocage initial de traversée a été corrigé : l’ouverture initialise le détecteur avec la dernière pose validée récente, pour reconnaître un premier pas immédiat. TypeScript, compilation et les 85 tests réussissent, dont le scénario réseau complet. Publication GitHub réussie et manifeste ARM64 vérifié ; détails dans [le récapitulatif](RECAPITULATIF.md). Aucun essai matériel n’est annoncé.
 
 Cette version attend collectivement les quatre passages dans la même pièce MR. Elle ne change pas encore le décor pour un joueur passé et ne montre pas d’avatars à travers une fenêtre vers un autre univers. Ces éléments constituent une évolution distincte.
 
