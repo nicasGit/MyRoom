@@ -5,7 +5,7 @@ export type Opening = { name:string; kind:'door'|'window'; wall:number; offset:n
 export const PUZZLE_ITEMS=['chest','sun','tree','moon','star','table','four','eight','king'] as const;
 export type PuzzleItem=typeof PUZZLE_ITEMS[number];
 export type WallPanel={wall:number;offset:number};
-export type PuzzleLayout={points:Record<PuzzleItem,Point2>;panel?:WallPanel};
+export type PuzzleLayout={points:Record<PuzzleItem,Point2>;panel?:WallPanel;poses?:Partial<Record<PuzzleItem,{y:number;yaw:number}>>};
 export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[]; puzzles?:PuzzleLayout };
 export type RoomLibrary = { version: 1; revision: number; activeId: string | null; rooms: RoomModel[] };
 const number = (n: unknown, min: number, max: number): n is number => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
@@ -89,15 +89,18 @@ export function parseRoom(value: unknown): RoomModel {
   const room:RoomModel={id:r.id,name:r.name.trim(),floor,height:r.height,obstacles,openings};
   if(r.puzzles!==undefined){
     const layout=object(r.puzzles),raw=object(layout.points);
-    if(Object.keys(layout).some(key=>!['points','panel'].includes(key))||Object.keys(raw).length!==PUZZLE_ITEMS.length)throw new Error('Placer les neuf éléments des énigmes.');
+    if(Object.keys(layout).some(key=>!['points','panel','poses'].includes(key))||Object.keys(raw).length!==PUZZLE_ITEMS.length)throw new Error('Placer les neuf éléments des énigmes.');
     const points={} as Record<PuzzleItem,Point2>;
     for(const id of PUZZLE_ITEMS){
       const p=object(raw[id]);
-      if(Object.keys(p).length!==2||!number(p.x,-30,30)||!number(p.z,-30,30)||!canPlacePuzzlePoint({x:p.x,z:p.z},room))throw new Error(`Position invalide pour ${id} : rester dans la pièce, hors des obstacles, avec 20 cm de marge.`);
+      const rawPose=layout.poses===undefined?undefined:object(layout.poses)[id],baseY=rawPose===undefined?0:object(rawPose).y;
+      const supports=typeof baseY==='number'?room.obstacles.filter(o=>baseY<o.height-0.02):room.obstacles;
+      if(Object.keys(p).length!==2||!number(p.x,-30,30)||!number(p.z,-30,30)||!canPlacePuzzlePoint({x:p.x,z:p.z},{...room,obstacles:supports}))throw new Error(`Position invalide pour ${id} : rester dans la pièce, hors des obstacles, avec 20 cm de marge.`);
       points[id]={x:p.x,z:p.z};
       for(const other of Object.values(points))if(other!==points[id]&&Math.hypot(other.x-p.x,other.z-p.z)<0.6)throw new Error('Écarter les éléments des énigmes d’au moins 60 cm.');
     }
     room.puzzles={points};
+    if(layout.poses!==undefined){const poses=object(layout.poses);if(Object.keys(poses).some(id=>!PUZZLE_ITEMS.includes(id as PuzzleItem)))throw new Error('Objet de pose inconnu.');room.puzzles.poses={};for(const id of PUZZLE_ITEMS)if(poses[id]!==undefined){const pose=object(poses[id]);if(Object.keys(pose).sort().join(',')!=='y,yaw'||!number(pose.y,0,height-0.2)||!number(pose.yaw,-Math.PI,Math.PI))throw new Error('Pose invalide.');room.puzzles.poses[id]={y:pose.y,yaw:pose.yaw};}}
     if(layout.panel!==undefined){
       const panel=object(layout.panel);
       if(Object.keys(panel).sort().join(',')!=='offset,wall'||!Number.isSafeInteger(panel.wall)||!number(panel.offset,0,100))throw new Error('Position du panneau mural invalide.');

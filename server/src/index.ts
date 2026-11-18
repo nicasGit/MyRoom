@@ -9,6 +9,7 @@ import { RoomStore } from './room-store.js';
 import { Adventure,parseAdventureCommand,parsePuzzleCommand } from './adventure.js';
 import { createRegistry,createCatalog } from './adventures/catalog.js';
 import { join } from 'node:path';
+import { parseObjectCommand } from './object-manipulation.js';
 
 const registry=createRegistry();
 const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
@@ -60,24 +61,33 @@ wss.on('connection', (ws, req) => {
   ws.send(JSON.stringify({ type: 'welcome', id })); broadcast();
   let alive = true;
   let count = 0;
+  let objectCount=0;
   const timer = setInterval(() => {
     count = 0;
+    objectCount=0;
     if (!alive) { log('heartbeat_timeout', { id, slot }); ws.terminate(); return; }
     alive = false; ws.ping();
   }, 10000);
   ws.on('pong', () => { alive = true; });
   ws.on('message', (raw, binary) => {
-    if (++count > 30) { log('rate_limit_exceeded', { id, slot }); ws.close(1008, 'Trop de messages'); return; }
+    let counted=false;
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      if(message&&typeof message==='object'&&'type' in message&&message.type==='object_action'){
+        counted=true;
+        if(++objectCount>80){ws.close(1008,'Trop de déplacements');return;}
+        room.snapshot();const command=parseObjectCommand(message),result=room.objects.act(command,id,room.model,Date.now(),randomUUID());
+        ws.send(JSON.stringify({type:'object_result',...result}));if(result.changed){if(command.action!=='move')log('object_manipulation',{id,slot,target:command.target,action:command.action});broadcast();}else ws.send(JSON.stringify(room.snapshot()));return;
+      }
+      counted=true;if (++count > 30) { log('rate_limit_exceeded', { id, slot }); ws.close(1008, 'Trop de messages'); return; }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='puzzle_action'){
-        room.maintain();const command=parsePuzzleCommand(message),result=room.adventure.actPuzzle(command,room.model,room.libraryRevision,id);
+        room.maintain();const command=parsePuzzleCommand(message),result=room.adventure.actPuzzle(command,room.model,room.libraryRevision,id,room.objects.snapshot());
         log('puzzle_action',{id,slot,instanceId:command.instanceId,accepted:result.changed,message:result.message});
         ws.send(JSON.stringify({type:'puzzle_result',...result}));if(result.changed)broadcast();else ws.send(JSON.stringify(room.snapshot()));return;
       }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='adventure_action'){
-        const command=parseAdventureCommand(message),result=room.adventure.act(command,room.model,room.libraryRevision);
+        const command=parseAdventureCommand(message),result=room.adventure.act(command,room.model,room.libraryRevision,room.objects.snapshot());
         log('adventure_action',{id,slot,action:command.action,target:command.target,simulation:command.simulation,accepted:result.changed,message:result.message});
         ws.send(JSON.stringify({type:'adventure_result',...result}));
         if(result.changed)broadcast();else ws.send(JSON.stringify(room.snapshot()));
@@ -96,6 +106,7 @@ wss.on('connection', (ws, req) => {
       // Always return authoritative state, including stale requests.
       broadcast();
     } catch {
+      if(!counted&&++count>30){ws.close(1008,'Trop de messages');return;}
       log('invalid_message', { id, slot, binary, bytes: Buffer.byteLength(raw.toString()) });
       ws.send(JSON.stringify({ type: 'error', message: 'Message invalide' }));
     }

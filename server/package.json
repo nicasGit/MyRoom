@@ -1,6 +1,6 @@
 {
   "name": "@myroom/server", "private": true, "version": "0.1.0", "type": "module",
-  "scripts": { "dev": "tsx watch src/index.ts", "build": "tsc", "typecheck": "tsc --noEmit", "start": "node dist/index.js", "test": "tsx --test src/room.test.ts src/network.test.ts src/calibration.test.ts src/xr-events.test.ts src/room-store.test.ts src/quest-scan.test.ts src/adventure.test.ts src/engine/engine.test.ts src/puzzles/blackjack-hybrid.test.ts src/hybrid-network.test.ts" },
+  "scripts": { "dev": "tsx watch src/index.ts", "build": "tsc", "typecheck": "tsc --noEmit", "start": "node dist/index.js", "test": "tsx --test src/room.test.ts src/network.test.ts src/calibration.test.ts src/xr-events.test.ts src/room-store.test.ts src/quest-scan.test.ts src/adventure.test.ts src/engine/engine.test.ts src/puzzles/blackjack-hybrid.test.ts src/hybrid-network.test.ts src/object-manipulation.test.ts src/objects-network.test.ts" },
   "dependencies": { "ws": "^8.18.3" },
   "devDependencies": { "@types/node": "^22.19.0", "@types/ws": "^8.18.1", "tsx": "^4.20.6", "typescript": "^5.9.3" }
 }

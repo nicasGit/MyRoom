@@ -8,7 +8,9 @@ import { Survey } from './survey';
 import { modelGroup, disposeGroup } from './model-view';
 import { capturePlanes,importSurfaces,QuestButtons } from './quest-scan';
 import { AdventureClient } from './adventure-client';
-import { adventureGroup,animateAdventure } from './adventure-view';
+import { adventureGroup,animateAdventure,applyObjectPoses } from './adventure-view';
+import { GrabInputs,ObjectGrabber } from './object-grab';
+import { HandCards } from './hand-cards';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -20,7 +22,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.6.0');
+diagnostic('Version client', '0.7.0');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -65,6 +67,7 @@ function calibrationMessage(text: string) {
   calibrationStatus.textContent = text; instruction.textContent = text;
 }
 function resetCalibration() {
+  grabber.cancel();handCards.cancel();
   firstPoint = undefined; calibration = undefined;baseCalibration=undefined;
   place.textContent = 'Placer A'; place.disabled = false;
   resetScene();
@@ -110,7 +113,7 @@ enter.onclick = async () => {
     if (!renderer.domElement.isConnected) document.body.append(renderer.domElement);
     overlay.hidden = false;
     session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection'], domOverlay: { root: overlay },
+      requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection','hand-tracking'], domOverlay: { root: overlay },
     });
     const touchOverlay = !!session.domOverlayState;
     adventure.setXRActive(true);
@@ -119,6 +122,7 @@ enter.onclick = async () => {
     overlay.hidden = !touchOverlay;
     element('xr-exit').onclick = () => { void session?.end().catch(error => calibrationMessage(String(error))); };
     session.addEventListener('end', () => {
+      grabber.cancel();handCards.cancel();
       adventure.setXRActive(false);
       xrEvent('session_ended');
       renderer?.setAnimationLoop(null); resetCalibration(); enter.disabled = false;
@@ -133,18 +137,22 @@ enter.onclick = async () => {
     let gameGroup:THREE.Group|undefined;
     let gameKey='';
     updateAdventureScene=()=>{
-      const view=adventure.viewState(),key=JSON.stringify([view,calibration,survey.hasDraft()]);
-      if(key===gameKey)return;gameKey=key;
+      const view=adventure.viewState(),key=JSON.stringify([view?.model,view?.state.revision,calibration,survey.hasDraft()]);
+      if(key===gameKey){if(gameGroup)applyObjectPoses(gameGroup,view?.state.objects);return;}gameKey=key;
       const previousLid=gameGroup?.userData.lid as THREE.Group|undefined;
       const previousAngle=previousLid?.rotation.x,previousTarget=previousLid?.userData.targetAngle;
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
       if(!calibration||!view||survey.hasDraft())return;
       gameGroup=adventureGroup(view.model,view.state,ownId);
+      applyObjectPoses(gameGroup,view.state.objects);
       const lid=gameGroup.userData.lid as THREE.Group|undefined;
       if(lid&&previousAngle!==undefined&&previousTarget===lid.userData.targetAngle)lid.rotation.x=previousAngle;
       gameGroup.position.copy(calibration.origin);gameGroup.rotation.y=-calibration.yaw;scene.add(gameGroup);
     };
     const camera = new THREE.PerspectiveCamera();
+    const grabInputs=new GrabInputs();
+    const squeezeStart=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,true),squeezeEnd=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,false);
+    session.addEventListener('squeezestart',squeezeStart);session.addEventListener('squeezeend',squeezeEnd);
     const rays:THREE.Line[]=[];
     for(let index=0;index<2;index++){
       const controller=renderer.xr.getController(index);
@@ -191,6 +199,7 @@ enter.onclick = async () => {
           xrEvent('scan_imported',{reason:feedback.textContent.slice(0,160)});
         }catch(error){feedback.textContent=String(error);xrEvent('scan_error',{reason:String(error).slice(0,160)});}
       }
+      hud.visible=!touchOverlay&&!grabber.blocksSelect();
       if(!touchOverlay&&pose){
         hud.position.set(0,0.32,-1.2).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)).add(new THREE.Vector3().copy(pose.transform.position));
         const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${adventure.story()||scanStatus.textContent}\n${feedback.textContent}`;
@@ -233,7 +242,7 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    disposeScene = () => { grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -278,6 +287,7 @@ enter.onclick = async () => {
       }, 1500);
     });
     session.addEventListener('select', event => {
+      if(grabber.blocksSelect()||handCards.blocksSelect())return;
       if(calibration&&!survey.collecting){
         if(gameGroup&&!survey.hasDraft()){
           const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference),viewer=event.frame.getViewerPose(reference);
@@ -296,6 +306,11 @@ enter.onclick = async () => {
     });
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
+      adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
+      if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
+      const hands=frame&&calibration?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
+      handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect());
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!handCards.blocksSelect());
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);
@@ -343,6 +358,8 @@ let ownId = '';
 let revision = 0;
 let socket: WebSocket;
 const adventure=new AdventureClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
+const grabber=new ObjectGrabber(()=>ownId,()=>adventure.viewState()?.state.objects,message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},message=>{feedback.textContent=message;});
+const handCards=new HandCards(()=>ownId,action=>adventure.handAction(action),message=>{feedback.textContent=message;});
 let retry: ReturnType<typeof setTimeout>;
 function showPlayers(players: { id: string; slot: number;name?:string }[]) {
   element('players').replaceChildren(...[1, 2, 3, 4].map(slot => {
@@ -366,6 +383,7 @@ function connect() {
       const message = JSON.parse(String(event.data));
       if (message.type === 'welcome') {ownId = message.id;adventure.setIdentity(message.id);}
       if (message.type === 'adventure_result'||message.type==='puzzle_result') adventure.result(message.message);
+      if(message.type==='object_result'&&!message.changed)grabber.reject(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
         showPlayers(message.players); revision = message.puzzle.revision;
@@ -378,6 +396,7 @@ function connect() {
     } catch { status.textContent = 'Réponse serveur invalide.'; }
   };
   socket.onclose = event => {
+      grabber.cancel();handCards.cancel();
     adventure.setConnected(false);
     solve.disabled = true; showPlayers([]);
     logStatus.textContent = 'Journal serveur déconnecté. Les prochains événements restent en attente.';

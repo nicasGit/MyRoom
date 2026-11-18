@@ -25,10 +25,11 @@ export function blackjackTable(state:HybridPublicState,actor?:string,captain?:st
     const score=sign(`Équipe ${state.teamTotal} · Croupier ${state.dealerTotal??'?'}`,0.95,0.14);score.position.set(0,1.48,-0.55);group.add(score);
   }else{
     for(const [i,c] of state.cards.entries())if(!state.slots.includes(c)){
-      const mesh=cardMesh(c);mesh.position.set((i-(state.cards.length-1)/2)*0.22,0.785,-0.27);if(!state.locks.some(l=>l.card===c))mesh.userData.hybridAction={action:'pick_card',card:c};group.add(mesh);
+      const mesh=cardMesh(c);mesh.userData.hybridCard=c;mesh.position.set((i-(state.cards.length-1)/2)*0.22,0.785,-0.27);if(!state.locks.some(l=>l.card===c))mesh.userData.hybridAction={action:'pick_card',card:c};group.add(mesh);
     }
     for(let slot=0;slot<3;slot++){
       const c=state.slots[slot],mesh=cardMesh(c,c===null);mesh.position.set((slot-1)*0.26,0.785,0.12);
+      mesh.userData.hybridSlot=slot;if(c)mesh.userData.hybridCard=c;
       mesh.userData.hybridAction=c?{action:'pick_card',card:c}:{action:'drop_card',slot};group.add(mesh);
       const number=sign(String(slot+1),0.1,0.07);number.position.set((slot-1)*0.26,0.82,0.3);group.add(number);
     }

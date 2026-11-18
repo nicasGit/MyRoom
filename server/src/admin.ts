@@ -5,6 +5,7 @@ import type { Room } from './room.js';
 import { log, recentLogs } from './logger.js';
 import type { RoomStore } from './room-store.js';
 import { puzzlePanel } from './scene-schema.js';
+import { PUZZLE_ITEMS,findPuzzlePanel } from './scene-schema.js';
 
 export type Connection = { socket: WebSocket; address?: string; userAgent?: string; connectedAt: string };
 const started = Date.now();
@@ -36,7 +37,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -63,6 +64,14 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     }
     if(req.url?.startsWith('/api/admin/adventure/')){
       room.adventure.configure(room.model);
+      if(req.url.endsWith('/save-objects')){
+        try{const command=body as Record<string,unknown>,objects=room.snapshot().adventure.objects;
+          if(Object.keys(command).sort().join(',')!=='objectRevision,revision'||command.objectRevision!==objects.revision||command.revision!==room.libraryRevision||!room.model?.puzzles||room.adventure.snapshot().running||objects.held.length)throw new Error('Arrêtez la partie et relâchez les objets avant de sauvegarder ; actualisez si nécessaire.');
+          const model=structuredClone(room.model);model.puzzles!.poses={};for(const id of PUZZLE_ITEMS){const p=objects.poses[id]!;model.puzzles!.points[id]={x:p.x,z:p.z};model.puzzles!.poses[id]={y:p.y,yaw:p.yaw};}
+          if(objects.poses.panel)model.puzzles!.panel=findPuzzlePanel(model,objects.poses.panel);
+          const library=store.change('save',command.revision,model);room.model=store.active();room.libraryRevision=library.revision;log('object_placements_saved',{revision:library.revision});broadcast();reply(res,200,{ok:true});
+        }catch(error){reply(res,400,{error:error instanceof Error?error.message:'Sauvegarde refusée.'});}return;
+      }
       if(req.url.endsWith('/hint')||req.url.endsWith('/reset-puzzle')){
         try{const command=body as Record<string,unknown>;if(Object.keys(command).join(',')!=='revision'||!Number.isSafeInteger(command.revision))throw new Error('Révision attendue.');room.adventure.adminPuzzle(req.url.endsWith('/hint')?'hint':'reset-puzzle',command.revision as number);}
         catch(error){reply(res,400,{error:error instanceof Error?error.message:'Commande refusée.'});return;}
@@ -82,7 +91,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
         if(!room.model||room.adventure.snapshot().running||!('gameRevision' in body)||body.gameRevision!==room.adventure.snapshot().revision||!['gameRevision,points,revision','gameRevision,panel,points,revision'].includes(Object.keys(body).sort().join(',')))throw new Error('Placement impossible : actualisez la préparation.');
         const command=body as Record<string,unknown>;
         const panel=command.panel??room.model.puzzles?.panel??puzzlePanel(room.model)?.panel;
-        const library=store.change('save',command.revision,{...room.model,puzzles:{points:command.points,...(panel===undefined?{}:{panel})}});
+        const library=store.change('save',command.revision,{...room.model,puzzles:{points:command.points,...(room.model.puzzles?.poses?{poses:room.model.puzzles.poses}:{}),...(panel===undefined?{}:{panel})}});
         room.model=store.active();room.libraryRevision=library.revision;
         log('adventure_placement',{revision:library.revision,activeId:library.activeId});broadcast();reply(res,200,{library});return;
       }

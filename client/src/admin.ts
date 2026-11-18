@@ -24,6 +24,8 @@ const catalogPanel=document.createElement('section');catalogPanel.className='pan
 catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Utiliser les noms suggérés</button></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
 el('dashboard').prepend(catalogPanel);
 const puzzleAdmin=document.createElement('div');puzzleAdmin.innerHTML='<p id="adventure-captain"></p><button id="adventure-hint">Partager l’indice suivant</button><button id="adventure-reset-puzzle" class="secondary">Réinitialiser l’énigme active</button><p id="adventure-hints"></p>';catalogPanel.append(puzzleAdmin);
+const saveObjects=document.createElement('button');saveObjects.textContent='Enregistrer les objets déplacés dans la pièce';puzzleAdmin.append(saveObjects);let objectRevision=0;
+saveObjects.onclick=()=>{void action('adventure/save-objects',{revision:libraryRevision,objectRevision});};
 el('adventure-hint').onclick=()=>{void action('adventure/hint',{revision:latestAdventureRevision});};
 el('adventure-reset-puzzle').onclick=()=>{if(confirm('Réinitialiser l’énigme active et ses récompenses pour toute l’équipe ?'))void action('adventure/reset-puzzle',{revision:latestAdventureRevision});};
 const testPanel=document.createElement('div');testPanel.innerHTML='<h3>Accès direct aux énigmes</h3><p>Activez le mode test PC ci-dessous, puis choisissez une énigme. Une session temporaire démarre pour tous les joueurs. Désactiver le mode test restaure la progression précédente. Réinitialiser ou changer de pièce efface cette sauvegarde temporaire.</p><select id="test-step" aria-label="Énigme à tester"></select><button id="test-step-open">Tester cette énigme</button><p id="test-step-status"></p>';catalogPanel.append(testPanel);
@@ -66,6 +68,7 @@ function node(tag: string, text: string, className?: string) {
 }
 function render(state: State) {
   latestAdventureRevision=state.adventure.revision;catalog=state.adventures;
+  objectRevision=state.adventure.objects?.revision??0;saveObjects.disabled=state.adventure.running||!state.adventure.objects||!!state.adventure.objects.held.length;
   const engine=state.adventure.engine,key=JSON.stringify(state.adventures);
   if(key!==catalogKey){catalogKey=key;el('adventure-catalog').replaceChildren(...catalog.map(m=>{const option=document.createElement('option');option.value=`${m.id}@${m.version}`;option.textContent=`${m.title} — ${m.version}`;return option;}));el<HTMLSelectElement>('adventure-catalog').value=`${engine.adventureId}@${engine.adventureVersion}`;}
   const manifest=catalog.find(m=>m.id===engine.adventureId&&m.version===engine.adventureVersion);

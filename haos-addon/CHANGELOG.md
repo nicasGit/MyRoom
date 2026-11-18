@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0
+
+- Prise des objets pendant la partie : une main pour les petits objets, deux mains pour coffre, table et panneau.
+- Pince des mains WebXR si disponible et poignées des contrôleurs ; positions partagées, verrous et annulation après perte de suivi ou déconnexion.
+- Indice sous le coffre, dépôt des cartes dans leurs logements et sauvegarde administrateur des placements après arrêt.
+- Anciens modèles de pièces et calibrage A/B conservés ; aucun essai physique Quest effectué par l’agent.
+
 ## 0.6.0
 
 - Opération Menthe 27 version 0.2.0 : coffre conservé puis blackjack hybride à trois manches.

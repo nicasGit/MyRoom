@@ -4,6 +4,11 @@ import { puzzlePanel,type PuzzleItem,type RoomModel } from '../../server/src/sce
 import { createChest } from './chest-view';
 import { blackjackTable } from './puzzles/blackjack-view';
 import type { HybridPublicState } from '../../server/src/puzzles/blackjack-hybrid.js';
+import type { ObjectSnapshot,ObjectId } from '../../server/src/object-manipulation.js';
+export function applyObjectPoses(group:THREE.Group,objects:ObjectSnapshot|undefined){
+  const roots=group.userData.grabbables as Partial<Record<ObjectId,THREE.Object3D>>|undefined;if(!roots)return;
+  for(const [id,node] of Object.entries(roots)){const p=objects?.poses[id as ObjectId];if(p&&node){node.position.set(p.x,p.y,p.z);node.rotation.y=p.yaw;}}
+}
 export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'};
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};
 export const CARD_CLUES={four:'Mes quatre coins gardent quatre saisons.',eight:'Deux fois les saisons de l’année.',king:'Je porte une couronne ; ma valeur est dix.'};
@@ -57,9 +62,11 @@ function wallConsole(model:RoomModel,state:AdventureState){
 }
 export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:string){
   const group=new THREE.Group();if(!model.puzzles)return group;
-  const at=(id:PuzzleItem)=>{const p=model.puzzles!.points[id],node=new THREE.Group();node.position.set(p.x,0,p.z);group.add(node);return node;};
+  const roots:Partial<Record<ObjectId,THREE.Object3D>>={};group.userData.grabbables=roots;
+  const at=(id:PuzzleItem)=>{const p=model.puzzles!.points[id],node=new THREE.Group();node.position.set(p.x,model.puzzles!.poses?.[id]?.y??0,p.z);node.rotation.y=model.puzzles!.poses?.[id]?.yaw??0;group.add(node);roots[id]=node;return node;};
   const chest=at('chest'),crafted=createChest(state.phase==='hybrid'||state.phase==='blackjack'||state.phase==='complete'||state.phase==='pending');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
-  const panel=wallConsole(model,state);if(panel)group.add(panel);
+  const panel=wallConsole(model,state);if(panel){group.add(panel);roots.panel=panel;}
+  const clue=plaque('Indice : le jour précède la forêt.','#ffe082',0.48,0.2);clue.rotation.x=-Math.PI/2;clue.position.set(chest.position.x,chest.position.y+0.006,chest.position.z);clue.visible=false;group.add(clue);group.userData.underChest={chest,clue,base:chest.position.clone()};
   const heading=label(state.phase==='symbols'?'Le coffre':'Coffre ouvert','#ffe082');heading.position.y=1.05;chest.add(heading);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
     const found=!state.running||state.symbols.found.includes(id),node=at(id),pole=box(0.05,0.65,0.05,0x64748b);pole.position.y=0.325;node.add(pole);
@@ -83,6 +90,7 @@ export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:str
   return group;
 }
 export function animateAdventure(group:THREE.Group,time:number){
+  const under=group.userData.underChest as {chest:THREE.Group;clue:THREE.Mesh;base:THREE.Vector3}|undefined;if(under)under.clue.visible=under.chest.position.y-under.base.y>0.25||Math.hypot(under.chest.position.x-under.base.x,under.chest.position.z-under.base.z)>0.45;
   const lid=group.userData.lid as THREE.Group|undefined;if(lid)lid.rotation.x+=(Number(lid.userData.targetAngle)-lid.rotation.x)*0.08;
   const key=group.userData.key as THREE.Group|undefined;if(key)key.rotation.y=time/1200;
 }

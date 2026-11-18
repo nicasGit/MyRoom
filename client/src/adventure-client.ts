@@ -10,6 +10,7 @@ import { SYMBOL_NAMES,CARD_NAMES,CARD_CLUES,pickAdventureAction } from './advent
 type Panel={root:HTMLElement;status:HTMLElement;body:HTMLElement};
 type InteractionTarget=PuzzleItem|'panel';
 export class AdventureClient {
+  handAction(action:HybridAction){this.performHybrid(action);}
   private actorId:string|undefined;
   private hybridButtons:{button:HTMLButtonElement;ready:boolean}[]=[];
   private hybridPreview:BlackjackPreview|undefined;
@@ -44,11 +45,13 @@ export class AdventureClient {
   setXRActive(value:boolean){this.xrActive=value;this.position=undefined;this.simulation=false;this.virtual=undefined;(document.getElementById('adventure-simulation') as HTMLInputElement).checked=false;this.render(true);}
   receive(model:RoomModel|null,state:AdventureState,libraryRevision:number){
     const previous=this.state?.phase;
+    const objectChanged=state.objects?.revision!==this.state?.objects?.revision;
     const changed=JSON.stringify(model)!==JSON.stringify(this.model)||state.revision!==this.state?.revision;
     this.model=model;this.state=state;this.libraryRevision=libraryRevision;
     if(!state.testMode){this.simulation=false;this.virtual=undefined;}
     if(previous&&previous!==state.phase&&(state.phase==='blackjack'||state.phase==='complete'))this.chime();
     if(changed){this.render(true);this.changed();}
+    else if(objectChanged){this.updateButtons();this.map();this.changed();}
   }
   viewState(){return this.model&&this.state?{model:this.model,state:this.state}:undefined;}
   updateAim(local:THREE.Vector3|undefined){const calibration=this.calibration();this.aim=local&&calibration?toRoom(local,calibration):undefined;this.aimAt=performance.now();}
@@ -75,7 +78,7 @@ export class AdventureClient {
     if(performance.now()-this.lastPositionUpdate>200){this.lastPositionUpdate=performance.now();this.updateButtons();this.map();}
   }
   private currentPosition(){return this.simulation&&!this.xrActive?this.virtual:this.position;}
-  private closeTo(target:InteractionTarget){const p=this.currentPosition(),q=target==='panel'&&this.model?puzzlePanel(this.model)?.position:this.model?.puzzles?.points[target as PuzzleItem];return !!p&&!!q&&Math.hypot(p.x-q.x,p.z-q.z)<=1.3;}
+  private closeTo(target:InteractionTarget){const p=this.currentPosition(),q=this.state?.objects?.poses[target]??(target==='panel'&&this.model?puzzlePanel(this.model)?.position:this.model?.puzzles?.points[target as PuzzleItem]);return !!p&&!!q&&Math.hypot(p.x-q.x,p.z-q.z)<=1.3;}
   private perform(action:AdventureCommand['action'],id:string,target:InteractionTarget){
     const position=this.currentPosition();if(!position||!this.state?.running||!this.model?.puzzles||this.pending||!this.connected||!this.closeTo(target))return;
     this.unlockSound();this.pending=true;this.updateButtons();
@@ -107,7 +110,7 @@ export class AdventureClient {
   private addAction(panel:Panel,label:string,action:AdventureCommand['action'],id:string,target:InteractionTarget,ready:boolean){
     const row=document.createElement('div');row.className='xr-actions';const button=document.createElement('button');button.textContent=label;button.dataset.gameAction=action;button.dataset.target=id;button.onclick=()=>this.perform(action,id,target);row.append(button);
     this.buttons.push({button,target,action,id,ready});
-    if(this.simulation&&!this.xrActive&&panel===this.panels[0]){const move=document.createElement('button');move.textContent='Aller à cet élément (test PC)';move.dataset.move=target;move.onclick=()=>{const point=target==='panel'?puzzlePanel(this.model!)?.position:this.model!.puzzles!.points[target];this.virtual=point?{...point}:undefined;this.updateButtons();this.map();};row.append(move);}
+    if(this.simulation&&!this.xrActive&&panel===this.panels[0]){const move=document.createElement('button');move.textContent='Aller à cet élément (test PC)';move.dataset.move=target;move.onclick=()=>{const point=this.state?.objects?.poses[target]??(target==='panel'?puzzlePanel(this.model!)?.position:this.model!.puzzles!.points[target]);this.virtual=point?{...point}:undefined;this.updateButtons();this.map();};row.append(move);}
     panel.body.append(row);
   }
   private render(force=false){
@@ -136,7 +139,7 @@ export class AdventureClient {
       if(state.hybrid){
         if(state.phase==='pending'){text(state.engine.step.title);text(state.message);}
         text(hybridSummary(state.hybrid));text(this.actorId===state.captainId?'Vous êtes le capitaine : Tirer/Rester sont vos décisions.':'Le capitaine décide de Tirer/Rester. Tout le monde peut placer les cartes des manches suivantes.');
-        if(this.simulation&&!this.xrActive&&panel===this.panels[0]){const move=document.createElement('button');move.textContent='Aller à la table (test PC)';move.dataset.move='table';move.onclick=()=>{this.virtual={...this.model!.puzzles!.points.table};this.updateButtons();this.map();};panel.body.append(move);}
+        if(this.simulation&&!this.xrActive&&panel===this.panels[0]){const move=document.createElement('button');move.textContent='Aller à la table (test PC)';move.dataset.move='table';move.onclick=()=>{this.virtual={...(this.state?.objects?.poses.table??this.model!.puzzles!.points.table)};this.updateButtons();this.map();};panel.body.append(move);}
         if(state.hybrid.round>1)text('Choisissez une carte puis un logement (gâchette ou boutons). Réservation 15 s ; remettre en réserve permet de corriger un choix.');
         for(const option of hybridOptions(state.hybrid,this.actorId,state.captainId)){const button=document.createElement('button');button.textContent=option.label;button.dataset.hybridAction=option.action.action;if('card' in option.action)button.dataset.card=option.action.card;if('slot' in option.action)button.dataset.slot=String(option.action.slot);if('value' in option.action)button.dataset.value=String(option.action.value);button.onclick=()=>this.performHybrid(option.action);panel.body.append(button);this.hybridButtons.push({button,ready:option.enabled});}
       }else if(state.phase==='symbols'){
@@ -159,6 +162,6 @@ export class AdventureClient {
     const canvas=document.getElementById('adventure-map') as HTMLCanvasElement;canvas.hidden=!this.model?.puzzles;
     if(!this.model?.puzzles||!this.state)return;
     const phase=this.state.phase,visible=this.state.hybrid?['table']:phase==='symbols'?['chest','sun','tree','moon','star']:PUZZLE_ITEMS;
-    drawMap(canvas,this.model,visible.map(id=>{const item=id as PuzzleItem;let label=ITEM_NAMES[item];if((['sun','tree','moon','star'] as string[]).includes(id)&&!this.state!.symbols.found.includes(id as SymbolId))label='Balise ?';if((['four','eight','king'] as string[]).includes(id)&&!this.state!.blackjack.found.includes(id as CardId))label='Carte ?';return {point:this.model!.puzzles!.points[item],label};}),this.currentPosition());
+    drawMap(canvas,this.model,visible.map(id=>{const item=id as PuzzleItem;let label=ITEM_NAMES[item];if((['sun','tree','moon','star'] as string[]).includes(id)&&!this.state!.symbols.found.includes(id as SymbolId))label='Balise ?';if((['four','eight','king'] as string[]).includes(id)&&!this.state!.blackjack.found.includes(id as CardId))label='Carte ?';return {point:this.state?.objects?.poses[item]??this.model!.puzzles!.points[item],label};}),this.currentPosition());
   }
 }
