@@ -4,9 +4,9 @@
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 - publication rapide 0.8.3 en cours
+### 18 novembre 2026 - publication rapide 0.8.3 confirmée
 
-Publication explicitement autorisée : main virtuelle téléphone, ouverture au premier bâton et nombre de joueurs de 1 à 4. Versions add-on et diagnostic client mises à jour, changelog complété. Les derniers contrôles complets de cette implémentation ont réussi : typecheck, build et 91 tests. Aucun changement fonctionnel depuis ces contrôles ; seuls version et documentation de publication sont adaptés. Le workflow GitHub relance les trois contrôles avant construction et publication ARM64. Disponibilité du registre encore à confirmer ; aucun essai matériel annoncé.
+Publication explicitement autorisée : main virtuelle téléphone, ouverture au premier bâton et nombre de joueurs de 1 à 4. Versions add-on et diagnostic client mises à jour, changelog complété. Les derniers contrôles complets de cette implémentation ont réussi : typecheck, build et 91 tests. Aucun changement fonctionnel depuis ces contrôles ; seuls version et documentation de publication sont adaptés. Commit `a9b1b8d` publié sur main ; workflow [44366811915](https://github.com/nicasGit/MyRoom/actions/runs/44366811915) réussi avec les trois contrôles et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.8.3` vérifiée : Linux ARM64, label 0.8.3, digest `sha256:9b6f0f772bdc4addc435ea9a4393cac264dc8c90f5b1137f2902e516761e74b1`. Branche conservée. Aucun essai matériel annoncé.
 
 ### 18 novembre 2026 - nombre de joueurs administrable, travail local
 
