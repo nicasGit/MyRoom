@@ -32,8 +32,12 @@ saveObjects.onclick=()=>{void action('adventure/save-objects',{revision:libraryR
 el('adventure-hint').onclick=()=>{void action('adventure/hint',{revision:latestAdventureRevision});};
 el('adventure-reset-puzzle').onclick=()=>{if(confirm('Réinitialiser l’énigme active et ses récompenses pour toute l’équipe ?'))void action('adventure/reset-puzzle',{revision:latestAdventureRevision});};
 const testPanel=document.createElement('div');testPanel.innerHTML='<h3>Accès direct aux énigmes</h3><p>Activez le mode test PC ci-dessous, puis choisissez une énigme. Une session temporaire démarre pour tous les joueurs. Désactiver le mode test restaure la progression précédente. Réinitialiser ou changer de pièce efface cette sauvegarde temporaire.</p><select id="test-step" aria-label="Énigme à tester"></select><button id="test-step-open">Tester cette énigme</button><p id="test-step-status"></p>';catalogPanel.append(testPanel);
-let testStepsKey='';
-el('test-step-open').onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez les placements avant de tester.';return;}void action('adventure/test-step',{stepId:el<HTMLSelectElement>('test-step').value,revision:latestAdventureRevision});};
+let testStepsKey='',portalRevision=0;
+const INTRO_STEP='intro-vortex';
+testPanel.querySelector('h3')!.textContent='Commencer par l’introduction ou tester une énigme';
+testPanel.querySelector('p')!.textContent='L’introduction Vortex démarre le rituel réel sans activer le mode test PC. Les accès directs au coffre et au blackjack restent réservés au mode test. Pour essayer seul, utilisez la simulation à quatre places dans Team Portal.';
+el('test-step').setAttribute('aria-label','Introduction ou énigme à démarrer');
+el('test-step-open').onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez les placements avant de tester.';return;}const stepId=el<HTMLSelectElement>('test-step').value;if(stepId===INTRO_STEP)void action('portal',{action:'reset',revision:portalRevision});else void action('adventure/test-step',{stepId,revision:latestAdventureRevision});};
 let latestAdventureRevision=0,namesRevision=0,namesDirty=false,catalogKey='';
 let catalog:AdventureManifest[]=[];
 const nameFields=Array.from({length:4},(_,index)=>{const label=document.createElement('label');label.textContent=`Place ${index+1} `;const input=document.createElement('input');input.id=`player-name-${index+1}`;input.maxLength=40;input.required=true;input.oninput=()=>{namesDirty=true;};label.append(input);el('player-name-fields').append(label);return input;});
@@ -81,16 +85,30 @@ function render(state: State) {
   el<HTMLButtonElement>('adventure-hint').disabled=!activeInstance;
   el<HTMLButtonElement>('adventure-reset-puzzle').disabled=!activeInstance;
   el('adventure-hints').textContent=activeInstance?.hints.join(' · ')??'';
-  const stepsKey=JSON.stringify([engine.adventureId,engine.adventureVersion,manifest?.steps]);
-  if(stepsKey!==testStepsKey){testStepsKey=stepsKey;el('test-step').replaceChildren(...(manifest?.steps??[]).map(step=>{const option=document.createElement('option');option.value=step.id;option.textContent=step.title+(step.kind==='planned'?' — bientôt disponible':'');option.disabled=step.kind!=='puzzle';return option;}));}
-  el<HTMLSelectElement>('test-step').disabled=!state.adventure.testMode;
-  el<HTMLButtonElement>('test-step-open').disabled=!state.adventure.testMode||state.adventure.phase==='unconfigured'||!manifest?.steps.some(step=>step.kind==='puzzle');
-  el('test-step-status').textContent=engine.testStartStepId?'Session de test temporaire active : les résultats seront abandonnés en quittant le mode test.':state.adventure.testMode?'Mode test actif : choisissez une énigme disponible.':'Accès direct désactivé : activez le mode test PC.';
+  portalRevision=state.portal.revision;
+  const hasIntro=true;
+  const stepsKey=JSON.stringify([engine.adventureId,engine.adventureVersion,manifest?.steps,hasIntro,state.adventure.testMode,state.portal.config.enabled]);
+  if(stepsKey!==testStepsKey){
+    testStepsKey=stepsKey;const options:HTMLOptionElement[]=[];
+    if(hasIntro){const intro=document.createElement('option');intro.value=INTRO_STEP;intro.textContent='Introduction Vortex';intro.disabled=!state.portal.config.enabled;options.push(intro);}
+    options.push(...(manifest?.steps??[]).map(step=>{const option=document.createElement('option');option.value=step.id;option.textContent=step.title;option.disabled=!state.adventure.testMode||step.kind!=='puzzle';return option;}));
+    el('test-step').replaceChildren(...options);
+  }
+  const updateDirect=()=>{
+    const intro=el<HTMLSelectElement>('test-step').value===INTRO_STEP;
+    el<HTMLSelectElement>('test-step').disabled=!hasIntro&&!state.adventure.testMode;
+    const button=el<HTMLButtonElement>('test-step-open');button.textContent=intro?'Commencer l’intro Vortex':'Tester cette enigme';
+    button.disabled=state.adventure.phase==='unconfigured'||(intro?state.portal.active||state.adventure.running||!state.portal.config.enabled||!state.portal.config.confirmed:!state.adventure.testMode||!manifest?.steps.some(step=>step.kind==='puzzle'));
+    if(intro)el('test-step-status').textContent=state.portal.active?'Introduction déjà active.':state.portal.config.confirmed?'Démarrage réel de l’introduction, puis coffre après les quatre passages. Pour un essai solo, utilisez la simulation à quatre places dans Team Portal.':'Configurez Team Portal et confirmez l’espace physique avant de commencer.';
+    else el('test-step-status').textContent=engine.testStartStepId?'Session de test temporaire active.':state.adventure.testMode?'Mode test actif : choisissez une énigme disponible.':'Activez le mode test PC pour accéder directement aux énigmes.';
+  };
+  el('test-step').onchange=updateDirect;updateDirect();
   el('adventure-description').textContent=`Active : ${manifest?.title??engine.adventureId}. ${manifest?.description??''}`;
   el('adventure-progress').textContent=`Étape : ${engine.step.title} · Réussites : ${engine.completedSteps.length}/${manifest?.steps.length??0} · Inventaire : ${engine.inventory.map(r=>r.label).join(', ')||'vide'}`;
   el<HTMLButtonElement>('adventure-select').disabled=state.adventure.running||!!engine.testStartStepId;
   el<HTMLButtonElement>('adventure-stop').disabled=!state.adventure.running&&!state.portal.active;
   if(!namesDirty){namesRevision=state.playerNamesRevision;nameFields.forEach((input,index)=>{input.value=state.playerNames[index];});}
+  startAdventure.textContent=state.portal.config.enabled?'Commencer avec l’intro Vortex':'Commencer les enigmes';
   startAdventure.disabled=state.portal.active||state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
   library=state.library;
   adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);

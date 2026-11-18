@@ -6,27 +6,29 @@ import { modelGroup,disposeGroup } from '../model-view';
 import { createPreview } from '../model-view';
 import type { RoomModel } from '../../../server/src/scene-schema.js';
 export class PortalClient {
-  state:PortalPublic|undefined;private slot=0;private seq=0;private last=-Infinity;private wasReady=false;
+  state:PortalPublic|undefined;private bypassIntro=false;private slot=0;private seq=0;private last=-Infinity;private wasReady=false;
   private panels:HTMLElement[]=[];private audio:AudioContext|undefined;private preview:(model:RoomModel|null)=>void;private previewState:PortalPublic|undefined;private host=document.createElement('div');
   constructor(private send:(command:PortalCommand)=>boolean,private calibration:()=>ReturnType<typeof makeCalibration>|undefined,private changed:()=>void,private notify:(text:string)=>void){
     for(const id of ['adventure-desktop','adventure-ar']){const panel=document.createElement('section');panel.hidden=true;document.getElementById(id)!.before(panel);this.panels.push(panel);}
     const host=this.host;host.hidden=true;this.panels[0].after(host);
-    this.preview=createPreview(host,model=>{const group=modelGroup(model);if(this.previewState?.active)group.add(portalView(this.previewState));return group;});
+    this.preview=createPreview(host,model=>{const group=modelGroup(model);if(this.previewState?.config.enabled&&this.previewState.phase!=='completed')group.add(portalView(this.previewState));return group;});
     document.addEventListener('pointerdown',()=>{try{this.audio=new AudioContext();void this.audio.resume();}catch{}},{once:true});
   }
-  receive(state:PortalPublic,slot:number,model:RoomModel|null){
-    const previous=this.state;this.state=state;this.slot=slot;
+  visible(){return !this.bypassIntro&&!!this.state?.config.enabled&&this.state.phase!=='completed';}
+  receive(state:PortalPublic,slot:number,model:RoomModel|null,bypassIntro=false){
+    const previous=this.state,bypassChanged=this.bypassIntro!==bypassIntro;this.bypassIntro=bypassIntro;this.state=state;this.slot=slot;
     if(previous?.sessionId!==state.sessionId){this.seq=0;this.wasReady=false;}
-    const changed=previous?.revision!==state.revision||previous?.sessionId!==state.sessionId;
+    const changed=bypassChanged||previous?.revision!==state.revision||previous?.sessionId!==state.sessionId;
     if(changed){
-      this.panels.forEach(panel=>{panel.hidden=!state.active;panel.replaceChildren();if(!state.active)return;const text=document.createElement('p');text.textContent=this.story();panel.append(text);const button=document.createElement('button');button.textContent='Mode accessible : valider mon passage sans traverser';button.disabled=state.phase!=='portal-open';button.onclick=()=>this.confirm();panel.append(button);});
-      this.host.hidden=!state.active;this.previewState=state;this.preview(state.active?model:null);this.changed();
+      for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!;root.hidden=this.visible();}
+      this.panels.forEach(panel=>{panel.hidden=!this.visible();panel.replaceChildren();if(!this.visible())return;const text=document.createElement('p');text.textContent=this.story();panel.append(text);const button=document.createElement('button');button.textContent='Mode accessible : valider mon passage sans traverser';button.disabled=state.phase!=='portal-open';button.onclick=()=>this.confirm();panel.append(button);});
+      this.host.hidden=!this.visible();this.previewState=state;this.preview(this.visible()?model:null);this.changed();
       const crossed=state.players.find(p=>p.slot===slot)?.crossed&&!previous?.players.find(p=>p.slot===slot)?.crossed;
       if(state.phase==='opening'&&previous?.phase!=='opening'||crossed)this.chime(state);
       if(crossed)this.notify('Votre passage est validé. Attendez vos coéquipiers dans la même pièce.');
     }
   }
-  story(){const s=this.state;if(!s?.active)return '';return `${s.simulation?'SIMULATION PC · ':''}Team Portal · ${s.phase} · ${s.players.filter(p=>p.claimed).length}/4 bâtons · ${s.players.filter(p=>p.crossed).length}/4 passages. ${s.phase==='portal-open'?'Le passage est ouvert. Marchez calmement dans le sens de la flèche ou utilisez la confirmation accessible.':'Prenez uniquement le bâton portant votre nom ; quatre joueurs présents et calibrés requis.'}`;}
+  story(){const s=this.state;if(!s||!this.visible())return '';if(!s.active)return 'Bienvenue dans MyRoom. Calibrez les reperes A/B : le vortex et les batons sont l’accueil commun avant toute aventure. L’organisateur prepare puis demarre le rituel.';return `${s.simulation?'SIMULATION PC · ':''}Team Portal · ${s.phase} · ${s.players.filter(p=>p.claimed).length}/4 bâtons · ${s.players.filter(p=>p.crossed).length}/4 passages. ${s.phase==='portal-open'?'Le passage est ouvert. Marchez calmement dans le sens de la flèche ou utilisez la confirmation accessible.':'Prenez uniquement le bâton portant votre nom ; quatre joueurs présents et calibrés requis.'}`;}
   private command(action:PortalCommand['action'],position?:THREE.Vector3){const s=this.state;if(!s?.active)return;this.send({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:crypto.randomUUID(),seq:++this.seq,action,...(position?{position:{x:position.x,y:position.y,z:position.z}}:{})});}
   update(local:THREE.Vector3|undefined,now=performance.now()){
     if(!this.state?.active||this.state.simulation)return;const calibration=this.calibration();

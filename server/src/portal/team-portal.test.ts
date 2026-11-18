@@ -13,6 +13,15 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
+test('accueil global : visible par défaut, placement et rituel indépendants du choix d’aventure',()=>{
+  const room=new Room();room.model=structuredClone(model);const initial=room.snapshot();
+  assert.equal(initial.portal.config.enabled,true);assert.equal(initial.portal.phase,'waiting');assert.equal(initial.portal.players.length,4);assert.equal(initial.adventure.running,false);
+  const key=room.placementKey();room.portal.configure(config);const before=room.portal.snapshot();
+  room.adventure.select('menthe27','0.2.0',room.adventure.snapshot().revision);room.snapshot();
+  assert.equal(room.placementKey(),key);assert.deepEqual(room.portal.snapshot().config,before.config);
+  room.startSession(true);room.maintain();assert.equal(room.portal.active,true);assert.equal(room.adventure.snapshot().running,false);
+  room.portal.skip();room.maintain(Date.now()+3000);assert.equal(room.adventure.snapshot().running,true);assert.equal(room.portal.snapshot().phase,'completed');
+});
 function fixture(){const portal=new TeamPortal();portal.configure(config);portal.begin('session',['Un','Deux','Trois','Quatre'],model,1000);portal.presence([1,2,3,4],1000);return portal;}
 function pose(portal:TeamPortal,slot:number,seq:number,at:number,d=0.6){const s=portal.snapshot();portal.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,at);}
 function open(){const portal=fixture();for(let i=1;i<=4;i++)pose(portal,i,1,1100);portal.tick(1100,()=>{});for(let i=1;i<=4;i++)portal.claim(i,STAFF_IDS[i-1]);portal.tick(1200,()=>{});portal.tick(6200,()=>{});return portal;}

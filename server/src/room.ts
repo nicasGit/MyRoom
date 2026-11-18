@@ -9,9 +9,10 @@ import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
 export class Room {
   portal=new TeamPortal();seats=new SeatSessions();portalStore?:PortalPlacementStore;private portalKey='';
-  syncPortal(){const definition=this.adventure.engine.definition(),key=this.model?.id+'@'+definition.id+'@'+definition.version+'@'+this.adventure.sceneEpoch;
-    if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;this.portal.configure(this.portalStore?.get(this.placementKey())??definition.introduction?.config??{...structuredClone(DEFAULT_PORTAL),enabled:false});}}
-  placementKey(){const m=this.adventure.engine.definition();return this.model?.id+'@'+m.id+'@'+m.version;}
+  syncPortal(){const key=JSON.stringify(this.model);
+    if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;this.portal.configure(this.portalStore?.get(this.placementKey())??this.portalStore?.legacyForRoom(this.model?.id??'no-room')??structuredClone(DEFAULT_PORTAL));}
+    this.portal.prepare(this.playerNames,[...this.players.values()]);}
+  placementKey(){return (this.model?.id??'no-room')+'@team-portal@1';}
   startSession(simulation=false){this.adventure.configure(this.model);this.syncPortal();if(!this.model?.puzzles)throw Error('Configurez les placements avant le rituel.');if(this.portal.snapshot().config.enabled){if(this.adventure.snapshot().running||this.adventure.engine.snapshot().completedSteps.length||this.adventure.engine.snapshot().status!=='ready')throw Error('Arretez et reinitialisez la partie avant un nouveau rituel.');this.portal.begin(randomUUID(),this.playerNames,this.model,Date.now(),simulation);}else this.adventure.start();}
   stopSession(){this.portal.cancel();this.adventure.stop();}
   objects=new ObjectManipulation();

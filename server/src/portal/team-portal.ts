@@ -8,6 +8,11 @@ export class TeamPortal {
   private seen=new Set<string>();private launched=false;
   snapshot(){return {...structuredClone(this.state),serverNow:Date.now()};}
   get active(){return this.state.active;}
+  prepare(names:string[],slots:number[]){
+    if(this.active||this.state.phase!=='waiting')return;
+    const players=names.map((name,i)=>({slot:i+1,name,present:slots.includes(i+1),ready:false,claimed:false,crossed:false}));
+    if(JSON.stringify(players)!==JSON.stringify(this.state.players)){this.state.players=players;this.state.revision++;}
+  }
   configure(config:PortalConfig){if(this.active)throw Error('Arrêtez l’introduction avant de modifier son placement.');this.state.config=parsePortalConfig(config);this.state.revision++;}
   begin(sessionId:string,names:string[],room:RoomModel|null,now:number,simulation=false){
     if(this.active)throw Error('Introduction déjà active.');validatePlacement(this.state.config,room);

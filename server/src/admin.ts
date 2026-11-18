@@ -64,7 +64,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       try{room.snapshot();const c=record(body,['action','revision','config','slot']),action=c.action;
         const expected=action==='configure'?'action,config,revision':['cross','release-seat','simulate-claim','simulate-cross'].includes(String(action))?'action,revision,slot':'action,revision';if(Object.keys(c).sort().join(',')!==expected)throw Error('Champs de commande invalides.');
         if(integer(c.revision)!==room.portal.snapshot().revision)throw Error('Le portail a change. Actualisez.');
-        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=parsePortalConfig(c.config);validatePlacement(config,room.model);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
+        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=parsePortalConfig(c.config);if(config.enabled)validatePlacement(config,room.model);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
         else if(action==='reset'){room.portal.cancel();room.startSession();}
         else if(action==='stop')room.portal.cancel();
         else if(action==='skip')room.portal.skip();
@@ -117,7 +117,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       }
       if(req.url.endsWith('/start')){if(Object.keys(body).length)throw new Error('Objet vide attendu');if(!room.model||!puzzlePanel(room.model)){reply(res,400,{error:'Aucun mur libre pour le panneau des symboles.'});return;}room.startSession();}
       else if(req.url.endsWith('/stop')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.stopSession();}
-      else if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.reset();}
+      else if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.portal.cancel();room.adventure.reset();}
       else {if(Object.keys(body).length!==1||!('enabled' in body)||typeof body.enabled!=='boolean')throw new Error('Booléen attendu');room.adventure.setTestMode(body.enabled);}
       log('adventure_admin',{action:req.url.split('/').at(-1),testMode:room.adventure.snapshot().testMode});broadcast();reply(res,200,{ok:true});return;
     }

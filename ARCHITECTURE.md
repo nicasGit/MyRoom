@@ -2,6 +2,8 @@
 
 ## Team Portal — introduction de session facultative
 
+Évolution locale après 0.8.0 : Team Portal devient l’accueil global de MyRoom, activé par défaut pour chaque pièce et présenté avant les objets d’aventure. Sa clé de placement est `pièce@team-portal@1`, indépendante du manifeste ; les anciens placements par aventure restent lisibles comme secours sans supprimer leurs fichiers. Le choix d’aventure ne réinitialise plus l’accueil. Les métadonnées `introduction` des manifestes historiques restent lisibles mais ne décident plus de l’activation globale. Une désactivation explicite dans l’administration et les accès de test temporaires permettent de contourner cet accueil intentionnellement. Le calibrage et la confirmation physique restent nécessaires avant les interactions.
+
 Un contrat dédié `introduction` dans les manifestes complète le catalogue sans changer `PuzzleModule`. Menthe 27 0.3.0 conserve les étapes de 0.2.0. `Room` coordonne une machine d’états `TeamPortal` avant le démarrage unique de l’aventure. Le détecteur de franchissement pur utilise historique, rectangle utile, sens et hystérésis ; les données de tête déclarées ne constituent pas une mesure indépendante. Les bâtons réutilisent les saisies, baux, positions et calibrage existants. Placements indépendants versionnés, reprise privée de place, commandes administrateur protégées et simulation PC identifiée : voir [Team Portal](docs/team-portal.md). Les anciennes aventures sans introduction conservent leur démarrage direct.
 
 ## Prises d’objets — évolution version 0.7.0

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1
+
+- Le vortex et les quatre bâtons deviennent l’accueil global de MyRoom, visible avant les objets d’aventure après calibrage.
+- Introduction activée par défaut et placement commun à la pièce, indépendant de l’aventure sélectionnée ; anciens placements conservés.
+- Accès direct à l’introduction dans l’administration, sans imposer le mode test PC. Les tests directs d’énigmes restent explicites.
+- 86 tests logiciels ; aucun essai physique Quest effectué par l’agent.
+
 ## 0.8.0
 
 - Team Portal : introduction coopérative facultative, avec quatre bâtons nominatifs, vortex et passages individuels validés par le serveur.

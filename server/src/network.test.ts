@@ -104,6 +104,7 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(placement)})).status,401);
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify(placement)})).status,200);
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify(placement)})).status,400);
+    const introState=await (await fetch(`${adminUrl}state`,{headers})).json();assert.equal((await fetch(`${adminUrl}portal`,{method:'POST',headers,body:JSON.stringify({action:'configure',revision:introState.portal.revision,config:{...introState.portal.config,enabled:false}})})).status,200);
     assert.equal((await fetch(`${adminUrl}adventure/start`,{method:'POST',headers,body:'{}'})).status,200);
     const started=(await (await fetch(`${adminUrl}state`,{headers})).json()).adventure;
     assert.equal((await fetch(`${adminUrl}adventure/place`,{method:'POST',headers,body:JSON.stringify({revision:5,gameRevision:started.revision,points})})).status,400);

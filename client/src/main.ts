@@ -26,7 +26,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.8.0');
+diagnostic('Version client', '0.8.1');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -147,7 +147,7 @@ enter.onclick = async () => {
       const previousAngle=previousLid?.rotation.x,previousTarget=previousLid?.userData.targetAngle;
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
       if(!calibration||!view||survey.hasDraft())return;
-      gameGroup=portal.state?.active?portalView(portal.state,ownSlot):adventureGroup(view.model,view.state,ownId);
+      gameGroup=portal.visible()&&portal.state?portalView(portal.state,ownSlot):adventureGroup(view.model,view.state,ownId);
       applyObjectPoses(gameGroup,view.state.objects);
       const lid=gameGroup.userData.lid as THREE.Group|undefined;
       if(lid&&previousAngle!==undefined&&previousTarget===lid.userData.targetAngle)lid.rotation.x=previousAngle;
@@ -324,7 +324,7 @@ enter.onclick = async () => {
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
       handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect());
-      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!handCards.blocksSelect());
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!handCards.blocksSelect()&&(!portal.visible()||!!portal.state?.active));
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);
@@ -405,7 +405,7 @@ function connect() {
       if(message.type==='object_result'&&!message.changed)grabber.reject(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
-        ownSlot=message.players.find((p:{id:string;slot:number})=>p.id===ownId)?.slot??0;if(message.portal)portal.receive(message.portal,ownSlot,message.model??null);
+        ownSlot=message.players.find((p:{id:string;slot:number})=>p.id===ownId)?.slot??0;if(message.portal)portal.receive(message.portal,ownSlot,message.model??null,!!message.adventure?.engine.testStartStepId);
         showPlayers(message.players); revision = message.puzzle.revision;
         survey.receive(message.model??null,message.libraryRevision??0);
         if(message.adventure)adventure.receive(message.model??null,message.adventure,message.libraryRevision??0);
