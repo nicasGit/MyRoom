@@ -7,7 +7,7 @@ import type { HybridPublicState } from '../../server/src/puzzles/blackjack-hybri
 import type { ObjectSnapshot,ObjectId } from '../../server/src/object-manipulation.js';
 export function applyObjectPoses(group:THREE.Group,objects:ObjectSnapshot|undefined){
   const roots=group.userData.grabbables as Partial<Record<ObjectId,THREE.Object3D>>|undefined;if(!roots)return;
-  for(const [id,node] of Object.entries(roots)){const p=objects?.poses[id as ObjectId];if(p&&node){node.position.set(p.x,p.y,p.z);node.rotation.y=p.yaw;}}
+  for(const [id,node] of Object.entries(roots)){const p=objects?.poses[id as ObjectId];if(node)node.userData.held=objects?.held.some(held=>held.target===id)??false;if(p&&node){node.position.set(p.x,p.y,p.z);node.rotation.y=p.yaw;}}
 }
 export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'};
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};

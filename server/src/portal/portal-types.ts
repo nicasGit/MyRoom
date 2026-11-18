@@ -5,7 +5,7 @@ export type StaffId='staff1'|'staff2'|'staff3'|'staff4';
 export const STAFF_IDS:StaffId[]=['staff1','staff2','staff3','staff4'];
 export type PortalConfig={enabled:boolean;confirmed:boolean;stand:Vec3;portal:{x:number;z:number;yaw:number;width:number;height:number;direction:1|-1;approach:number;exit:number};staffs:{color:string;symbol:string;length:number;crystal:number}[]};
 export type PortalPhase='waiting'|'collecting'|'opening'|'portal-open'|'transitioning'|'completed';
-export type PortalPublic={serverNow:number;sessionId:string;revision:number;active:boolean;phase:PortalPhase;config:PortalConfig;simulation:boolean;startedAt:number;players:{slot:number;name:string;present:boolean;ready:boolean;claimed:boolean;crossed:boolean}[]};
+export type PortalPublic={staffPositions?:Partial<Record<StaffId,Vec3>>;serverNow:number;sessionId:string;revision:number;active:boolean;phase:PortalPhase;config:PortalConfig;simulation:boolean;startedAt:number;players:{slot:number;name:string;present:boolean;ready:boolean;claimed:boolean;crossed:boolean}[]};
 export const DEFAULT_PORTAL:PortalConfig={enabled:true,confirmed:false,stand:{x:2,y:0,z:2},portal:{x:4,z:3,yaw:0,width:1.4,height:2.2,direction:1,approach:1,exit:1},staffs:[{color:'#80efb0',symbol:'♣',length:0.6,crystal:0.07},{color:'#ffd166',symbol:'★',length:0.6,crystal:0.07},{color:'#448aff',symbol:'ϟ',length:0.6,crystal:0.07},{color:'#bc7bff',symbol:'◎',length:0.6,crystal:0.07}]};
 export function number(value:unknown,min:number,max:number){if(typeof value!=='number'||!Number.isFinite(value)||value<min||value>max)throw Error('Valeur numérique hors limites.');return value;}
 export function vec3(value:unknown):Vec3{const p=record(value,['x','y','z']);return {x:number(p.x,-30,30),y:number(p.y,-2,4),z:number(p.z,-30,30)};}
@@ -21,8 +21,7 @@ export function validatePlacement(c:PortalConfig,room:RoomModel|null){
   // Sample the complete walking corridor, not only the portal center.
   const p=c.portal,nx=Math.sin(p.yaw)*p.direction,nz=Math.cos(p.yaw)*p.direction;
   for(let u=-p.width/2-0.25;u<=p.width/2+0.251;u+=0.1)for(let d=-p.exit;d<=p.approach+0.001;d+=0.1)if(!clear(p.x+Math.cos(p.yaw)*u+nx*d,p.z-Math.sin(p.yaw)*u+nz*d))throw Error('Couloir du portail hors pièce ou dans un obstacle déclaré.');
-  for(const dx of [-0.9,0,0.9])for(const dz of [-0.35,0,0.35])if(!clear(c.stand.x+dx,c.stand.z+dz))throw Error('Socle hors pièce ou dans un obstacle déclaré.');
-  if(Math.hypot(c.stand.x-p.x,c.stand.z-p.z)<p.width/2+0.9)throw Error('Éloignez le socle du passage.');
+  if(!clear(c.stand.x,c.stand.z))throw Error('Repère d’informations hors pièce ou dans un obstacle déclaré.');
 }
 export type PortalCommand={type:'portal_action';sessionId:string;revision:number;commandId:string;action:'pose'|'unready'|'confirm';seq:number;position?:Vec3};
 export function parsePortalCommand(value:unknown):PortalCommand{

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { TeamPortal } from './team-portal.js';
+import { staffLayout } from './staff-layout.js';
 import { CrossingDetector } from './crossing-detector.js';
 import { DEFAULT_PORTAL,parsePortalCommand,parsePortalConfig,validatePlacement,STAFF_IDS } from './portal-types.js';
 import { SeatSessions } from './seat-sessions.js';
@@ -13,6 +14,27 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
+test('floating staffs: deterministic shared layout avoids obstacles and vortex corridor',()=>{
+  const room={...model,obstacles:[{name:'Table',x:6,z:6,width:1,depth:1,height:1}]};
+  const layout=staffLayout(config,room),positions=Object.values(layout);
+  assert.equal(positions.length,4);assert.deepEqual(staffLayout(config,room),layout);
+  for(const [i,p] of positions.entries()){
+    assert.ok(p.x>=.3&&p.x<=7.7&&p.z>=.3&&p.z<=7.7);
+    assert.ok(Math.abs(p.x-6)>=.85||Math.abs(p.z-6)>=.85);
+    assert.ok(Math.abs(p.x-4)>=1.2||p.z-3<=-1.4||p.z-3>=1.4);
+    assert.ok(p.y>=.5&&p.y+.6<room.height);
+    for(const other of positions.slice(i+1))assert.ok(Math.hypot(p.x-other.x,p.z-other.z)>=1);
+  }
+  const portal=new TeamPortal();portal.configure(config);portal.begin('layout',[],room,1000);
+  const publicPositions=portal.snapshot().staffPositions;
+  assert.deepEqual(publicPositions,layout);
+  for(const id of STAFF_IDS){const pose=portal.staffPoses()[id];assert.ok(pose);assert.deepEqual({x:pose.x,y:pose.y,z:pose.z},layout[id]);}
+});
+test('floating staffs: insufficient space refuses start without activating the ritual',()=>{
+  const room={...model,height:1};assert.deepEqual(staffLayout(config,room),{});
+  const portal=new TeamPortal();portal.configure(config);
+  assert.throws(()=>portal.begin('crowded',[],room,1000));assert.equal(portal.active,false);
+});
 test('accueil global : visible par défaut, placement et rituel indépendants du choix d’aventure',()=>{
   const room=new Room();room.model=structuredClone(model);const initial=room.snapshot();
   assert.equal(initial.portal.config.enabled,true);assert.equal(initial.portal.phase,'waiting');assert.equal(initial.portal.players.length,4);assert.equal(initial.adventure.running,false);

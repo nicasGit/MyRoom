@@ -1,12 +1,15 @@
 import { CrossingDetector } from './crossing-detector.js';
 import { DEFAULT_PORTAL,STAFF_IDS,parsePortalConfig,validatePlacement,type PortalConfig,type PortalPublic,type PortalCommand,type Vec3 } from './portal-types.js';
 import type { RoomModel } from '../scene-schema.js';
+import { staffLayout } from './staff-layout.js';
 export class TeamPortal {
   private state:PortalPublic={serverNow:0,sessionId:'inactive',revision:0,active:false,phase:'waiting',config:structuredClone(DEFAULT_PORTAL),simulation:false,startedAt:0,players:[]};
   private pose=new Map<number,{p:Vec3;at:number;seq:number}>();
   private detectors=Array.from({length:4},()=>new CrossingDetector());
   private seen=new Set<string>();private launched=false;
-  snapshot(){return {...structuredClone(this.state),serverNow:Date.now()};}
+  private room:RoomModel|null=null;private layoutKey='';private positions:ReturnType<typeof staffLayout>={};
+  setRoom(room:RoomModel|null){this.room=room;const key=JSON.stringify([room,this.state.config]);if(key!==this.layoutKey){this.layoutKey=key;this.positions=staffLayout(this.state.config,room);}}
+  snapshot(){this.setRoom(this.room);return {...structuredClone(this.state),staffPositions:structuredClone(this.positions),serverNow:Date.now()};}
   get active(){return this.state.active;}
   prepare(names:string[],slots:number[]){
     if(this.active||this.state.phase!=='waiting')return;
@@ -15,7 +18,8 @@ export class TeamPortal {
   }
   configure(config:PortalConfig){if(this.active)throw Error('Arrêtez l’introduction avant de modifier son placement.');this.state.config=parsePortalConfig(config);this.state.revision++;}
   begin(sessionId:string,names:string[],room:RoomModel|null,now:number,simulation=false){
-    if(this.active)throw Error('Introduction déjà active.');validatePlacement(this.state.config,room);
+    if(this.active)throw Error('Introduction déjà active.');validatePlacement(this.state.config,room);this.setRoom(room);
+    if(Object.keys(this.positions).length!==4)throw Error('Pas assez de place libre pour disperser les quatre bâtons. Ajustez le portail ou le relevé de pièce.');
     if(!this.state.config.confirmed)throw Error('L’organisateur doit vérifier et confirmer l’espace physique.');
     this.pose.clear();this.seen.clear();this.detectors.forEach(d=>d.reset());this.launched=false;
     this.state={...this.state,sessionId,revision:this.state.revision+1,active:true,phase:'waiting',simulation,startedAt:now,players:names.map((name,i)=>({slot:i+1,name,present:false,ready:false,claimed:false,crossed:false}))};
@@ -70,6 +74,6 @@ export class TeamPortal {
     if(this.state.phase==='transitioning'&&this.allReady()&&now-this.state.startedAt>=2000&&!this.launched){launch();this.launched=true;this.state.phase='completed';this.state.active=false;this.state.revision++;this.pose.clear();}
     return old!==this.state.revision;
   }
-  staffPoses(){if(!this.active)return {};return Object.fromEntries(STAFF_IDS.map((id,i)=>[id,{x:this.state.config.stand.x+(i-1.5)*0.42,y:this.state.config.stand.y+0.9,z:this.state.config.stand.z,yaw:0}]));}
+  staffPoses(){if(!this.active)return {};this.setRoom(this.room);return Object.fromEntries(Object.entries(this.positions).map(([id,p])=>[id,{...p,yaw:0}]));}
 }
 import { inside as insideRoom } from '../scene-schema.js';

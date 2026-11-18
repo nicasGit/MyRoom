@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2
+
+- Bâtons du vortex en suspension, sans socle, avec halos respirants.
+- Répartition commune dans la pièce, hors obstacles déclarés et couloir du vortex.
+- Manipulation existante conservée ; 88 tests logiciels réussis. Aucun essai physique Quest effectué par l'agent.
+
 ## 0.8.1
 
 - Le vortex et les quatre bâtons deviennent l’accueil global de MyRoom, visible avant les objets d’aventure après calibrage.

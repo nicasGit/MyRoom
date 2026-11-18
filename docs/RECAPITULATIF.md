@@ -4,6 +4,16 @@
 
 ## 1. Projet et architecture
 
+### 18 novembre 2026 - préparation de publication 0.8.2
+
+Publication autorisée par l'utilisateur. Version add-on et diagnostic client portés à 0.8.2, changelog complété pour les bâtons flottants. Typecheck et build relancés avec succès avant commit. Première relance des tests : 86/88, échec HTTP 400 d'une écriture de pièce et refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 88/88 réussis, dont les parcours réseau. La disponibilité de l'image ARM64 sera vérifiée après le push ; aucune publication ni exécution matérielle encore annoncée à cette étape.
+
+### 18 novembre 2026 - bâtons flottants et dispersés, travail local
+
+Sur la branche `feat/floating-staffs`, retrait du socle 3D de l'accueil Vortex. Les quatre bâtons nominatifs sont en suspension avec deux halos respirants et une oscillation visuelle de 2,5 cm, suspendue pendant leur manipulation. Le serveur calcule et diffuse quatre positions déterministes dans le relevé de pièce, espacées d'au moins un mètre, hors obstacles déclarés et couloir du vortex ; un manque de place refuse le démarrage. Ces positions initialisent aussi les poses manipulables existantes. Le repère historique `stand` reste lisible et sert aux informations flottantes ; libellés administrateur adaptés. Le calibrage A/B, les attributions, les baux, les énigmes et le déploiement HAOS restent conservés.
+
+Vérifications exécutées avec succès : `npm run typecheck`, `npm run build`, `npm test` (**88 tests**, dont deux nouveaux tests de disposition et de refus sans activation) et `git diff --check`. Le scénario réseau à quatre joueurs reste passant. Avertissement Vite habituel pour le bloc Three.js de 530 kB. Aucun test visuel ou physique Quest effectué ; répartition et lisibilité à valider dans la pièce réelle. Calcul fondé sur le relevé déclaré, sans détection physique des obstacles. Changements locaux non publiés, version publiée toujours 0.8.1. Voir [Team Portal](team-portal.md).
+
 ### 18 novembre 2026 — publication 0.8.1 confirmée
 
 Publication de l’accueil global autorisée explicitement par l’utilisateur. Version de l’add-on et diagnostic client portés à 0.8.1, changelog complété. Les 86 tests, le typecheck et le build ont réussi lors de la modification ; vérifications de publication relancées. Publication confirmée : commit `b2249b5` sur `main`, workflow [44356005856](https://github.com/nicasGit/MyRoom/actions/runs/44356005856) réussi. Typecheck, build et 86 tests relancés avant commit avec succès. Manifeste `ghcr.io/nicasgit/myroom:0.8.1` vérifié : Linux ARM64, label 0.8.1, digest `sha256:f9df923bf16ac71ee9a64d41ce489db09be813800bbacb1d66213c3b96271ee8`. Branche intermédiaire conservée. Cette vérification confirme la disponibilité du registre, pas une exécution physique HAOS ou Quest. Aucun essai physique annoncé.
