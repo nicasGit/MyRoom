@@ -1,3 +1,4 @@
+import { DEFAULT_PORTAL } from '../portal/portal-types.js';
 // Version 0.1.0 remains readable for existing snapshots; 0.2.0 is the playable Phase 2.
 export const menthe27={
   schemaVersion:1,id:'menthe27',version:'0.1.0',title:'Opération Menthe 27',description:'Prototype Phase 1 : le coffre ouvre l’accès à une étape de blackjack hybride encore indisponible. Cette version ne constitue pas l’aventure complète.',
@@ -19,3 +20,5 @@ export const menthe27Hybrid={
   objects:[...structuredClone(menthe27.objects),{instanceId:'menthe-blackjack',objectId:'table',placementKey:'table'}],
   victory:{requiredSteps:['symbols','casino','videoclub']},
 };
+
+export const menthe27Portal={...structuredClone(menthe27Hybrid),version:'0.3.0',introduction:{type:'team-portal',schemaVersion:1,config:structuredClone(DEFAULT_PORTAL)}};

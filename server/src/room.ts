@@ -1,11 +1,22 @@
 import type { RoomModel } from './scene-schema.js';
 import { Adventure } from './adventure.js';
 import { text,integer,list } from './engine/validation.js';
+import { TeamPortal } from './portal/team-portal.js';
+import { SeatSessions } from './portal/seat-sessions.js';
+import { DEFAULT_PORTAL } from './portal/portal-types.js';
+import type { PortalPlacementStore } from './portal/placement-store.js';
+import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
 export class Room {
+  portal=new TeamPortal();seats=new SeatSessions();portalStore?:PortalPlacementStore;private portalKey='';
+  syncPortal(){const definition=this.adventure.engine.definition(),key=this.model?.id+'@'+definition.id+'@'+definition.version+'@'+this.adventure.sceneEpoch;
+    if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;this.portal.configure(this.portalStore?.get(this.placementKey())??definition.introduction?.config??{...structuredClone(DEFAULT_PORTAL),enabled:false});}}
+  placementKey(){const m=this.adventure.engine.definition();return this.model?.id+'@'+m.id+'@'+m.version;}
+  startSession(simulation=false){this.adventure.configure(this.model);this.syncPortal();if(!this.model?.puzzles)throw Error('Configurez les placements avant le rituel.');if(this.portal.snapshot().config.enabled){if(this.adventure.snapshot().running||this.adventure.engine.snapshot().completedSteps.length||this.adventure.engine.snapshot().status!=='ready')throw Error('Arretez et reinitialisez la partie avant un nouveau rituel.');this.portal.begin(randomUUID(),this.playerNames,this.model,Date.now(),simulation);}else this.adventure.start();}
+  stopSession(){this.portal.cancel();this.adventure.stop();}
   objects=new ObjectManipulation();
   captainId:string|undefined;
-  maintain(now=Date.now()){this.objects.configure(this.model,this.adventure.sceneEpoch);const moved=this.objects.maintain([...this.players.keys()],now);if(!this.captainId||!this.players.has(this.captainId))this.captainId=[...this.players].sort((a,b)=>a[1]-b[1])[0]?.[0];return this.adventure.maintain({captainId:this.captainId,players:[...this.players.keys()],now})||moved;}
+  maintain(now=Date.now()){this.syncPortal();const presence=this.portal.active&&this.portal.presence([...this.players.values()],now);const transition=this.portal.tick(now,()=>this.adventure.start());this.objects.configure(this.model,this.adventure.sceneEpoch,this.portal.staffPoses());const moved=this.objects.maintain([...this.players.keys()],now);if(!this.captainId||!this.players.has(this.captainId))this.captainId=[...this.players].sort((a,b)=>a[1]-b[1])[0]?.[0];return this.adventure.maintain({captainId:this.captainId,players:[...this.players.keys()],now})||moved||presence||transition;}
   leave(id:string){this.players.delete(id);this.maintain();}
   constructor(public adventure=new Adventure()){}
   playerNames=['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
@@ -20,8 +31,8 @@ export class Room {
   players = new Map<string, number>();
   revision = 0;
   solved = false;
-  join(id: string) {
-    const slot = [1, 2, 3, 4].find(n => ![...this.players.values()].includes(n));
+  join(id: string,requestedSlot?:number) {
+    const slot = (requestedSlot?[requestedSlot]:[1, 2, 3, 4]).find(n => ![...this.players.values()].includes(n));
     if (slot === undefined) return false;
     this.players.set(id, slot); return true;
   }
@@ -32,7 +43,7 @@ export class Room {
   snapshot() {
     this.adventure.configure(this.model);
     this.maintain();
-    return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
+    return { type: 'state',portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
   }
   reset() { this.solved = false; this.revision++; }
 }

@@ -1,0 +1,23 @@
+import * as THREE from 'three';
+import { label } from '../adventure-view';
+import { staffView } from './staff-view';
+import { STAFF_IDS,type PortalPublic } from '../../../server/src/portal/portal-types.js';
+export function portalView(state:PortalPublic,slot=0){
+  const clockOffset=state.serverNow-Date.now();
+  const group=new THREE.Group(),c=state.config,roots:Record<string,THREE.Group>={};group.userData.grabbables=roots;
+  const base=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.8,0.5),new THREE.MeshBasicMaterial({color:0x26364a}));base.position.set(c.stand.x,c.stand.y+0.4,c.stand.z);group.add(base);
+  state.players.forEach((player,i)=>{const staff=staffView(player.name,c.staffs[i],player.claimed);staff.position.set(c.stand.x+(i-1.5)*0.42,c.stand.y+0.9,c.stand.z);roots[STAFF_IDS[i]]=staff;group.add(staff);});
+  const counter=label(`${state.players.filter(p=>p.claimed).length}/4 bâtons · ${state.players.filter(p=>p.crossed).length}/4 passages`,'#ffffff');counter.position.set(c.stand.x,c.stand.y+0.65,c.stand.z+0.28);group.add(counter);
+  const gate=new THREE.Group();gate.position.set(c.portal.x,c.portal.height/2,c.portal.z);gate.rotation.y=c.portal.yaw;group.add(gate);
+  const rings=[0,1,2].map(i=>{const ring=new THREE.Mesh(new THREE.TorusGeometry(0.5-i*0.055,0.015,6,48),new THREE.MeshBasicMaterial({color:i===1?0xbc7bff:0x80efb0,transparent:true,opacity:0.8,depthWrite:false,side:THREE.DoubleSide}));ring.scale.set(c.portal.width,c.portal.height,1);gate.add(ring);return ring;});
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(0.48,48),new THREE.MeshBasicMaterial({color:0x4050bd,side:THREE.DoubleSide,transparent:true,opacity:0.25,depthWrite:false}));disc.scale.set(c.portal.width,c.portal.height,1);gate.add(disc);
+  const beams=c.staffs.map((staff,i)=>{const start=new THREE.Vector3(c.stand.x+(i-1.5)*0.42,c.stand.y+0.9+staff.length,c.stand.z),end=gate.position.clone(),delta=end.sub(start),beam=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,delta.length(),6),new THREE.MeshBasicMaterial({color:staff.color,transparent:true,opacity:0.5,depthWrite:false}));beam.position.copy(start).addScaledVector(delta,0.5);beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(beam);return beam;});
+  const beamStart=new THREE.Vector3(),beamDelta=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);
+  group.userData.updateBeams=()=>beams.forEach((beam,i)=>{const staff=roots[STAFF_IDS[i]];beamStart.copy(staff.position);beamStart.y+=c.staffs[i].length+c.staffs[i].crystal;beamDelta.copy(gate.position).sub(beamStart);const length=beamDelta.length();beam.position.copy(beamStart).addScaledVector(beamDelta,0.5);if(length>0.001)beam.quaternion.setFromUnitVectors(up,beamDelta.divideScalar(length));beam.scale.y=length/(beam.geometry as THREE.CylinderGeometry).parameters.height;});
+  const confirm=label('Passage accessible : confirmer','#ffe082');confirm.position.set(c.stand.x,c.stand.y+1.3,c.stand.z+0.3);confirm.userData.portalConfirm=true;group.add(confirm);
+  if(state.players.find(p=>p.slot===slot)?.crossed){(rings[0].material as THREE.MeshBasicMaterial).color.setHex(0xffe082);const message=label('Votre passage est validé','#ffe082');message.position.set(c.portal.x,1.4,c.portal.z);group.add(message);}
+  // Floor arrow identifies the approach side without moving the XR camera.
+  const arrow=new THREE.ArrowHelper(new THREE.Vector3(-Math.sin(c.portal.yaw)*c.portal.direction,0,-Math.cos(c.portal.yaw)*c.portal.direction),new THREE.Vector3(c.portal.x+Math.sin(c.portal.yaw)*c.portal.direction*c.portal.approach,0.03,c.portal.z+Math.cos(c.portal.yaw)*c.portal.direction*c.portal.approach),c.portal.approach,0xffe082,0.2,0.12);group.add(arrow);
+  group.userData.animatePortal=(now:number)=>{group.userData.updateBeams();const elapsed=now+clockOffset-state.startedAt;const amount=state.phase==='opening'?THREE.MathUtils.clamp(elapsed/5000,0.02,1):state.phase==='transitioning'?THREE.MathUtils.clamp(1-elapsed/2000,0.02,1):state.phase==='portal-open'?1:0.02;gate.scale.setScalar(amount);rings[1].rotation.z=now/1300;rings[2].rotation.z=-now/1700;beams.forEach(b=>b.visible=state.phase==='opening'||state.phase==='portal-open');confirm.visible=state.phase==='portal-open';};
+  return group;
+}

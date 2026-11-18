@@ -12,6 +12,8 @@ import { adventureGroup,animateAdventure,applyObjectPoses } from './adventure-vi
 import { GrabInputs,ObjectGrabber } from './object-grab';
 import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
+import { PortalClient } from './portal/portal-client';
+import { portalView } from './portal/portal-view';
 import { XRHandsView } from './xr-hands-view';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
@@ -139,13 +141,13 @@ enter.onclick = async () => {
     let gameGroup:THREE.Group|undefined;
     let gameKey='';
     updateAdventureScene=()=>{
-      const view=adventure.viewState(),key=JSON.stringify([view?.model,view?.state.revision,calibration,survey.hasDraft()]);
+      const view=adventure.viewState(),key=JSON.stringify([view?.model,view?.state.revision,portal.state?.revision,calibration,survey.hasDraft()]);
       if(key===gameKey){if(gameGroup)applyObjectPoses(gameGroup,view?.state.objects);return;}gameKey=key;
       const previousLid=gameGroup?.userData.lid as THREE.Group|undefined;
       const previousAngle=previousLid?.rotation.x,previousTarget=previousLid?.userData.targetAngle;
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
       if(!calibration||!view||survey.hasDraft())return;
-      gameGroup=adventureGroup(view.model,view.state,ownId);
+      gameGroup=portal.state?.active?portalView(portal.state,ownSlot):adventureGroup(view.model,view.state,ownId);
       applyObjectPoses(gameGroup,view.state.objects);
       const lid=gameGroup.userData.lid as THREE.Group|undefined;
       if(lid&&previousAngle!==undefined&&previousTarget===lid.userData.targetAngle)lid.rotation.x=previousAngle;
@@ -208,7 +210,7 @@ enter.onclick = async () => {
       hud.visible=!touchOverlay;
       if(!touchOverlay&&pose){
         hudAnchor.place(hud,new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation));
-        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${handStatus}\n${(feedback.textContent??'').slice(0,180)}\n${(adventure.story()||scanStatus.textContent||'').slice(0,240)}`;
+        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${handStatus}\n${(feedback.textContent??'').slice(0,180)}\n${(portal.story()||adventure.story()||scanStatus.textContent||'').slice(0,240)}`;
         if(text!==hudKey){
           hudKey=text;hudContext.fillStyle='rgba(9,20,34,0.94)';hudContext.fillRect(0,0,1024,512);hudContext.fillStyle='#ffffff';hudContext.font='30px sans-serif';
           let y=42;for(const paragraph of text.split('\n')){let line='';for(const word of paragraph.split(' ')){if(hudContext.measureText(line+word).width>970){hudContext.fillText(line,24,y);y+=38;line='';}line+=word+' ';}hudContext.fillText(line,24,y);y+=45;}
@@ -298,7 +300,8 @@ enter.onclick = async () => {
         if(gameGroup&&!survey.hasDraft()){
           const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference),viewer=event.frame.getViewerPose(reference);
           adventure.updatePosition(viewer?new THREE.Vector3().copy(viewer.transform.position):undefined);
-          if(ray)adventure.raycast(gameGroup,new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)),renderer!.xr.getCamera());
+          if(ray&&portal.state?.active)portal.raycast(gameGroup,new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)),renderer!.xr.getCamera());
+          else if(ray)adventure.raycast(gameGroup,new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)),renderer!.xr.getCamera());
         }
         return;
       }
@@ -314,6 +317,8 @@ enter.onclick = async () => {
       const pose = frame?.getViewerPose(reference);
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
+      portal.update(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
+      gameGroup?.userData.animatePortal?.(Date.now());
       const hands=frame&&calibration?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
       handsView.update(frame,reference,session!.inputSources,hands.filter(h=>h.pressed).map(h=>h.side));
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
@@ -369,6 +374,8 @@ let socket: WebSocket;
 const adventure=new AdventureClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
 const grabber=new ObjectGrabber(()=>ownId,()=>adventure.viewState()?.state.objects,message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},message=>{feedback.textContent=message;});
 const handCards=new HandCards(()=>ownId,action=>adventure.handAction(action),message=>{feedback.textContent=message;});
+const portal=new PortalClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
+let ownSlot=0;
 let retry: ReturnType<typeof setTimeout>;
 function showPlayers(players: { id: string; slot: number;name?:string }[]) {
   element('players').replaceChildren(...[1, 2, 3, 4].map(slot => {
@@ -379,8 +386,11 @@ function showPlayers(players: { id: string; slot: number;name?:string }[]) {
   }));
 }
 showPlayers([]);
+const forgetSeat=document.createElement('button');forgetSeat.textContent='Rejoindre avec une nouvelle place';forgetSeat.hidden=true;status.after(forgetSeat);
+forgetSeat.onclick=()=>{try{sessionStorage.removeItem('myroom-seat');}catch{}location.reload();};
 function connect() {
-  socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+  let resume='';try{resume=sessionStorage.getItem('myroom-seat')??'';}catch{}
+  socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`,resume?['myroom-resume.'+resume]:[]);
   socket.onopen = () => {
     adventure.setConnected(true);
     status.textContent = 'Connecté à la salle.';
@@ -390,25 +400,28 @@ function connect() {
   socket.onmessage = event => {
     try {
       const message = JSON.parse(String(event.data));
-      if (message.type === 'welcome') {ownId = message.id;adventure.setIdentity(message.id);}
+      if (message.type === 'welcome') {ownId = message.id;adventure.setIdentity(message.id);try{if(message.resumeToken)sessionStorage.setItem('myroom-seat',message.resumeToken);}catch{}}
       if (message.type === 'adventure_result'||message.type==='puzzle_result') adventure.result(message.message);
       if(message.type==='object_result'&&!message.changed)grabber.reject(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
+        ownSlot=message.players.find((p:{id:string;slot:number})=>p.id===ownId)?.slot??0;if(message.portal)portal.receive(message.portal,ownSlot,message.model??null);
         showPlayers(message.players); revision = message.puzzle.revision;
         survey.receive(message.model??null,message.libraryRevision??0);
         if(message.adventure)adventure.receive(message.model??null,message.adventure,message.libraryRevision??0);
         element('puzzle').textContent = `Démo : ${message.puzzle.solved ? 'résolue' : 'à résoudre'} · révision ${revision}`;
         solve.disabled = message.puzzle.solved;
       }
+      if(message.type==='portal_result'&&!message.accepted)feedback.textContent=message.message;
       if (message.type === 'error') status.textContent = message.message;
     } catch { status.textContent = 'Réponse serveur invalide.'; }
   };
   socket.onclose = event => {
-      grabber.cancel();handCards.cancel();
+      portal.update(undefined);grabber.cancel();handCards.cancel();
     adventure.setConnected(false);
     solve.disabled = true; showPlayers([]);
     logStatus.textContent = 'Journal serveur déconnecté. Les prochains événements restent en attente.';
+    forgetSeat.hidden=event.code!==1008;
     status.textContent = event.code === 1008 ? event.reason : 'Déconnecté. Reconnexion dans 2 secondes…';
     if (event.code !== 1008) retry = setTimeout(connect, 2000);
   };

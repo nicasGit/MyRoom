@@ -9,12 +9,15 @@ import { RoomStore } from './room-store.js';
 import { Adventure,parseAdventureCommand,parsePuzzleCommand } from './adventure.js';
 import { createRegistry,createCatalog } from './adventures/catalog.js';
 import { join } from 'node:path';
+import { PortalPlacementStore } from './portal/placement-store.js';
+import { parsePortalCommand,STAFF_IDS } from './portal/portal-types.js';
 import { parseObjectCommand } from './object-manipulation.js';
 
 const registry=createRegistry();
 const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
 const room = new Room(new Adventure(registry,catalog));
 const store = new RoomStore(process.env.DATA_DIR ?? 'data');
+room.portalStore=new PortalPlacementStore(process.env.DATA_DIR??'data');
 room.model = store.active(); room.libraryRevision = store.snapshot().revision;
 const connections = new Map<string, Connection>();
 const http = createServer((req, res) => {
@@ -33,7 +36,7 @@ http.on('upgrade', (req, socket, head) => {
   // Browser clients must use the same public origin; also checked behind Nginx.
   const origin = req.headers.origin;
   const allowedOrigin = process.env.PUBLIC_ORIGIN;
-  if (req.url !== '/ws' || !origin || (allowedOrigin ? origin !== allowedOrigin : !['http://localhost:5173', 'http://127.0.0.1:5173'].includes(origin))) {
+  if (new URL(req.url??'/', 'http://localhost').pathname !== '/ws' || !origin || (allowedOrigin ? origin !== allowedOrigin : !['http://localhost:5173', 'http://127.0.0.1:5173'].includes(origin))) {
     log('connection_rejected', { reason: req.url !== '/ws' ? 'invalid_path' : 'origin_not_allowed', origin: origin?.slice(0, 256), expectedOrigin: allowedOrigin ?? 'localhost:5173', address: req.socket.remoteAddress });
     socket.destroy(); return;
   }
@@ -51,20 +54,23 @@ wss.on('connection', (ws, req) => {
   const address = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(peer ?? '') && typeof forwarded === 'string' ? forwarded.slice(0, 128) : peer;
   const context = { id, address, userAgent: req.headers['user-agent']?.slice(0, 256), origin: req.headers.origin?.slice(0, 256) };
   ws.on('error', error => log('socket_error', { ...context, message: error.message }));
-  if (!room.join(id)) {
+  let seat:{slot:number;token:string};
+  try{const protocol=req.headers['sec-websocket-protocol'];if(protocol&&!/^myroom-resume\.[0-9a-f]{64}$/.test(protocol))throw Error('Protocole invalide.');seat=room.seats.acquire(id,protocol?.slice('myroom-resume.'.length),room.portal.active);}
+  catch{log('connection_rejected',{...context,reason:req.headers['sec-websocket-protocol']?'invalid_resume':'room_full',connected:room.players.size});ws.close(1008,'Place réservée ou reprise refusée.');return;}
+  if (!room.join(id,seat.slot)) {
     log('connection_rejected', { ...context, reason: 'room_full', connected: room.players.size });
     ws.close(1008, 'Salle complète (4 joueurs)'); return;
   }
   const slot = room.players.get(id);
   connections.set(id, { socket: ws, address, userAgent: context.userAgent, connectedAt: new Date().toISOString() });
   log('player_connected', { ...context, slot, connected: room.players.size });
-  ws.send(JSON.stringify({ type: 'welcome', id })); broadcast();
+  ws.send(JSON.stringify({ type: 'welcome', id,resumeToken:seat.token })); broadcast();
   let alive = true;
   let count = 0;
-  let objectCount=0;
+  let objectCount=0,portalCount=0;
   const timer = setInterval(() => {
     count = 0;
-    objectCount=0;
+    objectCount=0;portalCount=0;
     if (!alive) { log('heartbeat_timeout', { id, slot }); ws.terminate(); return; }
     alive = false; ws.ping();
   }, 10000);
@@ -74,10 +80,20 @@ wss.on('connection', (ws, req) => {
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      if(message&&typeof message==='object'&&'type' in message&&message.type==='portal_action'){
+        counted=true;if(++portalCount>60){ws.close(1008,'Trop de poses portail');return;}
+        try{room.snapshot();const command=parsePortalCommand(message);room.portal.act(command,slot!,room.model,Date.now());room.maintain();ws.send(JSON.stringify({type:'portal_result',accepted:true,commandId:command.commandId}));broadcast();}
+        catch(error){ws.send(JSON.stringify({type:'portal_result',accepted:false,message:error instanceof Error?error.message:'Commande refusee.'}));}return;
+      }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='object_action'){
         counted=true;
         if(++objectCount>80){ws.close(1008,'Trop de déplacements');return;}
-        room.snapshot();const command=parseObjectCommand(message),result=room.objects.act(command,id,room.model,Date.now(),randomUUID());
+        room.snapshot();const command=parseObjectCommand(message);
+        const staff=STAFF_IDS.includes(command.target as any);
+        if(room.portal.active&&(!staff||!room.portal.canGrab(slot!,command.target))&&command.action!=='cancel'){ws.send(JSON.stringify({type:'object_result',changed:false,message:'Baton reserve a sa place ; introduction active.'}));return;}
+        if(staff&&!room.portal.active){ws.send(JSON.stringify({type:'object_result',changed:false,message:'Introduction inactive.'}));return;}
+        const result=room.objects.act(command,id,room.model,Date.now(),randomUUID());
+        if(result.changed&&staff&&command.action==='grab'&&!room.portal.snapshot().players[slot!-1].claimed)room.portal.claim(slot!,command.target);
         ws.send(JSON.stringify({type:'object_result',...result}));if(result.changed){if(command.action!=='move')log('object_manipulation',{id,slot,target:command.target,action:command.action});broadcast();}else ws.send(JSON.stringify(room.snapshot()));return;
       }
       counted=true;if (++count > 30) { log('rate_limit_exceeded', { id, slot }); ws.close(1008, 'Trop de messages'); return; }
@@ -112,7 +128,7 @@ wss.on('connection', (ws, req) => {
     }
   });
   ws.on('close', (code, reason) => {
-    clearInterval(timer); room.leave(id); connections.delete(id);
+    clearInterval(timer);room.seats.disconnect(id,room.portal.active); room.leave(id); connections.delete(id);
     log('player_disconnected', { id, slot, code, reason: reason.toString().slice(0, 128), connected: room.players.size });
     broadcast();
   });

@@ -18,7 +18,7 @@ export function pickAdventureAction(group:THREE.Group,origin:THREE.Vector3,direc
   const ray=new THREE.Raycaster(origin,direction.clone().normalize(),0,8);ray.camera=camera;
   return ray.intersectObject(group,true).find(hit=>hit.object.userData.action)?.object.userData.action as Action|undefined;
 }
-function label(text:string,color:string){
+export function label(text:string,color:string){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#0c1727';ctx.fillRect(0,0,512,160);ctx.strokeStyle=color;ctx.lineWidth=8;ctx.strokeRect(4,4,504,152);ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 42px sans-serif';ctx.fillText(text,256,80,480);
   const texture=new THREE.CanvasTexture(canvas),sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthWrite:false}));sprite.scale.set(0.65,0.2,1);return sprite;

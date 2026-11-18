@@ -48,7 +48,7 @@ export function disposeGroup(group: THREE.Object3D) {
   });
   group.removeFromParent();
 }
-export function createPreview(container: HTMLElement) {
+export function createPreview(container: HTMLElement, factory:(model:RoomModel)=>THREE.Group=modelGroup) {
   let renderer: THREE.WebGLRenderer;
   try { renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); }
   catch { container.textContent='Aperçu 3D indisponible : WebGL requis.'; return (_model:RoomModel|null)=>{}; }
@@ -59,12 +59,14 @@ export function createPreview(container: HTMLElement) {
   const controls=new OrbitControls(camera,renderer.domElement);
   let group:THREE.Group|undefined;
   const render=()=>renderer.render(scene,camera);
+  if(factory!==modelGroup)renderer.setAnimationLoop(()=>{if(!group||container.hidden)return;group.traverse(node=>node.userData.animatePortal?.(Date.now()));render();});
+  window.addEventListener('pagehide',()=>{renderer.setAnimationLoop(null);renderer.dispose();},{once:true});
   controls.addEventListener('change',render);
   const resize=()=> { const width=Math.max(container.clientWidth,1); renderer.setSize(width,300); camera.aspect=width/300;camera.updateProjectionMatrix();render(); };
   new ResizeObserver(resize).observe(container);
   return (model:RoomModel|null)=> {
     if(group) disposeGroup(group);
-    group=model?modelGroup(model):undefined;
+    group=model?factory(model):undefined;
     if(group) {
       scene.add(group);
       const bounds=new THREE.Box3().setFromObject(group),center=bounds.getCenter(new THREE.Vector3());

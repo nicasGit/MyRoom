@@ -1,6 +1,6 @@
 import { PUZZLE_ITEMS,inside,puzzlePanel,findPuzzlePanel,type PuzzleItem,type RoomModel } from './scene-schema.js';
 import { record,integer,list,text } from './engine/validation.js';
-export type ObjectId=PuzzleItem|'panel';
+export type ObjectId=PuzzleItem|'panel'|import('./portal/portal-types.js').StaffId;
 export type ObjectPose={x:number;y:number;z:number;yaw:number};
 export type HandPoint={x:number;y:number;z:number};
 export type ObjectCommand={type:'object_action';action:'grab'|'move'|'drop'|'cancel';target:ObjectId;revision:number;lease:string;seq:number;hands:HandPoint[];pose:ObjectPose};
@@ -9,7 +9,7 @@ export const requiredHands=(target:ObjectId)=>['chest','table','panel'].includes
 function point(value:unknown){const p=record(value,['x','y','z']);for(const n of [p.x,p.y,p.z])if(typeof n!=='number'||!Number.isFinite(n)||Math.abs(n)>30)throw new Error('Coordonnées invalides.');return p as HandPoint;}
 export function parseObjectCommand(value:unknown):ObjectCommand{
   const c=record(value,['type','action','target','revision','lease','seq','hands','pose']);
-  if(Object.keys(c).length!==8||c.type!=='object_action'||!['grab','move','drop','cancel'].includes(String(c.action))||![...PUZZLE_ITEMS,'panel'].includes(c.target as ObjectId))throw new Error('Commande de manipulation invalide.');
+  if(Object.keys(c).length!==8||c.type!=='object_action'||!['grab','move','drop','cancel'].includes(String(c.action))||![...PUZZLE_ITEMS,'panel','staff1','staff2','staff3','staff4'].includes(c.target as ObjectId))throw new Error('Commande de manipulation invalide.');
   const pose=record(c.pose,['x','y','z','yaw']);const p=point({x:pose.x,y:pose.y,z:pose.z});if(typeof pose.yaw!=='number'||!Number.isFinite(pose.yaw)||Math.abs(pose.yaw)>Math.PI)throw new Error('Rotation invalide.');
   return {type:'object_action',action:c.action as ObjectCommand['action'],target:c.target as ObjectId,revision:integer(c.revision),lease:text(c.lease,64),seq:integer(c.seq),hands:list(c.hands,2).map(point),pose:{...p,yaw:pose.yaw}};
 }
@@ -18,7 +18,7 @@ export class ObjectManipulation {
   private poses:Partial<Record<ObjectId,ObjectPose>>={};
   private held=new Map<ObjectId,{owner:string;lease:string;expiresAt:number;seq:number;original:ObjectPose}>();
   private key='';
-  configure(model:RoomModel|null,epoch:number){const key=JSON.stringify([model,epoch]);if(key===this.key)return;this.key=key;this.held.clear();this.poses={};this.revision++;
+  configure(model:RoomModel|null,epoch:number,extra:Partial<Record<ObjectId,ObjectPose>>={}){const key=JSON.stringify([model,epoch,extra]);if(key===this.key)return;this.key=key;this.held.clear();this.poses=structuredClone(extra);this.revision++;
     if(!model?.puzzles)return;for(const id of PUZZLE_ITEMS)this.poses[id]={...model.puzzles.points[id],y:model.puzzles.poses?.[id]?.y??0,yaw:model.puzzles.poses?.[id]?.yaw??0};
     const panel=puzzlePanel(model);if(panel)this.poses.panel={...panel.position,y:panel.height,yaw:panel.yaw};
   }

@@ -1,11 +1,13 @@
 import './admin.css';
+import { PortalAdmin } from './portal/portal-admin';
+import type { PortalPublic } from '../../server/src/portal/portal-types.js';
 import { createPreview } from './model-view';
 import { area,type RoomLibrary } from '../../server/src/scene-schema.js';
 import { AdventureEditor } from './adventure-editor';
 import type { AdventureState } from '../../server/src/adventure.js';
 import type { AdventureManifest } from '../../server/src/engine/puzzle-types.js';
 type Player = { id: string; slot: number; name:string;address?: string; userAgent?: string; connectedAt: string };
-type State = { players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
+type State = { portal:PortalPublic;players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let token = '';
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -14,6 +16,7 @@ let loading = false;
 let session = 0;
 let previousPlayers = '';
 const notice = el('notice');
+const portalAdmin=new PortalAdmin(el('dashboard'),body=>api('portal',body),text=>{notice.textContent=text;});
 let library:RoomLibrary|undefined;
 let libraryRevision=-1;
 const preview=createPreview(el('admin-room-preview'));
@@ -67,6 +70,7 @@ function node(tag: string, text: string, className?: string) {
   return value;
 }
 function render(state: State) {
+  portalAdmin.receive(state.portal);
   latestAdventureRevision=state.adventure.revision;catalog=state.adventures;
   objectRevision=state.adventure.objects?.revision??0;saveObjects.disabled=state.adventure.running||!state.adventure.objects||!!state.adventure.objects.held.length;
   const engine=state.adventure.engine,key=JSON.stringify(state.adventures);
@@ -85,9 +89,9 @@ function render(state: State) {
   el('adventure-description').textContent=`Active : ${manifest?.title??engine.adventureId}. ${manifest?.description??''}`;
   el('adventure-progress').textContent=`Étape : ${engine.step.title} · Réussites : ${engine.completedSteps.length}/${manifest?.steps.length??0} · Inventaire : ${engine.inventory.map(r=>r.label).join(', ')||'vide'}`;
   el<HTMLButtonElement>('adventure-select').disabled=state.adventure.running||!!engine.testStartStepId;
-  el<HTMLButtonElement>('adventure-stop').disabled=!state.adventure.running;
+  el<HTMLButtonElement>('adventure-stop').disabled=!state.adventure.running&&!state.portal.active;
   if(!namesDirty){namesRevision=state.playerNamesRevision;nameFields.forEach((input,index)=>{input.value=state.playerNames[index];});}
-  startAdventure.disabled=state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
+  startAdventure.disabled=state.portal.active||state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
   library=state.library;
   adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);
   el('adventure-overview').textContent=`${state.adventure.running?'Partie en cours':'Préparation'} · ${state.adventure.phase} · ${state.adventure.message}`;

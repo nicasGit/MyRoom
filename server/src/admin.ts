@@ -4,6 +4,8 @@ import type { WebSocket } from 'ws';
 import type { Room } from './room.js';
 import { log, recentLogs } from './logger.js';
 import type { RoomStore } from './room-store.js';
+import { parsePortalConfig,validatePlacement } from './portal/portal-types.js';
+import { record,integer } from './engine/validation.js';
 import { puzzlePanel } from './scene-schema.js';
 import { PUZZLE_ITEMS,findPuzzlePanel } from './scene-schema.js';
 
@@ -23,6 +25,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
   }
   if (req.method === 'GET' && req.url === '/api/admin/state') {
     reply(res, 200, {
+      portal:room.snapshot().portal,
       uptimeSeconds: Math.floor((Date.now() - started) / 1000),
       publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
       puzzle: room.snapshot().puzzle,
@@ -37,7 +40,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -57,6 +60,23 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     }
     const body: unknown = JSON.parse(Buffer.concat(chunks).toString());
     if (!body || typeof body !== 'object' || Array.isArray(body)) { reply(res, 400, { error: 'Objet JSON attendu.' }); return; }
+    if(req.url==='/api/admin/portal'){
+      try{room.snapshot();const c=record(body,['action','revision','config','slot']),action=c.action;
+        const expected=action==='configure'?'action,config,revision':['cross','release-seat','simulate-claim','simulate-cross'].includes(String(action))?'action,revision,slot':'action,revision';if(Object.keys(c).sort().join(',')!==expected)throw Error('Champs de commande invalides.');
+        if(integer(c.revision)!==room.portal.snapshot().revision)throw Error('Le portail a change. Actualisez.');
+        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=parsePortalConfig(c.config);validatePlacement(config,room.model);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
+        else if(action==='reset'){room.portal.cancel();room.startSession();}
+        else if(action==='stop')room.portal.cancel();
+        else if(action==='skip')room.portal.skip();
+        else if(action==='cross')room.portal.adminCross(integer(c.slot,1,4));
+        else if(action==='release-seat')room.seats.release(integer(c.slot,1,4));
+        else if(action==='simulate-start'){if(!room.adventure.snapshot().testMode)throw Error('Activez le mode test PC.');room.startSession(true);}
+        else if(action==='simulate-claim'||action==='simulate-cross'){if(!room.adventure.snapshot().testMode)throw Error('Mode test PC requis.');room.portal.simulate(integer(c.slot,1,4),action==='simulate-cross');}
+        else throw Error('Commande administrateur inconnue.');
+        log('portal_admin',{action});broadcast();reply(res,200,{ok:true});
+      }catch(error){reply(res,400,{error:error instanceof Error?error.message:'Commande refusee.'});}return;
+    }
+    if(room.portal.active&&req.url!=='/api/admin/adventure/stop'&&req.url!=='/api/admin/kick'){reply(res,400,{error:'Arretez le portail avant de modifier la session.'});return;}
     if(req.url==='/api/admin/players/names'){
       try{if(Object.keys(body).sort().join(',')!=='names,revision')throw new Error('Noms et révision attendus.');const command=body as Record<string,unknown>;room.setPlayerNames(command.names,command.revision);}
       catch(error){reply(res,400,{error:error instanceof Error?error.message:'Noms invalides.'});return;}
@@ -95,8 +115,8 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
         room.model=store.active();room.libraryRevision=library.revision;
         log('adventure_placement',{revision:library.revision,activeId:library.activeId});broadcast();reply(res,200,{library});return;
       }
-      if(req.url.endsWith('/start')){if(Object.keys(body).length)throw new Error('Objet vide attendu');if(!room.model||!puzzlePanel(room.model)){reply(res,400,{error:'Aucun mur libre pour le panneau des symboles.'});return;}room.adventure.start();}
-      else if(req.url.endsWith('/stop')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.stop();}
+      if(req.url.endsWith('/start')){if(Object.keys(body).length)throw new Error('Objet vide attendu');if(!room.model||!puzzlePanel(room.model)){reply(res,400,{error:'Aucun mur libre pour le panneau des symboles.'});return;}room.startSession();}
+      else if(req.url.endsWith('/stop')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.stopSession();}
       else if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.adventure.reset();}
       else {if(Object.keys(body).length!==1||!('enabled' in body)||typeof body.enabled!=='boolean')throw new Error('Booléen attendu');room.adventure.setTestMode(body.enabled);}
       log('adventure_admin',{action:req.url.split('/').at(-1),testMode:room.adventure.snapshot().testMode});broadcast();reply(res,200,{ok:true});return;

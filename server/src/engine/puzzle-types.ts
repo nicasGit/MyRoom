@@ -26,6 +26,7 @@ export type AdventureStep = { id:string; title:string; narrative:string; next:st
   { kind:'puzzle'; instanceId:string } | { kind:'planned'; puzzleType:string }
 );
 export type AdventureManifest = {
+  introduction?:{type:'team-portal';schemaVersion:1;config:import('../portal/portal-types.js').PortalConfig};
   schemaVersion:1; id:string; version:string; title:string; description:string;
   players:{min:number;max:number;suggestedNames:string[]}; targetMinutes:number;
   instances:PuzzleInstanceSpec[]; steps:AdventureStep[];

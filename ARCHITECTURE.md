@@ -1,5 +1,9 @@
 # Architecture MyRoom
 
+## Team Portal — introduction de session facultative
+
+Un contrat dédié `introduction` dans les manifestes complète le catalogue sans changer `PuzzleModule`. Menthe 27 0.3.0 conserve les étapes de 0.2.0. `Room` coordonne une machine d’états `TeamPortal` avant le démarrage unique de l’aventure. Le détecteur de franchissement pur utilise historique, rectangle utile, sens et hystérésis ; les données de tête déclarées ne constituent pas une mesure indépendante. Les bâtons réutilisent les saisies, baux, positions et calibrage existants. Placements indépendants versionnés, reprise privée de place, commandes administrateur protégées et simulation PC identifiée : voir [Team Portal](docs/team-portal.md). Les anciennes aventures sans introduction conservent leur démarrage direct.
+
 ## Prises d’objets — évolution version 0.7.0
 
 `ObjectManipulation` conserve des poses et baux séparés de la progression et du modèle enregistré. Les commandes WebSocket `object_action` sont validées côté serveur avec propriétaire, séquence monotone, proximité déclarée, nombre de prises et bornes. Les poses temporaires sont ajoutées à l’état public ; leur révision n’altère pas celle de l’énigme. Le rendu applique les poses sans reconstruire la scène à chaque déplacement. Les contrôles de proximité suivent les nouveaux emplacements sans changer A/B.

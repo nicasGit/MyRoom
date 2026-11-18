@@ -1,8 +1,9 @@
 import type { AdventureManifest,PuzzleInstanceSpec,AdventureStep } from './puzzle-types.js';
 import { record,text,identifier,integer,list,unique } from './validation.js';
+import { parsePortalConfig } from '../portal/portal-types.js';
 import type { PuzzleRegistry } from './puzzle-registry.js';
 export function parseManifest(value:unknown,registry:PuzzleRegistry):AdventureManifest{
-  const m=record(value,['schemaVersion','id','version','title','description','players','targetMinutes','instances','steps','objects','victory']);
+  const m=record(value,['schemaVersion','id','version','title','description','players','targetMinutes','instances','steps','objects','victory','introduction']);
   if(m.schemaVersion!==1)throw new Error('Version de manifeste inconnue.');
   const version=text(m.version,32);if(!/^\d+\.\d+\.\d+$/.test(version))throw new Error('Version attendue : x.y.z.');
   const p=record(m.players,['min','max','suggestedNames']),min=integer(p.min,1,4),max=integer(p.max,min,4),suggestedNames=list(p.suggestedNames,4).map(n=>text(n,40));
@@ -23,7 +24,9 @@ export function parseManifest(value:unknown,registry:PuzzleRegistry):AdventureMa
   for(const spec of instances)for(const object of registry.get(spec.type,spec.schemaVersion).objects(spec.config))if(!objects.some(binding=>binding.instanceId===spec.id&&binding.objectId===object.id))throw new Error('Un objet déclaré ne possède pas de liaison spatiale.');
   const victory=record(m.victory,['requiredSteps']),requiredSteps=unique(list(victory.requiredSteps,32).map(identifier));
   if(requiredSteps.length!==steps.length||steps.some(s=>!requiredSteps.includes(s.id)))throw new Error('La victoire V1 exige toutes les étapes.');
-  return {schemaVersion:1,id:identifier(m.id),version,title:text(m.title,100),description:text(m.description,2000),players:{min,max,suggestedNames},targetMinutes:integer(m.targetMinutes,1,480),instances,steps,objects,victory:{requiredSteps}};
+  const intro=m.introduction===undefined?undefined:record(m.introduction,['type','schemaVersion','config']);
+  if(intro&&(intro.type!=='team-portal'||intro.schemaVersion!==1))throw Error('Introduction inconnue.');
+  return {...(intro?{introduction:{type:'team-portal' as const,schemaVersion:1 as const,config:parsePortalConfig(intro.config)}}:{}),schemaVersion:1,id:identifier(m.id),version,title:text(m.title,100),description:text(m.description,2000),players:{min,max,suggestedNames},targetMinutes:integer(m.targetMinutes,1,480),instances,steps,objects,victory:{requiredSteps}};
 }
 export class AdventureCatalog {
   private manifests=new Map<string,AdventureManifest>();
