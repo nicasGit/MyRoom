@@ -2,6 +2,8 @@ export type Reward = { id: string; label: string };
 export type Transform3D = { position: [number,number,number]; rotation: [number,number,number]; scale: [number,number,number] };
 export type PuzzleObject = { id: string; view: string; role: 'fixed'|'manipulable'|'interactive'|'decorative' };
 export type PuzzleResult<S> = { accepted: boolean; state: S; message: string };
+// Trusted server context, never read from a network action.
+export type PuzzleContext = { actorId?:string; captainId?:string; players:readonly string[]; now:number };
 export interface PuzzleModule<C,S,A> {
   type: string;
   schemaVersion: number;
@@ -10,7 +12,9 @@ export interface PuzzleModule<C,S,A> {
   initialState(config: C): S;
   parseState(value: unknown, config: C): S;
   parseAction(value: unknown): A;
-  reduce(config: C, state: S, action: A): PuzzleResult<S>;
+  reduce(config: C, state: S, action: A, context?:PuzzleContext): PuzzleResult<S>;
+  maintain?(config:C,state:S,context:PuzzleContext):S;
+  earnedRewards?(config:C,state:S):readonly Reward[];
   isSolved(config: C, state: S): boolean;
   publicState(config: C, state: S): unknown;
   hints(config: C): readonly string[];

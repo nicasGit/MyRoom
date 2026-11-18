@@ -20,7 +20,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.4.2');
+diagnostic('Version client', '0.6.0');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -139,7 +139,7 @@ enter.onclick = async () => {
       const previousAngle=previousLid?.rotation.x,previousTarget=previousLid?.userData.targetAngle;
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
       if(!calibration||!view||survey.hasDraft())return;
-      gameGroup=adventureGroup(view.model,view.state);
+      gameGroup=adventureGroup(view.model,view.state,ownId);
       const lid=gameGroup.userData.lid as THREE.Group|undefined;
       if(lid&&previousAngle!==undefined&&previousTarget===lid.userData.targetAngle)lid.rotation.x=previousAngle;
       gameGroup.position.copy(calibration.origin);gameGroup.rotation.y=-calibration.yaw;scene.add(gameGroup);
@@ -364,8 +364,8 @@ function connect() {
   socket.onmessage = event => {
     try {
       const message = JSON.parse(String(event.data));
-      if (message.type === 'welcome') ownId = message.id;
-      if (message.type === 'adventure_result') adventure.result(message.message);
+      if (message.type === 'welcome') {ownId = message.id;adventure.setIdentity(message.id);}
+      if (message.type === 'adventure_result'||message.type==='puzzle_result') adventure.result(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
         showPlayers(message.players); revision = message.puzzle.revision;

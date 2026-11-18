@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- Opération Menthe 27 version 0.2.0 : coffre conservé puis blackjack hybride à trois manches.
+- Casino à paquet serveur, Tirer/Rester réservés au capitaine, rattrapage après trois échecs et carte du croupier masquée avant révélation.
+- Double as et croupier impossible avec cartes 3D, sélection puis dépôt dans des logements partagés, réservations de 15 secondes et libération après déconnexion.
+- Récompenses progressives ♣ ♥ ♠, indices et réinitialisation de l’énigme active depuis l’administration ; suite explicitement en attente.
+- Compatibilité des anciennes pièces, calibrage A/B et démonstration classique conservés. Progression en mémoire ; aucun essai physique Quest/HAOS effectué par l’agent.
+
 ## 0.5.1
 
 - Accès direct aux énigmes implémentées depuis l’administration en mode test.

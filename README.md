@@ -1,6 +1,6 @@
 # MyRoom
 
-Version add-on 0.5.0 : [fondations modulaires — Phase 1](docs/adventures/phase1-architecture.md). L’administration permet de choisir [Opération Menthe 27](docs/adventures/menthe27.md) et de saisir les quatre noms. Le coffre reste jouable ; le blackjack hybride attend la validation de la Phase 2. La disponibilité de l’image est consignée dans le [récapitulatif](docs/RECAPITULATIF.md).
+Version add-on 0.6.0 : [Opération Menthe 27](docs/adventures/menthe27.md) version 0.2.0 propose le coffre puis trois manches de blackjack hybride coopératif, avec capitaine, cartes 3D et récompenses ♣ ♥ ♠. La suite reste en attente. L’administration permet de saisir les noms, tester directement une énigme, partager des indices et réinitialiser l’énigme active. La disponibilité de l’image est consignée dans le [récapitulatif](docs/RECAPITULATIF.md).
 
 Deux énigmes coopératives : **Le coffre des quatre symboles**, puis **La table du dernier As**. Placement dans l’administration et simulation solo sur PC : [guide des énigmes](docs/first-puzzles.md).
 

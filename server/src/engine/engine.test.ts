@@ -54,7 +54,7 @@ test('module pur : coffre compatible, validation et aucune mutation de l’état
   assert.throws(()=>symbolChest.parseState({found:[],entered:['sun'],attempts:0},config));
 });
 test('registre et manifestes : types, versions, références, cycles et configurations stricts',()=>{
-  const registry=createRegistry();assert.throws(()=>registry.register(symbolChest));assert.throws(()=>registry.get('symbol-chest',2));assert.throws(()=>registry.get('blackjack-hybrid',1));
+  const registry=createRegistry();assert.throws(()=>registry.register(symbolChest));assert.throws(()=>registry.get('symbol-chest',2));assert.equal(registry.get('blackjack-hybrid',1).type,'blackjack-hybrid');
   assert.equal(parseManifest(menthe27,registry).steps[1].kind,'planned');
   const bad=structuredClone(legacyAdventure);bad.instances[0].schemaVersion=9;assert.throws(()=>parseManifest(bad,registry));
   const cycle=structuredClone(legacyAdventure);cycle.steps[1].next='symbols';assert.throws(()=>parseManifest(cycle,registry));
@@ -106,6 +106,7 @@ test('instantané versionné : aller-retour JSON, révision nouvelle et corrupti
   for(const target of ['four','eight','king'])next.act('blackjack',next.snapshot().revision,{action:'discover_card',target});
   next.act('blackjack',next.snapshot().revision,{action:'choose_card',target:'four'});assert.equal(next.snapshot().status,'complete');
   const completed=engine();completed.restore(next.snapshot());completed.restore(completed.snapshot());assert.equal(completed.snapshot().inventory.length,2);assert.equal(completed.snapshot().status,'complete');
+  completed.resetActive(completed.snapshot().revision);assert.equal(completed.snapshot().status,'ready');assert.deepEqual(completed.snapshot().completedSteps,['symbols']);const replay=engine();replay.restore(completed.snapshot());assert.equal(replay.snapshot().inventory.length,1);replay.start();assert.equal(replay.currentStep().id,'blackjack');
   const pending=engine('menthe27','0.1.0');pending.start();solveChest(pending);const pendingCopy=engine('menthe27','0.1.0');pendingCopy.restore(pending.snapshot());assert.equal(pendingCopy.snapshot().status,'pending');
 });
 test('sélection et noms : sécurité des révisions, indépendance du jeu et réutilisation des places',()=>{

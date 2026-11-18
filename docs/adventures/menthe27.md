@@ -2,7 +2,13 @@
 
 Manifeste `menthe27@0.1.0`, schéma 1. Première tranche de développement, pas une aventure complète. Participants suggérés : **Léon, Reno, Fabien et Nicolas**. Durée cible indicative : 60 minutes, à ajuster lorsque les étapes seront implémentées. La métadonnée de quatre participants n’empêche pas les tests solo ; MyRoom conserve quatre connexions maximum.
 
-## Essayer localement
+## Phase 2 — version jouable 0.2.0
+
+Sélectionner **Opération Menthe 27 — 0.2.0** dans le catalogue : coffre, puis trois manches de blackjack hybride (Casino, Double as, Croupier impossible). Les récompenses ♣ ♥ ♠ sont conservées, puis le Vidéoclub rétro reste en attente. Le manifeste 0.1.0 ci-dessous décrit la tranche historique et reste disponible pour les anciens instantanés.
+
+Le [guide du blackjack hybride](blackjack-hybrid.md) décrit capitaine, sélection/dépôt, réservations, indices, réinitialisation et limites. Le coffre, les neuf points et A/B sont conservés. La progression reste en mémoire.
+
+## Essayer la tranche historique 0.1.0 localement
 
 ### Accès direct en mode test
 

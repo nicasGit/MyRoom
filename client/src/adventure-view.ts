@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import type { AdventureState,SymbolId } from '../../server/src/adventure.js';
 import { puzzlePanel,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
 import { createChest } from './chest-view';
+import { blackjackTable } from './puzzles/blackjack-view';
+import type { HybridPublicState } from '../../server/src/puzzles/blackjack-hybrid.js';
 export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'};
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};
 export const CARD_CLUES={four:'Mes quatre coins gardent quatre saisons.',eight:'Deux fois les saisons de l’année.',king:'Je porte une couronne ; ma valeur est dix.'};
@@ -53,16 +55,19 @@ function wallConsole(model:RoomModel,state:AdventureState){
   const hint=plaque('Choisir les symboles dans le bon ordre','#c3d8eb',0.85,0.09);hint.position.set(0,-0.29,0.065);panel.add(hint);
   return panel;
 }
-export function adventureGroup(model:RoomModel,state:AdventureState){
+export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:string){
   const group=new THREE.Group();if(!model.puzzles)return group;
   const at=(id:PuzzleItem)=>{const p=model.puzzles!.points[id],node=new THREE.Group();node.position.set(p.x,0,p.z);group.add(node);return node;};
-  const chest=at('chest'),crafted=createChest(state.phase==='blackjack'||state.phase==='complete'||state.phase==='pending');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
+  const chest=at('chest'),crafted=createChest(state.phase==='hybrid'||state.phase==='blackjack'||state.phase==='complete'||state.phase==='pending');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
   const panel=wallConsole(model,state);if(panel)group.add(panel);
   const heading=label(state.phase==='symbols'?'Le coffre':'Coffre ouvert','#ffe082');heading.position.y=1.05;chest.add(heading);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
     const found=!state.running||state.symbols.found.includes(id),node=at(id),pole=box(0.05,0.65,0.05,0x64748b);pole.position.y=0.325;node.add(pole);
     const sign=actionLabel(found?SYMBOL_NAMES[id]:`Balise ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_symbol',target:id});sign.position.y=0.85;node.add(sign);
   }
+  if(state.hybrid){at('table').add(blackjackTable(state.hybrid,actorId,state.captainId));return group;}
+  const hybridInstance=state.engine.instances.find(i=>i.type==='blackjack-hybrid');
+  if(hybridInstance){if(!state.running)at('table').add(blackjackTable(hybridInstance.state as HybridPublicState,actorId,state.captainId));return group;}
   if(state.running&&state.phase!=='blackjack'&&state.phase!=='complete')return group;
   const table=at('table'),felt=new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.55,0.07,24),new THREE.MeshBasicMaterial({color:0x126b54}));felt.position.y=0.74;table.add(felt);
   const leg=box(0.1,0.7,0.1,0x755038);leg.position.y=0.35;table.add(leg);

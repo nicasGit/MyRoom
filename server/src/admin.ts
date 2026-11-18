@@ -36,7 +36,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -63,6 +63,11 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     }
     if(req.url?.startsWith('/api/admin/adventure/')){
       room.adventure.configure(room.model);
+      if(req.url.endsWith('/hint')||req.url.endsWith('/reset-puzzle')){
+        try{const command=body as Record<string,unknown>;if(Object.keys(command).join(',')!=='revision'||!Number.isSafeInteger(command.revision))throw new Error('Révision attendue.');room.adventure.adminPuzzle(req.url.endsWith('/hint')?'hint':'reset-puzzle',command.revision as number);}
+        catch(error){reply(res,400,{error:error instanceof Error?error.message:'Commande refusée.'});return;}
+        log('adventure_admin',{action:req.url.split('/').at(-1)});broadcast();reply(res,200,{ok:true});return;
+      }
       if(req.url.endsWith('/test-step')){
         try{const command=body as Record<string,unknown>;if(Object.keys(command).sort().join(',')!=='revision,stepId'||typeof command.stepId!=='string'||command.stepId.length>64||!Number.isSafeInteger(command.revision))throw new Error('Étape et révision attendues.');room.adventure.testStep(command.stepId,command.revision as number);}
         catch(error){reply(res,400,{error:error instanceof Error?error.message:'Test impossible.'});return;}

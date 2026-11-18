@@ -23,6 +23,9 @@ startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent=
 const catalogPanel=document.createElement('section');catalogPanel.className='panel';
 catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Utiliser les noms suggérés</button></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
 el('dashboard').prepend(catalogPanel);
+const puzzleAdmin=document.createElement('div');puzzleAdmin.innerHTML='<p id="adventure-captain"></p><button id="adventure-hint">Partager l’indice suivant</button><button id="adventure-reset-puzzle" class="secondary">Réinitialiser l’énigme active</button><p id="adventure-hints"></p>';catalogPanel.append(puzzleAdmin);
+el('adventure-hint').onclick=()=>{void action('adventure/hint',{revision:latestAdventureRevision});};
+el('adventure-reset-puzzle').onclick=()=>{if(confirm('Réinitialiser l’énigme active et ses récompenses pour toute l’équipe ?'))void action('adventure/reset-puzzle',{revision:latestAdventureRevision});};
 const testPanel=document.createElement('div');testPanel.innerHTML='<h3>Accès direct aux énigmes</h3><p>Activez le mode test PC ci-dessous, puis choisissez une énigme. Une session temporaire démarre pour tous les joueurs. Désactiver le mode test restaure la progression précédente. Réinitialiser ou changer de pièce efface cette sauvegarde temporaire.</p><select id="test-step" aria-label="Énigme à tester"></select><button id="test-step-open">Tester cette énigme</button><p id="test-step-status"></p>';catalogPanel.append(testPanel);
 let testStepsKey='';
 el('test-step-open').onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez les placements avant de tester.';return;}void action('adventure/test-step',{stepId:el<HTMLSelectElement>('test-step').value,revision:latestAdventureRevision});};
@@ -66,6 +69,11 @@ function render(state: State) {
   const engine=state.adventure.engine,key=JSON.stringify(state.adventures);
   if(key!==catalogKey){catalogKey=key;el('adventure-catalog').replaceChildren(...catalog.map(m=>{const option=document.createElement('option');option.value=`${m.id}@${m.version}`;option.textContent=`${m.title} — ${m.version}`;return option;}));el<HTMLSelectElement>('adventure-catalog').value=`${engine.adventureId}@${engine.adventureVersion}`;}
   const manifest=catalog.find(m=>m.id===engine.adventureId&&m.version===engine.adventureVersion);
+  const activeInstance=engine.step.kind==='puzzle'?engine.instances.find(i=>engine.step.kind==='puzzle'&&i.id===engine.step.instanceId):undefined;
+  el('adventure-captain').textContent='Capitaine : '+(state.players.find(p=>p.id===state.adventure.captainId)?.name??'en attente d’un joueur');
+  el<HTMLButtonElement>('adventure-hint').disabled=!activeInstance;
+  el<HTMLButtonElement>('adventure-reset-puzzle').disabled=!activeInstance;
+  el('adventure-hints').textContent=activeInstance?.hints.join(' · ')??'';
   const stepsKey=JSON.stringify([engine.adventureId,engine.adventureVersion,manifest?.steps]);
   if(stepsKey!==testStepsKey){testStepsKey=stepsKey;el('test-step').replaceChildren(...(manifest?.steps??[]).map(step=>{const option=document.createElement('option');option.value=step.id;option.textContent=step.title+(step.kind==='planned'?' — bientôt disponible':'');option.disabled=step.kind!=='puzzle';return option;}));}
   el<HTMLSelectElement>('test-step').disabled=!state.adventure.testMode;

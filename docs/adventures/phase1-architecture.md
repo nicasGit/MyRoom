@@ -4,6 +4,8 @@
 
 ## Cartographie avant modification
 
+Ce document conserve les décisions de la Phase 1. La Phase 2 a ensuite été autorisée : consulter [le blackjack hybride](blackjack-hybrid.md) pour les extensions `PuzzleContext`, `maintain` et `earnedRewards`, le manifeste 0.2.0 et la table 3D. Les mentions de fonctionnalités différées ci-dessous décrivent la première tranche.
+
 - [index.ts](../../server/src/index.ts) assure HTTP/WebSocket, contrôle d’origine, quatre connexions, diagnostics et diffusion. Il envoyait les commandes à `Room.adventure`.
 - [room.ts](../../server/src/room.ts) possède joueurs, révision de démo, modèle actif et instance `Adventure`.
 - [adventure.ts](../../server/src/adventure.ts) réunissait règles des symboles, blackjack à une carte, révisions, proximité et transitions.

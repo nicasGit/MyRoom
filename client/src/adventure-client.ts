@@ -1,12 +1,20 @@
 import * as THREE from 'three';
 import { toRoom,type makeCalibration } from './calibration';
-import type { AdventureCommand,AdventureState,SymbolId,CardId } from '../../server/src/adventure.js';
+import type { AdventureCommand,PuzzleCommand,AdventureState,SymbolId,CardId } from '../../server/src/adventure.js';
+import type { HybridAction } from '../../server/src/puzzles/blackjack-hybrid.js';
+import { hybridOptions,hybridSummary } from './puzzles/blackjack-controls';
+import { BlackjackPreview,pickHybridAction } from './puzzles/blackjack-view';
 import { PUZZLE_ITEMS,parseRoom,parseLibrary,puzzlePanel,findPuzzlePanel,type Point2,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
 import { drawMap,ITEM_NAMES } from './adventure-map';
 import { SYMBOL_NAMES,CARD_NAMES,CARD_CLUES,pickAdventureAction } from './adventure-view';
 type Panel={root:HTMLElement;status:HTMLElement;body:HTMLElement};
 type InteractionTarget=PuzzleItem|'panel';
 export class AdventureClient {
+  private actorId:string|undefined;
+  private hybridButtons:{button:HTMLButtonElement;ready:boolean}[]=[];
+  private hybridPreview:BlackjackPreview|undefined;
+  private hybridHost:HTMLElement;
+  setIdentity(id:string){this.actorId=id;}
   private model:RoomModel|null=null;
   private state:AdventureState|undefined;
   private libraryRevision=0;
@@ -26,8 +34,9 @@ export class AdventureClient {
   private aimAt=0;
   private placementToken='';
   private moving=false;
-  constructor(private send:(message:AdventureCommand)=>boolean,private calibration:()=>ReturnType<typeof makeCalibration>|undefined,private changed:()=>void,private notify:(message:string)=>void){
+  constructor(private send:(message:AdventureCommand|PuzzleCommand)=>boolean,private calibration:()=>ReturnType<typeof makeCalibration>|undefined,private changed:()=>void,private notify:(message:string)=>void){
     for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!,status=document.createElement('p'),body=document.createElement('div');status.setAttribute('role','status');root.append(status,body);this.panels.push({root,status,body});}
+    this.hybridHost=document.createElement('div');this.hybridHost.id='blackjack-preview';this.hybridHost.setAttribute('aria-label','Table de blackjack 3D');this.panels[0].root.append(this.hybridHost);this.hybridHost.hidden=true;
     const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;
     toggle.onchange=()=>{this.simulation=toggle.checked&&!this.xrActive&&!!this.state?.testMode;this.virtual=undefined;this.render(true);};
   }
@@ -59,7 +68,7 @@ export class AdventureClient {
       parseLibrary(data.library);this.result('Élément déplacé et enregistré. Vérifiez sa position avant le départ.');
     }catch(error){this.result(`Déplacement non enregistré : ${String(error)}`);}finally{this.moving=false;}
   }
-  story(){if(this.state?.phase==='pending')return this.state.message;return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au panneau mural avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
+  story(){if(this.state?.phase==='pending')return this.state.message;if(this.state?.hybrid)return hybridSummary(this.state.hybrid);return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au panneau mural avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
   result(message:string){this.pending=false;clearTimeout(this.requestTimer);for(const panel of this.panels)panel.status.textContent=message;this.notify(message);this.updateButtons();}
   updatePosition(local:THREE.Vector3|undefined){
     const calibration=this.calibration();this.position=local&&calibration?toRoom(local,calibration):undefined;
@@ -74,15 +83,24 @@ export class AdventureClient {
     if(!this.send(message)){this.result('Connexion serveur indisponible.');return;}
     this.requestTimer=setTimeout(()=>{if(this.pending)this.result('Pas de réponse. Vérifiez la connexion avant de réessayer.');},5000);
   }
+  private performHybrid(action:HybridAction){
+    const position=this.currentPosition(),step=this.state?.engine.step;
+    if(!position||!this.state?.running||!step||step.kind!=='puzzle'||this.pending||!this.connected||!this.closeTo('table'))return;
+    this.unlockSound();this.pending=true;this.updateButtons();
+    if(!this.send({type:'puzzle_action',revision:this.state.revision,libraryRevision:this.libraryRevision,instanceId:step.instanceId,action,position:{x:position.x,z:position.z},simulation:this.simulation&&!this.xrActive})){this.result('Connexion serveur indisponible.');return;}
+    this.requestTimer=setTimeout(()=>{if(this.pending)this.result('Pas de réponse du serveur.');},5000);
+  }
   private unlockSound(){try{this.audio??=new AudioContext();void this.audio.resume().catch(()=>{});}catch{/* Audio is optional. */}}
   private chime(){try{if(!this.audio||this.audio.state!=='running')return;const oscillator=this.audio.createOscillator(),gain=this.audio.createGain();oscillator.connect(gain);gain.connect(this.audio.destination);gain.gain.setValueAtTime(0.06,this.audio.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,this.audio.currentTime+0.6);oscillator.frequency.setValueAtTime(523,this.audio.currentTime);oscillator.frequency.setValueAtTime(784,this.audio.currentTime+0.2);oscillator.start();oscillator.stop(this.audio.currentTime+0.6);}catch{/* No audio must never block the puzzle. */}}
   hint(){return this.state?.phase==='symbols'?'Énigme : trouvez les balises, puis visez les symboles du coffre et utilisez la gâchette.':this.state?.phase==='blackjack'?'Énigme : trouvez les trois cartes, puis choisissez à la table avec la gâchette.':this.state?.phase==='complete'?'Les deux énigmes sont réussies. Clé obtenue : 7.':'';}
   raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera){
+    if(this.state?.hybrid){const action=pickHybridAction(group,origin,direction,camera);if(action)this.performHybrid(action);return;}
     const command=pickAdventureAction(group,origin,direction,camera);if(!command)return;
     const button=this.buttons.find(item=>item.action===command.action&&item.id===command.target&&item.ready);
     if(button)this.perform(button.action,button.id,button.target);
   }
   private updateButtons(){
+    for(const item of this.hybridButtons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo('table');
     for(const item of this.buttons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo(item.target);
     const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;toggle.disabled=!this.state?.testMode||this.xrActive;toggle.checked=this.simulation;
   }
@@ -93,12 +111,16 @@ export class AdventureClient {
     panel.body.append(row);
   }
   private render(force=false){
-    const key=JSON.stringify([this.state,this.model?.id,this.simulation,this.xrActive]);if(!force&&key===this.key)return;this.key=key;this.buttons=[];
+    const key=JSON.stringify([this.state,this.model?.id,this.simulation,this.xrActive]);if(!force&&key===this.key)return;this.key=key;this.buttons=[];this.hybridButtons=[];
+    this.hybridHost.hidden=!this.state?.hybrid||this.xrActive;
+    if(this.state?.hybrid&&!this.xrActive){try{this.hybridPreview??=new BlackjackPreview(this.hybridHost,action=>this.performHybrid(action));this.hybridPreview.update(this.state.hybrid,this.actorId,this.state.captainId);}catch{/* Text and touch controls remain usable if WebGL is unavailable. */}}
     for(const panel of this.panels){
       panel.body.replaceChildren();panel.status.textContent=this.state?.message??'Connexion aux énigmes…';
       const text=(message:string)=>{const p=document.createElement('p');p.textContent=message;panel.body.append(p);};
       if(!this.model?.puzzles||!this.state||this.state.phase==='unconfigured'){text('Activer une pièce et placer les énigmes depuis l’administration.');continue;}
       const state=this.state;
+      const active=state.engine.step.kind==='puzzle'?state.engine.instances.find(i=>state.engine.step.kind==='puzzle'&&i.id===state.engine.step.instanceId):undefined;
+      for(const hint of active?.hints??[])text('Indice : '+hint);
       if(!state.running&&state.phase!=='pending'&&state.phase!=='complete'){
         text('Préparation : ajustez les éléments, puis commencez la partie depuis l’administration.');
         if(panel===this.panels[1]&&this.xrActive){
@@ -111,7 +133,13 @@ export class AdventureClient {
         }
       }
       if(state.engine.testStartStepId)text('MODE TEST — session temporaire, sans progression pour l’aventure normale.');
-      if(state.phase==='symbols'){
+      if(state.hybrid){
+        if(state.phase==='pending'){text(state.engine.step.title);text(state.message);}
+        text(hybridSummary(state.hybrid));text(this.actorId===state.captainId?'Vous êtes le capitaine : Tirer/Rester sont vos décisions.':'Le capitaine décide de Tirer/Rester. Tout le monde peut placer les cartes des manches suivantes.');
+        if(this.simulation&&!this.xrActive&&panel===this.panels[0]){const move=document.createElement('button');move.textContent='Aller à la table (test PC)';move.dataset.move='table';move.onclick=()=>{this.virtual={...this.model!.puzzles!.points.table};this.updateButtons();this.map();};panel.body.append(move);}
+        if(state.hybrid.round>1)text('Choisissez une carte puis un logement (gâchette ou boutons). Réservation 15 s ; remettre en réserve permet de corriger un choix.');
+        for(const option of hybridOptions(state.hybrid,this.actorId,state.captainId)){const button=document.createElement('button');button.textContent=option.label;button.dataset.hybridAction=option.action.action;if('card' in option.action)button.dataset.card=option.action.card;if('slot' in option.action)button.dataset.slot=String(option.action.slot);if('value' in option.action)button.dataset.value=String(option.action.value);button.onclick=()=>this.performHybrid(option.action);panel.body.append(button);this.hybridButtons.push({button,ready:option.enabled});}
+      }else if(state.phase==='symbols'){
         text('Le coffre des quatre symboles');text('« Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. »');
         text(`Balises découvertes : ${state.symbols.found.length}/4 · combinaison : ${state.symbols.entered.map(id=>SYMBOL_NAMES[id]).join(' → ')||'vide'} · erreurs : ${state.symbols.attempts}`);
         for(const [i,id] of (['sun','tree','moon','star'] as SymbolId[]).entries())this.addAction(panel,state.symbols.found.includes(id)?`${SYMBOL_NAMES[id]} découvert`:`Découvrir la balise ${i+1}`,'discover_symbol',id,id,!state.symbols.found.includes(id));
@@ -130,7 +158,7 @@ export class AdventureClient {
   private map(){
     const canvas=document.getElementById('adventure-map') as HTMLCanvasElement;canvas.hidden=!this.model?.puzzles;
     if(!this.model?.puzzles||!this.state)return;
-    const phase=this.state.phase,visible=phase==='symbols'?['chest','sun','tree','moon','star']:PUZZLE_ITEMS;
+    const phase=this.state.phase,visible=this.state.hybrid?['table']:phase==='symbols'?['chest','sun','tree','moon','star']:PUZZLE_ITEMS;
     drawMap(canvas,this.model,visible.map(id=>{const item=id as PuzzleItem;let label=ITEM_NAMES[item];if((['sun','tree','moon','star'] as string[]).includes(id)&&!this.state!.symbols.found.includes(id as SymbolId))label='Balise ?';if((['four','eight','king'] as string[]).includes(id)&&!this.state!.blackjack.found.includes(id as CardId))label='Carte ?';return {point:this.model!.puzzles!.points[item],label};}),this.currentPosition());
   }
 }

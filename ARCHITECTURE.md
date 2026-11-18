@@ -1,5 +1,15 @@
 # Architecture MyRoom
 
+## Blackjack hybride — Phase 2, version 0.6.0 préparée
+
+Le registre ajoute `blackjack-hybrid`, sans modifier le comportement des deux modules historiques. Le manifeste `menthe27@0.2.0` enchaîne coffre, trois manches de casino, puis une étape Vidéoclub prévue. La version 0.1.0 reste au catalogue pour les instantanés historiques. Aucun moteur générique ne contient de règle de Menthe 27.
+
+`PuzzleContext` transporte acteur, capitaine, connexions actives et heure depuis le serveur. Le module propose les extensions optionnelles `maintain` (réservations) et `earnedRewards` (gains par manche). Le moteur applique les gains après chaque action et les recalcule à la restauration ; les autres modules gardent une attribution à la réussite. Une révision globale sérialise les commandes concurrentes ; les commandes refusées retournent explicitement le motif et l’état courant.
+
+La première connexion est capitaine ; un départ réattribue le rôle à une place active. Le paquet est mélangé via une source cryptographique injectée, conservé uniquement dans l’état privé. La projection publique masque paquet, carte cachée et total du croupier tant que la main est active. Les actions et le journal ne contiennent pas le paquet. Les cartes des manches suivantes utilisent des réservations de 15 secondes et trois logements ; la maintenance serveur libère expiration/déconnexion et diffuse les changements. Position de la table et états de jeu restent séparés.
+
+Le rendu Three.js et les descripteurs de commandes sont réutilisés par l’aperçu PC, le tactile et WebXR. La première interaction est sélection puis dépôt fixe, sans prise libre ou poses transmises en continu. `/api/admin/adventure/hint` et `/reset-puzzle` sont protégés par la sécurité existante et la révision. Voir [le guide hybride et ses limites](docs/adventures/blackjack-hybrid.md). Les sessions restent en mémoire, la persistance disque est différée en Phase 3. Aucun essai physique Quest annoncé.
+
 ## Fondations modulaires — Phase 1 locale, 18 novembre 2026
 
 Le code distingue désormais MyRoom Engine (transport, pièces, sécurité spatiale et administration), Puzzle Engine (registre et modules purs), Adventure Engine (étapes, instances, inventaire et instantanés) et Adventure Catalog (manifestes versionnés). La façade historique `Adventure` conserve les commandes et l’état attendus par le client. Le coffre est encapsulé dans `symbol-chest`, le blackjack actuel dans `blackjack-legacy` ; aucun blackjack hybride n’est encore implémenté.

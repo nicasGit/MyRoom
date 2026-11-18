@@ -72,7 +72,7 @@ wss.on('connection', (ws, req) => {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
       if(message&&typeof message==='object'&&'type' in message&&message.type==='puzzle_action'){
-        const command=parsePuzzleCommand(message),result=room.adventure.actPuzzle(command,room.model,room.libraryRevision);
+        room.maintain();const command=parsePuzzleCommand(message),result=room.adventure.actPuzzle(command,room.model,room.libraryRevision,id);
         log('puzzle_action',{id,slot,instanceId:command.instanceId,accepted:result.changed,message:result.message});
         ws.send(JSON.stringify({type:'puzzle_result',...result}));if(result.changed)broadcast();else ws.send(JSON.stringify(room.snapshot()));return;
       }
@@ -101,15 +101,17 @@ wss.on('connection', (ws, req) => {
     }
   });
   ws.on('close', (code, reason) => {
-    clearInterval(timer); room.players.delete(id); connections.delete(id);
+    clearInterval(timer); room.leave(id); connections.delete(id);
     log('player_disconnected', { id, slot, code, reason: reason.toString().slice(0, 128), connected: room.players.size });
     broadcast();
   });
 });
 const port = Number(process.env.PORT ?? 3000);
+const maintenance=setInterval(()=>{if(room.maintain())broadcast();},1000);maintenance.unref();
 http.on('error', error => { log('server_error', { message: error.message }); process.exitCode = 1; });
 http.listen(port, '0.0.0.0', () => log('server_started', { port, maxPlayers: 4, publicOrigin: process.env.PUBLIC_ORIGIN ?? 'localhost:5173', savedRooms:store.snapshot().rooms.length, activeRoom:room.model?.name ?? null }));
 function shutdown() {
+  clearInterval(maintenance);
   log('server_stopping', { connected: room.players.size });
   for (const client of wss.clients) client.terminate();
   wss.close(); http.close();

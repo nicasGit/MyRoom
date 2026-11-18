@@ -1,8 +1,22 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **18 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.5.0**, incluant les fondations modulaires de la Phase 1. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.5.1**, avec la Phase 2 préparée en **0.6.0**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
+
+### 18 novembre 2026 — Phase 2 préparée en 0.6.0 sur branche dédiée
+
+Branche `feat/menthe27-blackjack-hybrid`, à partir de `b7617d4`. Lecture préalable des cinq documents demandés. Module indépendant `blackjack-hybrid` enregistré avec source aléatoire cryptographique injectée au point de composition serveur, sans dépendance Three.js/WebSocket dans les règles. Trois manches, paquet privé, projection masquée, capitaine issu des connexions, réservations de cartes de 15 secondes et dépôts dans trois logements. Contexte d’action fourni par le serveur, commandes et révisions validées. Récompenses intermédiaires via un contrat générique `earnedRewards`, maintenance des verrous et indices administrateur ; `symbol-chest` et `blackjack-legacy` restent inchangés.
+
+Menthe 27 `0.2.0` remplace le casino prévu par une instance jouable puis attend le Vidéoclub rétro, sans victoire finale. La version `0.1.0` est conservée au catalogue pour la compatibilité des instantanés. Les neuf points existants sont inchangés, seule la position `table` est réutilisée. État de jeu séparé des placements. Aucun changement de calibrage A/B, de schéma de pièce ou de stockage existant.
+
+Contrôles finaux locaux : `npm run typecheck`, `npm run build` et `npm test` réussis, **63 tests**, dont onze tests de règles/intégration hybrides et un test réseau supplémentaire avec quatre connexions. Couverture : blackjack naturel, 17 souple, égalités, trois échecs/rattrapage, deux solutions du double as, choix erronés/correction, états privés, locks/expiration, capitaine, gains partiels/restauration, partie normale jusqu’à l’attente et état final restaurable. Le test réseau couvre refus hors capitaine, réattribution, actions simultanées, libération après déconnexion, indices/reset protégés, trois manches/récompenses et reconnexion dans l’attente finale. Un contrôle de réinitialisation du blackjack historique après sa réussite conserve désormais un état restaurable et rejouable, sans toucher à ses règles. Avertissement Vite habituel pour le bloc Three.js de 524 kB ; vérification d’espacement Git réussie.
+
+Dans Chrome local : parcours des trois manches jusqu’au Vidéoclub en attente, commandes DOM par clics synthétiques (onglet partagé masqué), réservation d’une carte via projection d’un clic sur l’aperçu 3D, et capture Canvas du rendu Three.js inspectée. Inscriptions agrandies et boutons remontés pour dégager les logements. Canvas d’aperçu présent et vue du croupier masquée pendant la main. Pièce temporaire supprimée après essai ; aventure classique et simulation désactivée rétablies. Ces simulations ne constituent pas des essais WebXR physiques. Progression, paquet et noms restent en mémoire ; la persistance disque appartient toujours à la Phase 3. Aucun essai physique Quest/téléphone/HAOS.
+
+Version de l’add-on et diagnostic client portés à 0.6.0, changelog, architecture, README et guides actualisés. Le [guide hybride](adventures/blackjack-hybrid.md) décrit le fonctionnement et les limites. Publication sur `main` demandée explicitement ; workflow et registre restent à confirmer après le push de cette tranche.
+
+Publication préalable 0.5.1 confirmée : commit `b7617d4`, workflow [44268181791](https://github.com/nicasGit/MyRoom/actions/runs/44268181791) réussi, manifeste Linux ARM64 `ghcr.io/nicasgit/myroom:0.5.1` vérifié après exécution, digest `sha256:fd9337f28208b5b6781e94640a27fbad4e11ee5b681530bab3493c1ac9eaf19b`. Les 51 tests, le typecheck et la compilation avaient réussi avant son push. La première commande globale commit/push avait été refusée par la revue automatique ; les douze fichiers ont été sélectionnés et inspectés explicitement, puis l’autorisation manuelle a confirmé la publication sur main.
 
 ### 18 novembre 2026 — accès direct aux énigmes en mode test, préparation 0.5.1
 

@@ -56,3 +56,7 @@ Une étape future peut être déclarée avec `kind: "planned"` et `puzzleType`, 
 Un module implémente [PuzzleModule](../../server/src/engine/puzzle-types.ts). Sa configuration et ses états/actions sont validés séparément. `reduce` renvoie un nouvel état et un refus explicite en cas d’action non autorisée. Le moteur seul enregistre la réussite, les récompenses et la transition. Aucun accès WebSocket, Three.js, disque ou pièce n’est nécessaire pour tester les règles.
 
 Les indices sont déclarés et l’instantané possède un niveau d’indice par instance ; aucune attribution admin n’est implémentée en Phase 1. Le client conserve le rendu actuel et sa phrase d’énigme historique pour le coffre ; un manifeste avec un autre ordre doit prévoir son parcours de présentation lors de la généralisation du client. Les nouveaux modules/visuels, la manipulation magnétique et la persistance de session attendent les phases validées suivantes.
+
+## Phase 2
+
+Voir [blackjack-hybrid](blackjack-hybrid.md) pour un module avec contexte serveur, projection publique et contrat optionnel `earnedRewards` pour les gains par manche. `maintain` libère les réservations expirées ou déconnectées. Les modules existants conservent leur comportement sans ces extensions.

@@ -2,6 +2,9 @@ import type { RoomModel } from './scene-schema.js';
 import { Adventure } from './adventure.js';
 import { text,integer,list } from './engine/validation.js';
 export class Room {
+  captainId:string|undefined;
+  maintain(now=Date.now()){if(!this.captainId||!this.players.has(this.captainId))this.captainId=[...this.players].sort((a,b)=>a[1]-b[1])[0]?.[0];return this.adventure.maintain({captainId:this.captainId,players:[...this.players.keys()],now});}
+  leave(id:string){this.players.delete(id);this.maintain();}
   constructor(public adventure=new Adventure()){}
   playerNames=['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
   playerNamesRevision=0;
@@ -26,6 +29,7 @@ export class Room {
   }
   snapshot() {
     this.adventure.configure(this.model);
+    this.maintain();
     return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:this.adventure.snapshot() };
   }
   reset() { this.solved = false; this.revision++; }
