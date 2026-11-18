@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0
+
+- Team Portal : introduction coopérative facultative, avec quatre bâtons nominatifs, vortex et passages individuels validés par le serveur.
+- Menthe 27 0.3.0 conserve le coffre et le blackjack existants, après ce rituel ; anciennes versions conservées.
+- Placements indépendants enregistrés, confirmation de l’espace physique, couleurs et dimensions personnalisables.
+- Reprise privée de place, passage accessible, commandes administrateur et simulation PC explicitement identifiée.
+- Correction du passage immédiatement après ouverture ; aucun essai matériel Quest effectué par l’agent.
+
 ## 0.7.2
 
 - Mains articulées stylisées avec doigts suivant les poses WebXR disponibles, visibles dès l’entrée en session.

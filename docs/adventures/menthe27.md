@@ -40,3 +40,7 @@ Les noms sont validés côté serveur : quatre textes non vides, 40 caractères 
 Le manifeste ne crée volontairement aucune instance `blackjack-hybrid` avant la validation utilisateur. Les autres énigmes restent également à concevoir après les phases précédentes.
 
 Voir [l’architecture et les risques de migration](phase1-architecture.md) et [la création d’aventures](creating-adventures.md). Aucun essai physique téléphone/Quest effectué par l’agent pour cette Phase 1.
+# Introduction Team Portal — version 0.3.0
+
+La version 0.3.0 ajoute une introduction de session facultative, avant les étapes de 0.2.0 qui restent identiques : coffre, blackjack hybride, suite en attente. Choisir cette version dans l’administration, configurer et confirmer l’espace physique, puis démarrer le rituel. Les noms des bâtons viennent des quatre places de la session. Voir [Team Portal](../team-portal.md) pour les placements, la reconnexion, le passage accessible et la simulation PC. Aucun essai physique Quest annoncé.
+

@@ -55,7 +55,12 @@ export class TeamPortal {
     if(!this.active)return false;const old=this.state.revision;
     if(this.state.phase==='waiting'&&this.state.players.some(p=>p.ready)){this.state.phase='collecting';this.state.revision++;}
     if(this.state.phase==='collecting'&&this.allReady()&&this.state.players.every(p=>p.claimed)){this.state.phase='opening';this.state.startedAt=now;this.state.revision++;}
-    if(this.state.phase==='opening'&&this.allReady()&&now-this.state.startedAt>=5000){this.state.phase='portal-open';this.state.revision++;}
+    if(this.state.phase==='opening'&&this.allReady()&&now-this.state.startedAt>=5000){
+      this.state.phase='portal-open';this.state.revision++;
+      // Preserve a recent approach pose when the gate opens between two samples.
+      // Otherwise an immediate first step can miss the arming distance entirely.
+      this.detectors.forEach((detector,index)=>{detector.reset();const pose=this.pose.get(index+1);if(pose&&now-pose.at<=1200)detector.sample(pose.p,pose.at,this.state.config.portal);});
+    }
     if(this.state.phase==='portal-open'&&this.allReady()&&this.state.players.every(p=>p.crossed)){this.state.phase='transitioning';this.state.startedAt=now;this.state.revision++;}
     if(this.state.phase==='transitioning'&&this.allReady()&&now-this.state.startedAt>=2000&&!this.launched){launch();this.launched=true;this.state.phase='completed';this.state.active=false;this.state.revision++;this.pose.clear();}
     return old!==this.state.revision;

@@ -60,3 +60,7 @@ Les indices sont déclarés et l’instantané possède un niveau d’indice par
 ## Phase 2
 
 Voir [blackjack-hybrid](blackjack-hybrid.md) pour un module avec contexte serveur, projection publique et contrat optionnel `earnedRewards` pour les gains par manche. `maintain` libère les réservations expirées ou déconnectées. Les modules existants conservent leur comportement sans ces extensions.
+# Introduction de session réutilisable
+
+Le champ facultatif `introduction` accepte `{ "type": "team-portal", "schemaVersion": 1, "config": ... }`. La configuration complète est décrite dans [Team Portal](../team-portal.md) et son exemple intégré se trouve dans [Menthe 27](../../server/src/adventures/menthe27.ts). Cette introduction ne figure ni dans `steps`, ni dans `victory.requiredSteps`. Le démarrage est coordonné par la salle avant l’AdventureEngine. Sans ce champ, les anciens manifestes conservent le démarrage direct. Créer une nouvelle version d’aventure pour ajouter le rituel plutôt que modifier une version déjà utilisée.
+

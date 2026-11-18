@@ -2,7 +2,9 @@
 
 Implémentation en cours sur `feature/team-portal`. Aucun essai physique Quest effectué par l’agent. Le rituel ne constitue pas une énigme et n’ajoute aucune condition de victoire.
 
-**État de validation : publication bloquée.** Le contrôle TypeScript et la compilation réussissent ; 83 tests sur 84 passent. Le scénario réseau à quatre joueurs dépasse son délai en attendant une traversée. Conformément au workflow demandé, arrêt sans fusion ni publication ; commit de développement `7714031`. Les fonctions décrites ci-dessous sont implémentées mais le parcours complet n’est pas encore validé.
+**Préparation 0.8.0.** Le blocage initial de traversée a été corrigé : l’ouverture initialise le détecteur avec la dernière pose validée récente, pour reconnaître un premier pas immédiat. TypeScript, compilation et les 85 tests réussissent, dont le scénario réseau complet. La publication de l’image reste à confirmer. Aucun essai matériel n’est annoncé.
+
+Cette version attend collectivement les quatre passages dans la même pièce MR. Elle ne change pas encore le décor pour un joueur passé et ne montre pas d’avatars à travers une fenêtre vers un autre univers. Ces éléments constituent une évolution distincte.
 
 ## Architecture et compatibilité
 

@@ -39,6 +39,12 @@ test('traversée : sens, fenêtre utile, hystérésis, sauts et lacunes de suivi
   detector.reset();sample(.5);assert.equal(sample(-1),false);
   detector.reset();sample(.5);at+=1500;assert.equal(sample(-.4),false);
 });
+test('portail : une traversée immédiate utilise la pose récente précédant l’ouverture',()=>{
+  const p=fixture();for(let i=1;i<=4;i++)pose(p,i,1,1100);p.tick(1100,()=>{});for(let i=1;i<=4;i++)p.claim(i,STAFF_IDS[i-1]);p.tick(1200,()=>{});
+  for(let i=1;i<=4;i++)pose(p,i,2,6100);p.tick(6200,()=>{});
+  pose(p,1,3,6400,.2);pose(p,1,4,6700,-.1);pose(p,1,5,7000,-.4);
+  assert.equal(p.snapshot().players[0].crossed,true);
+});
 test('portail : commandes répétées/périmées, passage unique et lancement unique',()=>{
   const p=open();assert.equal(p.snapshot().phase,'portal-open');
   const s=p.snapshot(),c={type:'portal_action' as const,sessionId:s.sessionId,revision:s.revision,commandId:'unique',seq:2,action:'confirm' as const};p.act(c,1,model,6300);assert.throws(()=>p.act(c,1,model,6400));assert.throws(()=>p.act({...c,commandId:'stale'},2,model,6400));
