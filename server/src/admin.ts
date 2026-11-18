@@ -64,7 +64,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       try{room.snapshot();const c=record(body,['action','revision','config','slot']),action=c.action;
         const expected=action==='configure'?'action,config,revision':['cross','release-seat','simulate-claim','simulate-cross'].includes(String(action))?'action,revision,slot':'action,revision';if(Object.keys(c).sort().join(',')!==expected)throw Error('Champs de commande invalides.');
         if(integer(c.revision)!==room.portal.snapshot().revision)throw Error('Le portail a change. Actualisez.');
-        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=parsePortalConfig(c.config);if(config.enabled)validatePlacement(config,room.model);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
+        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=parsePortalConfig(c.config);if([...room.players.values()].some(slot=>slot>(config.playerCount??4)))throw Error("Deconnectez les places au-dessus du nombre choisi avant de reduire le groupe.");if(config.enabled)validatePlacement(config,room.model);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
         else if(action==='reset'){room.portal.cancel();room.startSession();}
         else if(action==='stop')room.portal.cancel();
         else if(action==='skip')room.portal.skip();

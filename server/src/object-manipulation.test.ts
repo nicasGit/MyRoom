@@ -8,6 +8,28 @@ import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
 import { XRHandsView } from '../../client/src/xr-hands-view.js';
+import { phoneHand } from '../../client/src/phone-hand.js';
+import { makeCalibration } from '../../client/src/calibration.js';
+
+test('phone: virtual hand uses A/B, follows camera and drives grab/drop through existing leases',()=>{
+  const calibration=makeCalibration(new THREE.Vector3(),new THREE.Vector3(1,0,0));
+  const camera=new THREE.Vector3(1,1.4,1),orientation=new THREE.Quaternion();
+  const first=phoneHand(camera,orientation,calibration,true);
+  assert.ok(first.local.distanceTo(new THREE.Vector3(1,1.32,.45))<1e-8);
+  const view=new XRHandsView();view.simulateRight(first.local,orientation,true);
+  assert.equal(view.group.getObjectByName('hand-right')!.visible,true);
+  const group=new THREE.Group(),node=new THREE.Mesh(new THREE.BoxGeometry(.1,.6,.1),new THREE.MeshBasicMaterial());
+  node.position.copy(first.hand.position);group.add(node);group.userData.grabbables={staff1:node};
+  const pose={x:node.position.x,y:node.position.y,z:node.position.z,yaw:0};
+  const snapshot:any={revision:1,poses:{staff1:pose},held:[]},sent:ObjectCommand[]=[];
+  const grab=new ObjectGrabber(()=>'phone',()=>snapshot,c=>{sent.push(c);return true;},()=>{});
+  grab.update(group,[first.hand],true,100);assert.equal(sent[0].action,'grab');
+  snapshot.held=[{target:'staff1',owner:'phone',lease:'lease'}];
+  const next=phoneHand(camera.clone().add(new THREE.Vector3(.1,0,0)),orientation,calibration,true);
+  grab.update(group,[next.hand],true,400);assert.equal(sent[1].action,'move');
+  grab.update(group,[{...next.hand,pressed:false}],true,500);assert.equal(sent[2].action,'drop');
+  view.dispose();node.geometry.dispose();node.material.dispose();
+});
 
 test('mains visibles : articulations suivies, perte de suivi et retrait de source',()=>{
   const view=new XRHandsView(),wrist={},thumb={},tip={};

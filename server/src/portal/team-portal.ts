@@ -13,16 +13,16 @@ export class TeamPortal {
   get active(){return this.state.active;}
   prepare(names:string[],slots:number[]){
     if(this.active||this.state.phase!=='waiting')return;
-    const players=names.map((name,i)=>({slot:i+1,name,present:slots.includes(i+1),ready:false,claimed:false,crossed:false}));
+    const players=names.slice(0,this.state.config.playerCount??4).map((name,i)=>({slot:i+1,name,present:slots.includes(i+1),ready:false,claimed:false,crossed:false}));
     if(JSON.stringify(players)!==JSON.stringify(this.state.players)){this.state.players=players;this.state.revision++;}
   }
   configure(config:PortalConfig){if(this.active)throw Error('Arrêtez l’introduction avant de modifier son placement.');this.state.config=parsePortalConfig(config);this.state.revision++;}
   begin(sessionId:string,names:string[],room:RoomModel|null,now:number,simulation=false){
     if(this.active)throw Error('Introduction déjà active.');validatePlacement(this.state.config,room);this.setRoom(room);
-    if(Object.keys(this.positions).length!==4)throw Error('Pas assez de place libre pour disperser les quatre bâtons. Ajustez le portail ou le relevé de pièce.');
+    if(Object.keys(this.positions).length!==(this.state.config.playerCount??4))throw Error('Pas assez de place libre pour disperser les bâtons du groupe. Ajustez le portail ou le relevé de pièce.');
     if(!this.state.config.confirmed)throw Error('L’organisateur doit vérifier et confirmer l’espace physique.');
     this.pose.clear();this.seen.clear();this.detectors.forEach(d=>d.reset());this.launched=false;
-    this.state={...this.state,sessionId,revision:this.state.revision+1,active:true,phase:'waiting',simulation,startedAt:now,players:names.map((name,i)=>({slot:i+1,name,present:false,ready:false,claimed:false,crossed:false}))};
+    this.state={...this.state,sessionId,revision:this.state.revision+1,active:true,phase:'waiting',simulation,startedAt:now,players:names.slice(0,this.state.config.playerCount??4).map((name,i)=>({slot:i+1,name,present:false,ready:false,claimed:false,crossed:false}))};
   }
   cancel(){this.state.active=false;this.state.phase='waiting';this.state.revision++;this.pose.clear();this.detectors.forEach(d=>d.reset());}
   presence(slots:number[],now:number){
@@ -55,7 +55,7 @@ export class TeamPortal {
     else {if(!p.ready)throw Error('Signalez votre présence avant la confirmation accessible.');this.cross(slot);}
     this.seen.add(c.commandId);if(this.seen.size>512)this.seen.delete(this.seen.values().next().value!);
   }
-  private allReady(){return this.state.players.length===4&&this.state.players.every(p=>p.present&&p.ready);}
+  private allReady(){return this.state.players.length===(this.state.config.playerCount??4)&&this.state.players.every(p=>p.present&&p.ready);}
   private cross(slot:number){const p=this.state.players[slot-1];if(this.state.phase!=='portal-open'||!this.allReady()||!p||p.crossed)throw Error('Passage déjà validé ou portail indisponible.');p.crossed=true;this.state.revision++;}
   adminCross(slot:number){this.cross(slot);}
   simulate(slot:number,cross:boolean){if(!this.state.simulation||!this.active)throw Error('Simulation PC inactive.');if(cross)this.cross(slot);else this.claim(slot,STAFF_IDS[slot-1]);}
@@ -63,8 +63,8 @@ export class TeamPortal {
   tick(now:number,launch:()=>void){
     if(!this.active)return false;const old=this.state.revision;
     if(this.state.phase==='waiting'&&this.state.players.some(p=>p.ready)){this.state.phase='collecting';this.state.revision++;}
-    if(this.state.phase==='collecting'&&this.allReady()&&this.state.players.every(p=>p.claimed)){this.state.phase='opening';this.state.startedAt=now;this.state.revision++;}
-    if(this.state.phase==='opening'&&this.allReady()&&now-this.state.startedAt>=5000){
+    if(this.state.phase==='collecting'&&this.state.players.some(p=>p.claimed)){this.state.phase='opening';this.state.startedAt=now;this.state.revision++;}
+    if(this.state.phase==='opening'&&now-this.state.startedAt>=5000){
       this.state.phase='portal-open';this.state.revision++;
       // Preserve a recent approach pose when the gate opens between two samples.
       // Otherwise an immediate first step can miss the arming distance entirely.

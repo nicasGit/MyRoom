@@ -33,7 +33,7 @@ export class Room {
   revision = 0;
   solved = false;
   join(id: string,requestedSlot?:number) {
-    const slot = (requestedSlot?[requestedSlot]:[1, 2, 3, 4]).find(n => ![...this.players.values()].includes(n));
+    const slot = (requestedSlot?[requestedSlot]:[1, 2, 3, 4]).find(n => n>=1&&n<=(this.portal.snapshot().config.playerCount??4)&&![...this.players.values()].includes(n));
     if (slot === undefined) return false;
     this.players.set(id, slot); return true;
   }

@@ -4,6 +4,20 @@
 
 ## 1. Projet et architecture
 
+### 18 novembre 2026 - publication rapide 0.8.3 en cours
+
+Publication explicitement autorisée : main virtuelle téléphone, ouverture au premier bâton et nombre de joueurs de 1 à 4. Versions add-on et diagnostic client mises à jour, changelog complété. Les derniers contrôles complets de cette implémentation ont réussi : typecheck, build et 91 tests. Aucun changement fonctionnel depuis ces contrôles ; seuls version et documentation de publication sont adaptés. Le workflow GitHub relance les trois contrôles avant construction et publication ARM64. Disponibilité du registre encore à confirmer ; aucun essai matériel annoncé.
+
+### 18 novembre 2026 - nombre de joueurs administrable, travail local
+
+Ajout de **Nombre de joueurs** (1 à 4) dans Team Portal. Configuration strictement validée côté serveur, sauvegardée avec les paramètres existants par pièce ; anciennes configurations conservées avec quatre joueurs par défaut. Le rituel utilise les premières places choisies et ne demande que leurs présences et passages ; les bâtons dispersés, compteurs et commandes de simulation suivent ce nombre. Les noms des quatre places restent disponibles. Connexions au-delà du nombre choisi refusées ; réduction refusée si une place supérieure est encore connectée. Réglage verrouillé pendant la partie. Aucun changement des règles des énigmes ni du calibrage A/B. Tests ajoutés pour les nombres invalides, les anciens paramètres, les parcours complets de un à quatre joueurs et le refus des connexions supplémentaires. Première exécution : un test a détecté une initialisation conservant quatre places au démarrage ; corrigée. Vérifications finales réussies : `npm run typecheck`, `npm run build`, `npm test` (**91 tests**) et `git diff --check`. Avertissement Vite habituel pour le bloc Three.js de 530 kB. Modifications locales non publiées ; version publiée 0.8.2. Aucun essai matériel effectué.
+
+### 18 novembre 2026 - main virtuelle téléphone et ouverture au premier bâton, travail local
+
+Branche `feat/phone-grab-vortex` : en AR avec DOM Overlay, après A/B et sans source Quest main/contrôleur, ajout d'une main droite virtuelle à 55 cm devant la caméra et d'un bouton à bascule Prendre / Relâcher. La main reprend le gant procédural existant, change de couleur pendant la prise et fournit des entrées au même ObjectGrabber que les mains Quest ; commandes, baux et validations serveur conservés. Masquage pendant un brouillon ou une perte de suivi ; bouton retiré à la fin de session. Une seule main simulée ne permet pas de soulever les gros objets à deux mains.
+
+Le serveur ouvre désormais le vortex en cinq secondes dès la première attribution d'un bâton, sans attendre les trois autres prises. Les quatre présences calibrées et les quatre passages restent nécessaires au lancement de l'aventure ; aucun démarrage solo implicite. Texte d'accueil et guide adaptés. Typecheck, build et **90 tests** réussis, dont saisie/déplacement/dépôt par la main simulée et ouverture avec une seule prise sans lancement prématuré ; `git diff --check` réussi. Avertissement Vite habituel du bloc Three.js de 530 kB. Aucun essai physique téléphone ou Quest effectué. Modifications locales non publiées ; version publiée 0.8.2.
+
 ### 18 novembre 2026 - publication 0.8.2 confirmée
 
 Publication autorisée par l'utilisateur. Version add-on et diagnostic client portés à 0.8.2, changelog complété pour les bâtons flottants. Typecheck et build relancés avec succès avant commit. Première relance des tests : 86/88, échec HTTP 400 d'une écriture de pièce et refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 88/88 réussis, dont les parcours réseau. Commit `aad7f06` publié sur `main` ; workflow [44363141432](https://github.com/nicasGit/MyRoom/actions/runs/44363141432) réussi, vérifications Linux incluses. Manifeste `ghcr.io/nicasgit/myroom:0.8.2` vérifié : Linux ARM64, label 0.8.2, digest `sha256:bd153187091b712ef1911761377b9ea875a7b592a26b6cfb06f31d0caa27c4db`. Branche intermédiaire conservée. Aucun essai physique HAOS ou Quest effectué par l'agent.

@@ -14,6 +14,21 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
+test('portal: one to four selected players, strict count and legacy defaults',()=>{
+  assert.equal(parsePortalConfig(config).playerCount??4,4);
+  for(const invalid of [0,5,1.5,'2',null])assert.throws(()=>parsePortalConfig({...config,playerCount:invalid}));
+  for(let count=1;count<=4;count++){
+    const p=new TeamPortal();p.configure({...config,playerCount:count});p.begin('count',['A','B','C','D'],model,1000,true);
+    p.presence([],1100);p.tick(1100,()=>{});assert.equal(p.snapshot().players.length,count);
+    assert.equal(Object.keys(p.staffPoses()).length,count);
+    p.simulate(1,false);p.tick(1200,()=>{});p.tick(6200,()=>{});let starts=0;
+    for(let slot=1;slot<=count;slot++)p.simulate(slot,true);
+    p.tick(6300,()=>starts++);p.tick(8300,()=>starts++);p.tick(9000,()=>starts++);
+    assert.equal(starts,1);assert.equal(p.snapshot().phase,'completed');
+  }
+  const room=new Room();room.snapshot();room.portal.configure({...config,playerCount:1});
+  assert.equal(room.join('first'),true);assert.equal(room.join('extra'),false);assert.equal(room.join('extra',2),false);
+});
 test('floating staffs: deterministic shared layout avoids obstacles and vortex corridor',()=>{
   const room={...model,obstacles:[{name:'Table',x:6,z:6,width:1,depth:1,height:1}]};
   const layout=staffLayout(config,room),positions=Object.values(layout);
@@ -55,11 +70,18 @@ test('portail : schémas stricts, placements et ancienne aventure sans introduct
   const registry=createRegistry(),catalog=createCatalog(registry);assert.equal(catalog.get('myroom-classic','1.0.0').introduction,undefined);assert.equal(catalog.get('menthe27','0.2.0').introduction,undefined);assert.equal(catalog.get('menthe27','0.3.0').introduction?.type,'team-portal');
   assert.deepEqual(catalog.get('menthe27','0.3.0').steps,catalog.get('menthe27','0.2.0').steps);
 });
-test('portail : bâtons nominatifs, doublons et ouverture seulement avec quatre présences prêtes',()=>{
+test('portail : bâtons nominatifs, doublons et ouverture dès une première prise',()=>{
   const p=fixture();for(let i=1;i<=3;i++)pose(p,i,1,1100);p.tick(1100,()=>{});
   assert.throws(()=>p.claim(1,'staff2'));for(let i=1;i<=3;i++)p.claim(i,STAFF_IDS[i-1]);assert.throws(()=>p.claim(1,'staff1'));
-  p.tick(1200,()=>{});assert.equal(p.snapshot().phase,'collecting');pose(p,4,1,1300);p.claim(4,'staff4');p.presence([1,2,3],1300);p.tick(1400,()=>{});assert.equal(p.snapshot().phase,'collecting');
+  p.tick(1200,()=>{});assert.equal(p.snapshot().phase,'opening');pose(p,4,1,1300);p.claim(4,'staff4');p.presence([1,2,3],1300);p.tick(1400,()=>{});assert.equal(p.snapshot().phase,'opening');
   p.presence([1,2,3,4],1500);pose(p,4,2,1600);p.tick(1600,()=>{});assert.equal(p.snapshot().phase,'opening');assert.equal(p.snapshot().players[3].claimed,true);
+});
+test('portal: first staff opens alone, adventure still waits for the team',()=>{
+  const p=fixture();p.presence([1],1050);pose(p,1,1,1100);p.tick(1100,()=>{});
+  assert.equal(p.snapshot().phase,'collecting');p.claim(1,'staff1');p.tick(1200,()=>{});
+  assert.equal(p.snapshot().phase,'opening');let starts=0;p.tick(6200,()=>starts++);
+  assert.equal(p.snapshot().phase,'portal-open');assert.equal(starts,0);
+  assert.throws(()=>p.adminCross(1));p.tick(9000,()=>starts++);assert.equal(starts,0);
 });
 test('traversée : sens, fenêtre utile, hystérésis, sauts et lacunes de suivi',()=>{
   const c=config.portal,detector=new CrossingDetector();let at=1000;const sample=(d:number,x=4)=>detector.sample({x,y:1.6,z:3+d},at+=300,c);

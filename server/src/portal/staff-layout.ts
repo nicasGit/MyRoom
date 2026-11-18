@@ -13,7 +13,7 @@ export function staffLayout(config:PortalConfig,room:RoomModel|null):Partial<Rec
     candidates.push({x,z});
   }
   const chosen:{x:number;z:number}[]=[];
-  for(let i=0;i<4;i++){
+  for(let i=0;i<(config.playerCount??4);i++){
     let best:typeof candidates[number]|undefined,score=-Infinity;
     for(const point of candidates){const distance=chosen.length?Math.min(...chosen.map(other=>Math.hypot(point.x-other.x,point.z-other.z))):-Math.hypot(point.x-config.stand.x,point.z-config.stand.z);
       if(chosen.length&&distance<1)continue;if(distance>score){score=distance;best=point;}}
@@ -21,5 +21,5 @@ export function staffLayout(config:PortalConfig,room:RoomModel|null):Partial<Rec
   }
   const y=Math.min(config.stand.y+.9,room.height-Math.max(...config.staffs.map(s=>s.length))-.3);
   if(y<.5)return {};
-  return Object.fromEntries(STAFF_IDS.map((id,i)=>[id,{x:Number(chosen[i].x.toFixed(4)),y,z:Number(chosen[i].z.toFixed(4))}]));
+  return Object.fromEntries(STAFF_IDS.slice(0,config.playerCount??4).map((id,i)=>[id,{x:Number(chosen[i].x.toFixed(4)),y,z:Number(chosen[i].z.toFixed(4))}]));
 }

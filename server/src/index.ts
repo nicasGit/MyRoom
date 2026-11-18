@@ -58,8 +58,9 @@ wss.on('connection', (ws, req) => {
   try{const protocol=req.headers['sec-websocket-protocol'];if(protocol&&!/^myroom-resume\.[0-9a-f]{64}$/.test(protocol))throw Error('Protocole invalide.');seat=room.seats.acquire(id,protocol?.slice('myroom-resume.'.length),room.portal.active);}
   catch{log('connection_rejected',{...context,reason:req.headers['sec-websocket-protocol']?'invalid_resume':'room_full',connected:room.players.size});ws.close(1008,'Place réservée ou reprise refusée.');return;}
   if (!room.join(id,seat.slot)) {
+    room.seats.disconnect(id,false);
     log('connection_rejected', { ...context, reason: 'room_full', connected: room.players.size });
-    ws.close(1008, 'Salle complète (4 joueurs)'); return;
+    ws.close(1008, 'Salle complete pour le nombre de joueurs choisi'); return;
   }
   const slot = room.players.get(id);
   connections.set(id, { socket: ws, address, userAgent: context.userAgent, connectedAt: new Date().toISOString() });

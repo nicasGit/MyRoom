@@ -15,6 +15,7 @@ import { InfoPanelAnchor } from './xr-info-panel';
 import { PortalClient } from './portal/portal-client';
 import { portalView } from './portal/portal-view';
 import { XRHandsView } from './xr-hands-view';
+import { phoneHand } from './phone-hand';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -26,7 +27,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.8.2');
+diagnostic('Version client', '0.8.3');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -180,6 +181,10 @@ enter.onclick = async () => {
     const hud=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.55),hudMaterial);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
     const hudAnchor=new InfoPanelAnchor();
     const handsView=new XRHandsView();scene.add(handsView.group);
+    const phoneButton=document.createElement('button');phoneButton.textContent='Prendre (main virtuelle)';phoneButton.setAttribute('aria-pressed','false');phoneButton.hidden=true;
+    element('xr-exit').before(phoneButton);
+    let phonePressed=false;
+    phoneButton.onclick=()=>{phonePressed=!phonePressed;phoneButton.textContent=phonePressed?'Relâcher (main virtuelle)':'Prendre (main virtuelle)';phoneButton.setAttribute('aria-pressed',String(phonePressed));};
     const handDots=[0,1].map(()=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(0.025,12,8),new THREE.MeshBasicMaterial({color:0x67e8f9,depthTest:false}));dot.renderOrder=1001;dot.visible=false;scene.add(dot);return dot;});
     let handStatus='';
     let hudKey='',lastScanUpdate=-Infinity;
@@ -250,7 +255,7 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { hudAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    disposeScene = () => { phoneButton.remove();grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -320,7 +325,15 @@ enter.onclick = async () => {
       portal.update(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       gameGroup?.userData.animatePortal?.(Date.now());
       const hands=frame&&calibration?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
+      const phoneEnabled=touchOverlay&&!!calibration&&!!pose&&!survey.hasDraft()&&!hands.length&&!Array.from(session!.inputSources).some(source=>source.hand||source.gripSpace||source.handedness!=='none');
+      phoneButton.hidden=!phoneEnabled;
+      if(!phoneEnabled){phonePressed=false;phoneButton.textContent='Prendre (main virtuelle)';phoneButton.setAttribute('aria-pressed','false');}
       handsView.update(frame,reference,session!.inputSources,hands.filter(h=>h.pressed).map(h=>h.side));
+      if(phoneEnabled&&pose&&calibration){
+        const orientation=new THREE.Quaternion().copy(pose.transform.orientation);
+        const simulated=phoneHand(new THREE.Vector3().copy(pose.transform.position),orientation,calibration,phonePressed);
+        hands.push(simulated.hand);handsView.simulateRight(simulated.local,orientation,phonePressed);
+      }
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
       handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect());

@@ -29,6 +29,13 @@ export class XRHandsView {
       this.rigs.set(side,{root,joints:nodes,bones,controller,material});
     }
   }
+  simulateRight(position:THREE.Vector3,orientation:THREE.Quaternion,pressed:boolean){
+    for(const rig of this.rigs.values())rig.root.visible=false;
+    const rig=this.rigs.get('right')!;rig.root.visible=true;rig.controller.visible=true;
+    for(const node of rig.joints.values())node.visible=false;for(const bone of rig.bones)bone.visible=false;
+    rig.controller.position.copy(position);rig.controller.quaternion.copy(orientation);
+    rig.material.color.setHex(pressed?0xffd54f:0xa7f3a0);
+  }
   update(frame:XRFrame|undefined,reference:XRReferenceSpace,sources:XRInputSourceArray,pressed:readonly string[]=[]){
     for(const rig of this.rigs.values())rig.root.visible=false;
     if(!frame)return;

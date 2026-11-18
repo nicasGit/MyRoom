@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.3
+
+- Main virtuelle sur téléphone avec bouton Prendre / Relâcher après calibrage A/B.
+- Vortex ouvert dès la première prise de bâton ; nombre de joueurs réglable de 1 à 4 dans l'administration.
+- Bâtons, passages et limite de connexion adaptés au groupe choisi ; anciennes configurations à quatre conservées.
+- 91 tests logiciels réussis ; aucun essai matériel effectué par l'agent.
+
 ## 0.8.2
 
 - Bâtons du vortex en suspension, sans socle, avec halos respirants.
