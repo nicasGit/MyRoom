@@ -4,6 +4,16 @@
 
 ## 1. Projet et architecture
 
+### 18 novembre 2026 - préparation de publication 0.8.4
+
+Publication autorisée : accueil mural, mode pièces et correction tactile. Version add-on et diagnostic client portés à 0.8.4, changelog complété. Les derniers contrôles complets ont réussi : typecheck, build et 94 tests ; seuls version et documents sont adaptés depuis. Le workflow GitHub relance ces contrôles avant publication ARM64. Disponibilité du registre à confirmer ; aucun essai matériel annoncé.
+
+### 18 novembre 2026 - accueil mural, mode pièces et correction de la main, travail local
+
+Branche `feat/wall-lobby` : distinction des sources tactiles screen et des prises tracked-pointer pour éviter de désactiver la main virtuelle à cause d'un grip déclaré par le téléphone. Bouton présent avec indication du calibrage manquant. Après A/B, masquage de la croix/cible au sol et des grands panneaux permanents en jeu ; réactivation explicite dans le mode pièces. Menu 3D planaire fixe au mur du panneau existant : accueil, catalogue versionné, groupe de 1 à 4, noms via clavier 3D, confirmation physique du passage et commandes de relevé. Sélection Quest par rayon, téléphone par visée et bouton, aperçu Canvas PC/tactile. Modifications via routes administrateur existantes ; jeton en mémoire et autorisation préalable possible avant AR, sans exposer les journaux ou secrets. Mise à jour publique par WebSocket, relecture organisateur toutes les deux secondes. Relevé et import existants réutilisés dans un mode dédié ; aucune migration des pièces ou d'A/B.
+
+Premier passage complet : typecheck, build et 94 tests réussis. Après ajout de l'aperçu PC, une relance a rencontré le refus Windows EPERM connu sur renommage atomique du test de bibliothèque ; Vérifications finales réussies : `npm run typecheck`, `npm run build`, `npm test` (**94 tests**) et `git diff --check`. Avertissement Vite habituel pour le bloc Three.js de 530 kB. Serveurs locaux relancés après constat d'une page ancienne 0.6.0 avec serveur arrêté ; nouvelle page chargée en 0.8.3 et rendu Canvas 1024×768 confirmé dans Chrome intégré. Aucun essai physique téléphone ou Quest effectué ; confort et précision AR restent à vérifier. Modifications locales non publiées. Voir [le guide](wall-lobby.md).
+
 ### 18 novembre 2026 - publication rapide 0.8.3 confirmée
 
 Publication explicitement autorisée : main virtuelle téléphone, ouverture au premier bâton et nombre de joueurs de 1 à 4. Versions add-on et diagnostic client mises à jour, changelog complété. Les derniers contrôles complets de cette implémentation ont réussi : typecheck, build et 91 tests. Aucun changement fonctionnel depuis ces contrôles ; seuls version et documentation de publication sont adaptés. Commit `a9b1b8d` publié sur main ; workflow [44366811915](https://github.com/nicasGit/MyRoom/actions/runs/44366811915) réussi avec les trois contrôles et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.8.3` vérifiée : Linux ARM64, label 0.8.3, digest `sha256:9b6f0f772bdc4addc435ea9a4393cac264dc8c90f5b1137f2902e516761e74b1`. Branche conservée. Aucun essai matériel annoncé.

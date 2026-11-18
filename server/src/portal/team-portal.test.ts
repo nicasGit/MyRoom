@@ -14,6 +14,12 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
+test('wall lobby: public catalog metadata and names refresh without private configuration',()=>{
+  const room=new Room(),first=room.snapshot();assert.ok(first.lobby.adventures.length>0);
+  assert.deepEqual(Object.keys(first.lobby.adventures[0]).sort(),['id','title','version']);
+  room.setPlayerNames(['Leon','Reno','Fabien','Nicolas'],room.playerNamesRevision);
+  const next=room.snapshot();assert.equal(next.lobby.names[0],'Leon');assert.equal(next.lobby.namesRevision,first.lobby.namesRevision+1);
+});
 test('portal: one to four selected players, strict count and legacy defaults',()=>{
   assert.equal(parsePortalConfig(config).playerCount??4,4);
   for(const invalid of [0,5,1.5,'2',null])assert.throws(()=>parsePortalConfig({...config,playerCount:invalid}));

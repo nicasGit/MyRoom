@@ -5,6 +5,7 @@ import { createPreview } from './model-view';
 type Calibration=ReturnType<typeof makeCalibration>;
 const el=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 export class Survey {
+  authorize(token:string){this.token=token;}
   private model:RoomModel|null=null;
   private draft:RoomModel|null=null;
   private revision=0;

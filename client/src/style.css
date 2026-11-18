@@ -22,4 +22,11 @@ input { color: #e6edf7; background: #17283f; border: 1px solid #68829b; border-r
 .xr-panel select { width: 100%; margin-top: 5px; min-height: 44px; color: #e6edf7; background: #17283f; border: 1px solid #68829b; padding: 8px; }
 .xr-actions { margin-top: 8px; }
 [hidden] { display: none !important; }
+.xr-lobby-ready:not(.xr-room-mode) .xr-crosshair { display: none; }
+.xr-lobby-ready:not(.xr-room-mode) .xr-panel { top: auto; max-height: 32vh; background: rgb(12 23 39 / 65%); padding: 6px; }
+.xr-lobby-ready:not(.xr-room-mode) .xr-panel > :not(.xr-toolbar):not(#xr-feedback):not([data-lobby-auth]) { display: none !important; }
+.xr-lobby-ready:not(.xr-room-mode) #xr-place { display: none; }
+.xr-lobby-ready:not(.xr-room-mode) #xr-feedback { font-size: 13px; max-height: 3em; overflow-y: auto; margin: 4px; }
+.xr-lobby-ready .xr-toolbar { position: static; background: transparent; }
+[data-lobby-auth] { padding: 8px; background: #102035; }
 #room-preview { min-height: 100px; width: 100%; }

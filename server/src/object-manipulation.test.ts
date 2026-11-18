@@ -8,8 +8,28 @@ import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
 import { XRHandsView } from '../../client/src/xr-hands-view.js';
-import { phoneHand } from '../../client/src/phone-hand.js';
+import { phoneHand,hasTrackedHands } from '../../client/src/phone-hand.js';
+import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view.js';
 import { makeCalibration } from '../../client/src/calibration.js';
+test('phone: touchscreen grip does not disable simulation; tracked Quest inputs do',()=>{
+  assert.equal(hasTrackedHands([{targetRayMode:'screen',gripSpace:{} as XRSpace}]),false);
+  assert.equal(hasTrackedHands([{targetRayMode:'tracked-pointer',gripSpace:{} as XRSpace}]),true);
+  const inputs=new GrabInputs();let read=false;
+  const frame={getPose:()=>{read=true;throw Error('screen input must not supply a grip');}} as unknown as XRFrame;
+  const hands=inputs.read(frame,{} as XRReferenceSpace,[{targetRayMode:'screen',handedness:'right',gripSpace:{}}] as unknown as XRInputSourceArray,makeCalibration(new THREE.Vector3(),new THREE.Vector3(1,0,0)));
+  assert.deepEqual(hands,[]);assert.equal(read,false);
+});
+test('wall menu: fixed room wall transform and UV button selection',()=>{
+  const room=parseRoom({id:'menu',name:'Menu',height:2.5,floor:[{x:0,z:0},{x:5,z:0},{x:5,z:5},{x:0,z:5}],obstacles:[],openings:[]});
+  const group=new THREE.Group();assert.equal(positionWallMenu(group,room),true);
+  const before=group.matrix.clone();group.updateMatrix();const transform=group.matrix.clone();
+  assert.ok(group.position.y>=1&&group.position.y<=1.5);assert.notDeepEqual(transform.elements,before.elements);
+  assert.equal(positionWallMenu(group,room),true);group.updateMatrix();assert.deepEqual(group.matrix.elements,transform.elements);
+  const hits=[{id:'settings',x:32,y:244,width:465,height:58}];
+  assert.equal(hitMenu(hits,100/1024,1-270/768),'settings');
+  assert.equal(hitMenu(hits,100/1024,270/768),undefined);
+  assert.equal(hitMenu(hits,0,1),undefined);
+});
 
 test('phone: virtual hand uses A/B, follows camera and drives grab/drop through existing leases',()=>{
   const calibration=makeCalibration(new THREE.Vector3(),new THREE.Vector3(1,0,0));

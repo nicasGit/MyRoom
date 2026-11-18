@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { toRoom,type makeCalibration } from './calibration';
 import type { GrabHand } from './object-grab';
 
+export function hasTrackedHands(sources:Iterable<Pick<XRInputSource,'targetRayMode'|'hand'|'gripSpace'>>){
+  return Array.from(sources).some(source=>source.targetRayMode==='tracked-pointer'&&!!(source.hand||source.gripSpace));
+}
+
 // Explicit simulation: a virtual right hand 55 cm in front of the phone.
 export function phoneHand(position:THREE.Vector3,orientation:THREE.Quaternion,calibration:ReturnType<typeof makeCalibration>,pressed:boolean):{local:THREE.Vector3;hand:GrabHand}{
   const local=new THREE.Vector3(0,-.08,-.55).applyQuaternion(orientation).add(position);

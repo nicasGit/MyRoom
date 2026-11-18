@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.4
+
+- Menu mural Team Portal : aventures, paramètres joueurs, noms avec clavier 3D et démarrage.
+- Actualisation en direct, modifications protégées par le jeton organisateur existant.
+- Mode pièces dédié ; croix et grands panneaux masqués en jeu après calibrage.
+- Correction de la détection tactile qui pouvait désactiver la main virtuelle téléphone.
+- 94 tests logiciels réussis ; aucun essai matériel effectué par l'agent.
+
 ## 0.8.3
 
 - Main virtuelle sur téléphone avec bouton Prendre / Relâcher après calibrage A/B.

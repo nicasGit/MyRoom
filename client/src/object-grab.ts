@@ -18,7 +18,7 @@ export class GrabInputs {
   squeeze(source:XRInputSource,pressed:boolean){if(pressed)this.squeezed.add(source);else this.squeezed.delete(source);}
   read(frame:XRFrame,reference:XRReferenceSpace,sources:XRInputSourceArray,calibration:ReturnType<typeof makeCalibration>):GrabHand[]{
     const result:GrabHand[]=[];
-    for(const source of Array.from(sources).sort((a,b)=>Number(!!b.hand)-Number(!!a.hand))){if(source.handedness!=='left'&&source.handedness!=='right'||result.some(h=>h.side===source.handedness))continue;
+    for(const source of Array.from(sources).sort((a,b)=>Number(!!b.hand)-Number(!!a.hand))){if(source.targetRayMode==='screen')continue;if(source.handedness!=='left'&&source.handedness!=='right'||result.some(h=>h.side===source.handedness))continue;
       let position:THREE.Vector3|undefined,orientation:DOMPointReadOnly|undefined,pressed=false;
       if(source.hand){
         const thumb=source.hand.get('thumb-tip'),index=source.hand.get('index-finger-tip');if(!thumb||!index)continue;
