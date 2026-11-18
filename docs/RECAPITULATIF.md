@@ -4,9 +4,9 @@
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 - préparation de publication 0.8.2
+### 18 novembre 2026 - publication 0.8.2 confirmée
 
-Publication autorisée par l'utilisateur. Version add-on et diagnostic client portés à 0.8.2, changelog complété pour les bâtons flottants. Typecheck et build relancés avec succès avant commit. Première relance des tests : 86/88, échec HTTP 400 d'une écriture de pièce et refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 88/88 réussis, dont les parcours réseau. La disponibilité de l'image ARM64 sera vérifiée après le push ; aucune publication ni exécution matérielle encore annoncée à cette étape.
+Publication autorisée par l'utilisateur. Version add-on et diagnostic client portés à 0.8.2, changelog complété pour les bâtons flottants. Typecheck et build relancés avec succès avant commit. Première relance des tests : 86/88, échec HTTP 400 d'une écriture de pièce et refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 88/88 réussis, dont les parcours réseau. Commit `aad7f06` publié sur `main` ; workflow [44363141432](https://github.com/nicasGit/MyRoom/actions/runs/44363141432) réussi, vérifications Linux incluses. Manifeste `ghcr.io/nicasgit/myroom:0.8.2` vérifié : Linux ARM64, label 0.8.2, digest `sha256:bd153187091b712ef1911761377b9ea875a7b592a26b6cfb06f31d0caa27c4db`. Branche intermédiaire conservée. Aucun essai physique HAOS ou Quest effectué par l'agent.
 
 ### 18 novembre 2026 - bâtons flottants et dispersés, travail local
 

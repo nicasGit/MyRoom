@@ -8,13 +8,13 @@ Cette version attend collectivement les quatre passages dans la même pièce MR.
 
 **Depuis 0.8.1 : accueil global.** Le vortex et les quatre bâtons deviennent la première scène après le calibrage, indépendamment de l’aventure sélectionnée. Ils apparaissent en attente avant même le démarrage du rituel. Les énigmes sont masquées jusqu’aux quatre passages ; un accès de test explicite peut les afficher directement. Il n’est plus nécessaire de sélectionner Menthe 27 0.3.0 pour obtenir le vortex. Le placement doit toujours être configuré et confirmé une fois pour la pièce. Cette évolution est publiée en 0.8.1.
 
-## Bâtons flottants — évolution locale
+## Bâtons flottants — version 0.8.2 publiée
 
 Le socle 3D est retiré. Les quatre bâtons sont répartis automatiquement dans la pièce par le serveur : marge aux murs et obstacles déclarés, espacement minimal d'un mètre et exclusion du couloir du vortex. Tous les clients reçoivent les mêmes positions. Le démarrage est refusé si quatre emplacements ne peuvent pas être trouvés. Les champs historiques `stand` restent lisibles et définissent désormais le repère des informations ; ils ne représentent plus un meuble.
 
 Chaque bâton possède deux anneaux lumineux avec une pulsation douce et une légère suspension visuelle de 2,5 cm. La suspension s'arrête pendant la prise ; les poses et les baux de manipulation restent autoritaires et séparés de cette animation. Le compteur flotte sans socle. Les anciennes mentions du socle ci-dessous décrivent la version publiée 0.8.1.
 
-Le calcul repose sur le relevé déclaré, sans détection physique en temps réel. La dispersion et la lisibilité restent à vérifier dans la pièce réelle sur Quest. Aucun essai matériel effectué pour cette évolution locale.
+Le calcul repose sur le relevé déclaré, sans détection physique en temps réel. La dispersion et la lisibilité restent à vérifier dans la pièce réelle sur Quest. Version 0.8.2 publiée, workflow réussi et image ARM64 vérifiée ; aucun essai matériel effectué pour cette évolution.
 
 ## Architecture et compatibilité
 
