@@ -36,7 +36,8 @@ export class GrabInputs {
 type Hold={target:ObjectId;start:GrabHand[];original:ObjectPose;pose:ObjectPose;hands:GrabHand[];seq:number;requestedAt:number;lease?:string;lastSent:number};
 export class ObjectGrabber {
   private hold:Hold|undefined;
-  private previous=new Set<string>();
+  private attempted=new Set<ObjectId>();
+  private guidance='';
   private blockedUntil=0;
   constructor(private actor:()=>string,private snapshot:()=>ObjectSnapshot|undefined,private send:(command:ObjectCommand)=>boolean,private notify:(message:string)=>void){}
   blocksSelect(now=performance.now()){return !!this.hold||now<this.blockedUntil;}
@@ -45,7 +46,8 @@ export class ObjectGrabber {
   private command(hold:Hold,action:ObjectCommand['action']){const snapshot=this.snapshot();if(!snapshot)return;this.send({type:'object_action',action,target:hold.target,revision:snapshot.revision,lease:hold.lease??'request',seq:++hold.seq,hands:hold.hands.map(h=>({x:h.position.x,y:h.position.y,z:h.position.z})),pose:hold.pose});}
   update(group:THREE.Group|undefined,hands:GrabHand[],enabled:boolean,now=performance.now()){
     const pressed=hands.filter(h=>h.pressed),snapshot=this.snapshot();
-    if(!enabled||!group||!snapshot){this.cancel();this.previous=new Set(pressed.map(h=>h.side));return;}
+    if(!pressed.length)this.attempted.clear();
+    if(!enabled||!group||!snapshot){this.cancel();return;}
     const roots=group.userData.grabbables as Partial<Record<ObjectId,THREE.Object3D>>|undefined;
     if(this.hold){
       const hold=this.hold,lease=snapshot.held.find(l=>l.target===hold.target&&l.owner===this.actor());
@@ -56,21 +58,23 @@ export class ObjectGrabber {
       const current=hold.start.map(h=>hands.find(next=>next.side===h.side)!);
       if(current.some(h=>!h.pressed)){
         this.command(hold,'drop');this.notify('Objet posé ; position partagée dans la session.');
-        this.hold=undefined;this.blockedUntil=now+600;this.previous=new Set(pressed.map(h=>h.side));return;
+        this.hold=undefined;this.blockedUntil=now+600;return;
       }
       hold.hands=current;hold.pose=gripTransform(hold.start,current,hold.original);const node=roots[hold.target]!;node.position.set(hold.pose.x,hold.pose.y,hold.pose.z);node.rotation.y=hold.pose.yaw;
       if(now-hold.lastSent>=220){this.command(hold,'move');hold.lastSent=now;}
-    }else if(pressed.some(h=>!this.previous.has(h.side))&&roots){
+    }else if(pressed.length&&now>=this.blockedUntil&&roots){
       group.updateMatrixWorld(true);const rootInverse=new THREE.Matrix4().copy(group.matrixWorld).invert();
       const candidate=Object.entries(roots).map(([target,node])=>{
         const box=new THREE.Box3().setFromObject(node!),local=box.applyMatrix4(rootInverse),near=pressed.filter(h=>local.distanceToPoint(h.position)<0.15);
         return {target:target as ObjectId,near,distance:Math.min(...pressed.map(h=>local.distanceToPoint(h.position)))};
-      }).filter(c=>c.near.length>=requiredHands(c.target)&&!snapshot.held.some(l=>l.target===c.target)).sort((a,b)=>a.distance-b.distance)[0];
+      }).filter(c=>c.near.length&&!this.attempted.has(c.target)).sort((a,b)=>a.distance-b.distance)[0];
+      const guidance=candidate?(snapshot.held.some(l=>l.target===candidate.target)?'Objet déjà tenu par un joueur.':candidate.near.length<requiredHands(candidate.target)?'Gros objet : approchez les deux mains et maintenez les deux prises.':''):'Approchez les mains de l’objet en maintenant la pince ou la poignée.';
+      if(guidance&&guidance!==this.guidance)this.notify(guidance);this.guidance=guidance;
+      if(candidate&&(candidate.near.length<requiredHands(candidate.target)||snapshot.held.some(l=>l.target===candidate.target)))return;
       if(candidate){const target=candidate.target,selected=candidate.near.slice(0,requiredHands(target)),pose=snapshot.poses[target]!;
         if(selected.length===2&&selected[0].position.distanceTo(selected[1].position)<0.12){this.notify('Écartez les deux mains sur l’objet.');}
-        else {this.hold={target,start:selected.map(h=>({...h,position:h.position.clone()})),original:{...pose},pose:{...pose},hands:selected,seq:0,requestedAt:now,lastSent:now};this.command(this.hold,'grab');this.notify(requiredHands(target)===2?'Objet lourd : gardez les deux mains fermées.':'Objet saisi.');}
+        else {this.attempted.add(target);this.hold={target,start:selected.map(h=>({...h,position:h.position.clone()})),original:{...pose},pose:{...pose},hands:selected,seq:0,requestedAt:now,lastSent:now};this.command(this.hold,'grab');this.notify(requiredHands(target)===2?'Objet lourd : gardez les deux mains fermées.':'Objet saisi.');}
       }
     }
-    this.previous=new Set(pressed.map(h=>h.side));
   }
 }

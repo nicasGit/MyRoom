@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1
+
+- Panneau d’informations fixe dans l’espace de session, à hauteur de lecture, au lieu de suivre le regard.
+- Prise possible en approchant avec la pince ou la poignée déjà maintenue, avec aide pour les gros objets à deux mains.
+- Points cyan/jaunes et compteur des prises détectées pour faciliter le diagnostic sur casque.
+- Correctifs couverts par 75 tests logiciels ; essai physique de cette correction encore nécessaire.
+
 ## 0.7.0
 
 - Prise des objets pendant la partie : une main pour les petits objets, deux mains pour coffre, table et panneau.

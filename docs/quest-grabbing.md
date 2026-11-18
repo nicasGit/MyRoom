@@ -23,6 +23,8 @@ Le format existant garde ses neuf points X/Z et ajoute facultativement `puzzles.
 
 ## Limites de validation
 
+Correctif local après le retour utilisateur sur Quest : le panneau d’informations est maintenant un panneau plan placé une fois devant le joueur, à hauteur de lecture, et ne suit plus le regard. Un recalibrage le replace. Des points cyan montrent les mains/poignées suivies, jaunes quand une prise est maintenue ; le panneau indique le nombre de prises suivies et fermées. On peut approcher avec une pince/poignée déjà maintenue. En cas de refus, relâcher avant de réessayer ; les objets lourds exigent toujours deux mains proches. Cette correction doit encore être essayée sur le casque de l’utilisateur.
+
 Les coordonnées et le nombre de prises sont déclarés par le client : ils ne prouvent pas une présence physique. Le serveur vérifie les types, bornes, proximité déclarée, deux points distincts pour un gros objet, propriétaire, bail, séquence monotone, hauteur, contour, obstacles et vitesse par mise à jour. Il ne simule ni gravité ni collisions complètes des volumes ; vérifier les passages et meubles réels. A/B reste un repère manuel commun, sans ancre partagée.
 
 Références primaires : [WebXR Hand Input](https://www.w3.org/TR/webxr-hand-input-1/) et [événements de saisie WebXR](https://www.w3.org/TR/webxr/). Les tests logiciels et poses synthétiques ne remplacent pas un essai physique sur Quest 2, Quest 3 ou Quest 3S.

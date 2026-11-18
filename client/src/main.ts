@@ -11,6 +11,7 @@ import { AdventureClient } from './adventure-client';
 import { adventureGroup,animateAdventure,applyObjectPoses } from './adventure-view';
 import { GrabInputs,ObjectGrabber } from './object-grab';
 import { HandCards } from './hand-cards';
+import { InfoPanelAnchor } from './xr-info-panel';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -22,7 +23,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.7.0');
+diagnostic('Version client', '0.7.1');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -172,8 +173,11 @@ enter.onclick = async () => {
     const hudCanvas=document.createElement('canvas');hudCanvas.width=1024;hudCanvas.height=512;
     const hudContext=hudCanvas.getContext('2d')!;
     const hudTexture=new THREE.CanvasTexture(hudCanvas);
-    const hudMaterial=new THREE.SpriteMaterial({map:hudTexture,depthTest:false,depthWrite:false});
-    const hud=new THREE.Sprite(hudMaterial);hud.scale.set(0.9,0.45,1);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
+    const hudMaterial=new THREE.MeshBasicMaterial({map:hudTexture,side:THREE.DoubleSide,transparent:true,depthTest:false,depthWrite:false});
+    const hud=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.55),hudMaterial);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
+    const hudAnchor=new InfoPanelAnchor();
+    const handDots=[0,1].map(()=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(0.025,12,8),new THREE.MeshBasicMaterial({color:0x67e8f9,depthTest:false}));dot.renderOrder=1001;dot.visible=false;scene.add(dot);return dot;});
+    let handStatus='';
     let hudKey='',lastScanUpdate=-Infinity;
     const questButtons=new QuestButtons();
     const updateScan=(frame:XRFrame,pose:XRViewerPose|null)=>{
@@ -199,10 +203,10 @@ enter.onclick = async () => {
           xrEvent('scan_imported',{reason:feedback.textContent.slice(0,160)});
         }catch(error){feedback.textContent=String(error);xrEvent('scan_error',{reason:String(error).slice(0,160)});}
       }
-      hud.visible=!touchOverlay&&!grabber.blocksSelect();
+      hud.visible=!touchOverlay;
       if(!touchOverlay&&pose){
-        hud.position.set(0,0.32,-1.2).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)).add(new THREE.Vector3().copy(pose.transform.position));
-        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${adventure.story()||scanStatus.textContent}\n${feedback.textContent}`;
+        hudAnchor.place(hud,new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation));
+        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${handStatus}\n${(feedback.textContent??'').slice(0,180)}\n${(adventure.story()||scanStatus.textContent||'').slice(0,240)}`;
         if(text!==hudKey){
           hudKey=text;hudContext.fillStyle='rgba(9,20,34,0.94)';hudContext.fillRect(0,0,1024,512);hudContext.fillStyle='#ffffff';hudContext.font='30px sans-serif';
           let y=42;for(const paragraph of text.split('\n')){let line='';for(const word of paragraph.split(' ')){if(hudContext.measureText(line+word).width>970){hudContext.fillText(line,24,y);y+=38;line='';}line+=word+' ';}hudContext.fillText(line,24,y);y+=45;}
@@ -241,8 +245,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { hudAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -309,6 +313,8 @@ enter.onclick = async () => {
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
       const hands=frame&&calibration?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
+      handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
+      handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect());
       grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!handCards.blocksSelect());
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);

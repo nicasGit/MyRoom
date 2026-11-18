@@ -6,6 +6,29 @@ import { parseRoom,suggestPuzzleLayout,type RoomModel } from './scene-schema.js'
 import { gripTransform,GrabInputs,ObjectGrabber,type GrabHand } from '../../client/src/object-grab.js';
 import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
+import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
+
+test('panneau XR : hauteur lisible, position et orientation fixes après mouvement du regard',()=>{
+  const panel=new THREE.Object3D(),anchor=new InfoPanelAnchor();
+  anchor.place(panel,new THREE.Vector3(0,1.7,0),new THREE.Quaternion().setFromEuler(new THREE.Euler(0.8,0.2,0)));
+  assert.equal(panel.position.y,1.45);assert.ok(Math.abs(Math.hypot(panel.position.x,panel.position.z)-1.6)<1e-8);
+  const position=panel.position.clone(),rotation=panel.quaternion.clone();
+  anchor.place(panel,new THREE.Vector3(2,1.6,3),new THREE.Quaternion());
+  assert.deepEqual(panel.position,position);assert.deepEqual(panel.quaternion.toArray(),rotation.toArray());
+  anchor.reset();anchor.place(panel,new THREE.Vector3(2,1.6,3),new THREE.Quaternion());assert.notDeepEqual(panel.position,position);
+});
+
+test('prise : approcher avec les poignées déjà fermées, sans répétition après refus',()=>{
+  const sent:ObjectCommand[]=[],group=new THREE.Group(),chest=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.5,0.6));group.add(chest);group.userData.grabbables={chest};
+  const snapshot={revision:1,poses:{chest:{x:0,y:0,z:0,yaw:0}},held:[]};
+  const grab=new ObjectGrabber(()=> 'a',()=>snapshot,c=>{sent.push(c);return true;},()=>{});
+  const hands:GrabHand[]=[{side:'left',position:new THREE.Vector3(-0.2,0.2,2),pressed:true,yaw:0},{side:'right',position:new THREE.Vector3(0.2,0.2,2),pressed:true,yaw:0}];
+  grab.update(group,hands,true,100);assert.equal(sent.length,0);
+  hands.forEach(h=>h.position.z=0);grab.update(group,hands,true,200);assert.equal(sent.length,1);
+  grab.reject('refus');grab.update(group,hands,true,performance.now()+1000);assert.equal(sent.length,1);
+  grab.update(group,hands.map(h=>({...h,pressed:false})),true,performance.now()+1100);
+  grab.update(group,hands,true,performance.now()+1200);assert.equal(sent.length,2);
+});
 const room:RoomModel={id:'grab',name:'Grab',height:2.5,floor:[{x:0,z:0},{x:8,z:0},{x:8,z:6},{x:0,z:6}],obstacles:[],openings:[]};room.puzzles=suggestPuzzleLayout(room,()=>0.3);
 function fixture(){const objects=new ObjectManipulation();objects.configure(room,0);const pose=objects.snapshot().poses.chest!;const command:ObjectCommand={type:'object_action',action:'grab',target:'chest',revision:objects.snapshot().revision,lease:'request',seq:1,hands:[{x:pose.x-0.25,y:0.4,z:pose.z},{x:pose.x+0.25,y:0.4,z:pose.z}],pose:{...pose}};return {objects,command};}
 test('objets : deux mains, schéma strict, propriétaire, séquences et exclusion mutuelle',()=>{
