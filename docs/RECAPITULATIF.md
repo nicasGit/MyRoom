@@ -1,12 +1,12 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.8.0**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.8.1**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 — préparation de publication 0.8.1
+### 18 novembre 2026 — publication 0.8.1 confirmée
 
-Publication de l’accueil global autorisée explicitement par l’utilisateur. Version de l’add-on et diagnostic client portés à 0.8.1, changelog complété. Les 86 tests, le typecheck et le build ont réussi lors de la modification ; vérifications de publication relancées. Image ARM64 à confirmer après GitHub Actions. Aucun essai physique annoncé.
+Publication de l’accueil global autorisée explicitement par l’utilisateur. Version de l’add-on et diagnostic client portés à 0.8.1, changelog complété. Les 86 tests, le typecheck et le build ont réussi lors de la modification ; vérifications de publication relancées. Publication confirmée : commit `b2249b5` sur `main`, workflow [44356005856](https://github.com/nicasGit/MyRoom/actions/runs/44356005856) réussi. Typecheck, build et 86 tests relancés avant commit avec succès. Manifeste `ghcr.io/nicasgit/myroom:0.8.1` vérifié : Linux ARM64, label 0.8.1, digest `sha256:f9df923bf16ac71ee9a64d41ce489db09be813800bbacb1d66213c3b96271ee8`. Branche intermédiaire conservée. Cette vérification confirme la disponibilité du registre, pas une exécution physique HAOS ou Quest. Aucun essai physique annoncé.
 
 ### 18 novembre 2026 — accueil Vortex indépendant des aventures, travail local
 

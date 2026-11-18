@@ -1,5 +1,7 @@
 # MyRoom
 
+Depuis 0.8.1, le vortex est l’accueil global, visible avant les objets d’aventure après calibrage. Il ne dépend plus de l’aventure choisie. Configurer et confirmer le passage une fois pour la pièce dans Team Portal.
+
 Version 0.8.0 publiée : [Team Portal](docs/team-portal.md) ajoute quatre bâtons nominatifs et un rituel d’entrée coopératif à Menthe 27 0.3.0. Les quatre passages déclenchent une seule fois le coffre existant. Configurer et confirmer le passage depuis l’administration avant les essais ; la simulation PC reste explicitement distincte d’un essai Quest.
 
 Fonctionnalités conservées depuis 0.7.2 : mains visibles, prise des objets avec une ou deux mains et indice sous le coffre ([guide Quest](docs/quest-grabbing.md)). [Opération Menthe 27](docs/adventures/menthe27.md) version 0.2.0 propose le coffre puis trois manches de blackjack hybride coopératif, avec capitaine, cartes 3D et récompenses ♣ ♥ ♠. La suite reste en attente. L’administration permet de saisir les noms, tester directement une énigme, partager des indices et réinitialiser l’énigme active. La disponibilité de l’image est consignée dans le [récapitulatif](docs/RECAPITULATIF.md).
