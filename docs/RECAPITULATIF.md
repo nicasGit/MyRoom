@@ -4,9 +4,9 @@
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 - publication directe autorisée et préparation 0.8.5
+### 18 novembre 2026 - publication directe autorisée et 0.8.5 confirmée
 
-L'utilisateur demande de conserver la préférence de publication directe : consigne ajoutée à AGENTS.md, applicable après validation avec branche dédiée, contrôles, mise à jour de version, intégration main et vérification ARM64, sans nouvelle confirmation sauf instruction contraire. Publication des mains 3D en 0.8.5 préparée ; version add-on/client et changelog actualisés. Typecheck et build de livraison réussis. Première relance des tests : 94/95, refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 95/95 réussis. Disponibilité du registre à confirmer, aucun essai matériel annoncé.
+L'utilisateur demande de conserver la préférence de publication directe : consigne ajoutée à AGENTS.md, applicable après validation avec branche dédiée, contrôles, mise à jour de version, intégration main et vérification ARM64, sans nouvelle confirmation sauf instruction contraire. Version add-on/client et changelog actualisés en 0.8.5. Typecheck et build de livraison réussis. Première relance des tests : 94/95, refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 95/95 réussis. Commit `5ebaa24` publié sur main ; workflow [44381718580](https://github.com/nicasGit/MyRoom/actions/runs/44381718580) réussi avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.8.5` vérifiée : Linux ARM64, label 0.8.5, digest `sha256:6d2be56f64615f1362fc253c357f77293fc4006d7c2febf30d36611ee5170f6f`. Branche conservée ; aucun essai matériel annoncé.
 
 ### 18 novembre 2026 - mains 3D articulées plus naturelles, travail local
 
