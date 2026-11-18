@@ -1,14 +1,16 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **18 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.2**, avec une Phase 1 modulaire locale non publiée. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **18 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.5.0**, incluant les fondations modulaires de la Phase 1. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
 ### 18 novembre 2026 — préparation de la publication 0.5.0
 
+Publication confirmée : commit `ffe92e5` intégré sur `main` après autorisation explicite, workflow [44262750589](https://github.com/nicasGit/MyRoom/actions/runs/44262750589) terminé avec succès. Manifeste `ghcr.io/nicasgit/myroom:0.5.0` vérifié après le workflow : Linux ARM64 et label de version 0.5.0 ; digest `sha256:f77c8f24e0cdf3af4f6955355413353e9ea9f03ea9f936a2446ae8a30fef7507`. La disponibilité du registre ne constitue pas un essai sur HAOS, Raspberry Pi, téléphone ou Quest. La revue automatique avait bloqué le premier push sur `main` ; une autorisation manuelle explicite a ensuite permis cette intégration et publication.
+
 Publication demandée explicitement après le commit `1b530bc` et son push sur `feat/modular-adventures-phase1`. Préparation de l’intégration sur `main`, version de l’add-on portée à 0.5.0 et changelog actualisé. Le workflow existant conserve Linux ARM64, HTTPS/WSS et les contrôles logiciels avant publication. Les pièces existantes ne sont pas migrées ni supprimées. Phase 2 toujours non commencée ; noms et progression en mémoire uniquement.
 
-Contrôles locaux de cette version : `npm run typecheck` et `npm run build` réussis ; `npm test` réussit avec 49 tests après relance. Le premier passage a rencontré un `EPERM` Windows sur le renommage atomique du fichier temporaire du test de bibliothèque ; la relance sans modification du code passe. Avertissement Vite habituel pour le bloc Three.js supérieur à 500 kB. La disponibilité effective de l’image sera consignée après exécution du workflow ; aucune publication ni validation matérielle supplémentaire n’est annoncée à ce stade.
+Contrôles locaux de cette version : `npm run typecheck` et `npm run build` réussis ; `npm test` réussit avec 49 tests après relance. Le premier passage a rencontré un `EPERM` Windows sur le renommage atomique du fichier temporaire du test de bibliothèque ; la relance sans modification du code passe. Avertissement Vite habituel pour le bloc Three.js supérieur à 500 kB. Le workflow a également réussi ses trois commandes de validation sous Linux avant la construction et publication ARM64.
 
 ### 18 novembre 2026 — architecture modulaire, Phase 1 locale
 
