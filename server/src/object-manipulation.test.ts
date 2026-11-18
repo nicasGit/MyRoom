@@ -11,6 +11,30 @@ import { XRHandsView } from '../../client/src/xr-hands-view.js';
 import { phoneHand,hasTrackedHands } from '../../client/src/phone-hand.js';
 import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view.js';
 import { makeCalibration } from '../../client/src/calibration.js';
+import { RealisticHand } from '../../client/src/realistic-hand.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { readFileSync } from 'node:fs';
+
+test('realistic hands: local GLBs, smooth grip animation, tracking loss and disposal',async()=>{
+  for(const side of ['left','right'] as const){
+    const bytes=readFileSync(new URL(`../../client/public/models/hands/${side}.glb`,import.meta.url));
+    const gltf=await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+    const hand=new RealisticHand(side);hand.install(gltf.scene);assert.equal(hand.ready,true);
+    const tip=gltf.scene.getObjectByName('index-finger-tip')!;
+    const position=new THREE.Vector3(1,1.4,-.5),orientation=new THREE.Quaternion();
+    hand.grip(position,orientation,false,0,true);const open=tip.position.clone();
+    for(let i=1;i<=30;i++)hand.grip(position,orientation,true,i*16,true);
+    assert.ok(tip.position.distanceTo(open)>.02);assert.ok(tip.position.toArray().every(Number.isFinite));
+    for(let i=31;i<=90;i++)hand.grip(position,orientation,false,i*16,true);
+    assert.ok(tip.position.distanceTo(open)<.001);
+    const source=new Map<string,XRJointSpace>();for(const node of gltf.scene.children[0].children)if(node instanceof THREE.Bone)source.set(node.name,{} as XRJointSpace);
+    const pose={transform:{position:new THREE.Vector3(.1,.2,.3),orientation:new THREE.Quaternion()},radius:.008};
+    assert.equal(hand.tracked({getJointPose:()=>pose} as unknown as XRFrame,{} as XRReferenceSpace,source as unknown as XRHand),true);
+    assert.deepEqual(tip.position.toArray(),[.1,.2,.3]);
+    assert.equal(hand.tracked({getJointPose:()=>null} as unknown as XRFrame,{} as XRReferenceSpace,source as unknown as XRHand),false);
+    hand.dispose();assert.equal(hand.ready,false);assert.equal(hand.group.children.length,0);
+  }
+});
 test('phone: touchscreen grip does not disable simulation; tracked Quest inputs do',()=>{
   assert.equal(hasTrackedHands([{targetRayMode:'screen',gripSpace:{} as XRSpace}]),false);
   assert.equal(hasTrackedHands([{targetRayMode:'tracked-pointer',gripSpace:{} as XRSpace}]),true);

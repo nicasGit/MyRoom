@@ -17,6 +17,7 @@ import { portalView } from './portal/portal-view';
 import { XRHandsView } from './xr-hands-view';
 import { phoneHand,hasTrackedHands } from './phone-hand';
 import { WallLobby } from './portal/wall-lobby';
+import { handPreview } from './hand-preview';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -28,7 +29,8 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.8.4');
+diagnostic('Version client', '0.8.5');
+handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;

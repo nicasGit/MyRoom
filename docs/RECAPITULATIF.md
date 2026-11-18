@@ -4,6 +4,16 @@
 
 ## 1. Projet et architecture
 
+### 18 novembre 2026 - publication directe autorisée et préparation 0.8.5
+
+L'utilisateur demande de conserver la préférence de publication directe : consigne ajoutée à AGENTS.md, applicable après validation avec branche dédiée, contrôles, mise à jour de version, intégration main et vérification ARM64, sans nouvelle confirmation sauf instruction contraire. Publication des mains 3D en 0.8.5 préparée ; version add-on/client et changelog actualisés. Typecheck et build de livraison réussis. Première relance des tests : 94/95, refus Windows EPERM sur renommage atomique dans le test de bibliothèque. Relance complète sans changement de code : 95/95 réussis. Disponibilité du registre à confirmer, aucun essai matériel annoncé.
+
+### 18 novembre 2026 - mains 3D articulées plus naturelles, travail local
+
+Branche `feat/realistic-hands` : modèles génériques gauche/droite WebXR Input Profiles intégrés sans modification des GLB, source épinglée au commit `c5356912d0c3bc43c6db8aa3926d8951a7716449`, licence MIT et provenance conservées dans le dossier des modèles. Environ 94 Ko par main, servis par MyRoom sans CDN à l'exécution. Matériau couleur peau, éclairage, doigts animés progressivement à la prise sur téléphone/contrôleur ; les 25 articulations WebXR réelles pilotent le maillage lorsque toutes les poses nécessaires sont disponibles. Retour aux primitives existantes pendant le chargement, en cas d'échec ou de suivi partiel. Pose simulée explicitement distincte du suivi réel. Aucun changement des commandes, baux ou règles serveur.
+
+Ajout d'un aperçu 3D repliable avec bouton d'ouverture/fermeture. Typecheck, build et **95 tests** réussis, dont lecture des deux GLB, fermeture/réouverture des doigts, poses suivies, perte de suivi et libération des ressources. Requête de modèle locale HTTP 200 et présence du Canvas d'aperçu confirmées dans Chrome ; contrôle visuel complet non conclu dans l'onglet intégré inactif. Avertissement Vite de taille du bloc Three.js (574 kB après ajout du chargement GLTF et du maillage). Aucun essai matériel téléphone ou Quest. Modifications locales non publiées, version publiée toujours 0.8.4. Voir [la provenance des modèles](../client/public/models/hands/SOURCE.md).
+
 ### 18 novembre 2026 - publication 0.8.4 confirmée
 
 Publication autorisée : accueil mural, mode pièces et correction tactile. Version add-on et diagnostic client portés à 0.8.4, changelog complété. Les derniers contrôles complets ont réussi : typecheck, build et 94 tests ; seuls version et documents sont adaptés depuis. Commit `e0bf037` sur main ; workflow [44377664201](https://github.com/nicasGit/MyRoom/actions/runs/44377664201) réussi avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.8.4` vérifiée : Linux ARM64, label 0.8.4, digest `sha256:971ad08704a9ad1a0f6e57cb93e0c4bc09893e36648a5f50c4ae53019ff16050`. Branche conservée ; aucun essai matériel annoncé.

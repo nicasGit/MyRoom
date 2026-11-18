@@ -1,5 +1,7 @@
 # Consignes MyRoom
 
+- À la demande de l'utilisateur, publier directement les modifications terminées après validation, sans demander une nouvelle confirmation de publication : travailler sur une branche dédiée, mettre à jour le récapitulatif et la version de l'add-on/client, exécuter les contrôles requis, puis commit, push et intégration sur `main`. Vérifier le workflow de publication et la disponibilité de l'image HAOS ARM64 avant d'annoncer la version disponible. Une instruction ultérieure de ne pas publier prime sur cette préférence. Ne pas forcer les push ni contourner les contrôles ; signaler tout blocage.
+
 - À chaque modification du projet (code, configuration, déploiement ou documentation), mettre à jour [docs/RECAPITULATIF.md](docs/RECAPITULATIF.md) dans le même ensemble de changements, avant de terminer la tâche. Y refléter les changements réalisés, les vérifications effectivement exécutées et les limites connues. Actualiser la date et les versions/commits lorsqu'ils existent, sans annoncer une publication ou un essai matériel non vérifié.
 
 - Conserver le client en TypeScript / Three.js / WebXR et le serveur en TypeScript / Node.js / WebSocket.

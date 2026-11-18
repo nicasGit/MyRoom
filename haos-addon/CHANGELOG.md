@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.5
+
+- Mains 3D WebXR articulées avec matériau couleur peau, servies localement et accompagnées de leur licence MIT.
+- Fermeture progressive sur téléphone et contrôleurs ; articulations WebXR réelles lorsqu'elles sont disponibles.
+- Aperçu 3D avant l'AR et repli sur les primitives si le modèle ou le suivi sont indisponibles.
+- 95 tests logiciels réussis ; aucun essai matériel effectué par l'agent.
+
 ## 0.8.4
 
 - Menu mural Team Portal : aventures, paramètres joueurs, noms avec clavier 3D et démarrage.
