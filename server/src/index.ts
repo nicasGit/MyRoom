@@ -6,9 +6,13 @@ import { log } from './logger.js';
 import { admin, type Connection } from './admin.js';
 import { parseXREvent } from './xr-events.js';
 import { RoomStore } from './room-store.js';
-import { parseAdventureCommand } from './adventure.js';
+import { Adventure,parseAdventureCommand,parsePuzzleCommand } from './adventure.js';
+import { createRegistry,createCatalog } from './adventures/catalog.js';
+import { join } from 'node:path';
 
-const room = new Room();
+const registry=createRegistry();
+const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
+const room = new Room(new Adventure(registry,catalog));
 const store = new RoomStore(process.env.DATA_DIR ?? 'data');
 room.model = store.active(); room.libraryRevision = store.snapshot().revision;
 const connections = new Map<string, Connection>();
@@ -67,6 +71,11 @@ wss.on('connection', (ws, req) => {
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      if(message&&typeof message==='object'&&'type' in message&&message.type==='puzzle_action'){
+        const command=parsePuzzleCommand(message),result=room.adventure.actPuzzle(command,room.model,room.libraryRevision);
+        log('puzzle_action',{id,slot,instanceId:command.instanceId,accepted:result.changed,message:result.message});
+        ws.send(JSON.stringify({type:'puzzle_result',...result}));if(result.changed)broadcast();else ws.send(JSON.stringify(room.snapshot()));return;
+      }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='adventure_action'){
         const command=parseAdventureCommand(message),result=room.adventure.act(command,room.model,room.libraryRevision);
         log('adventure_action',{id,slot,action:command.action,target:command.target,simulation:command.simulation,accepted:result.changed,message:result.message});

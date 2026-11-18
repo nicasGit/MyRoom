@@ -1,7 +1,15 @@
 import type { RoomModel } from './scene-schema.js';
 import { Adventure } from './adventure.js';
+import { text,integer,list } from './engine/validation.js';
 export class Room {
-  adventure=new Adventure();
+  constructor(public adventure=new Adventure()){}
+  playerNames=['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
+  playerNamesRevision=0;
+  setPlayerNames(names:unknown,revision:unknown){
+    if(integer(revision)!==this.playerNamesRevision)throw new Error('Les noms ont changé. Actualisez avant de recommencer.');
+    const parsed=list(names,4).map(name=>text(name,40));if(parsed.length!==4)throw new Error('Quatre noms attendus.');
+    this.playerNames=parsed;this.playerNamesRevision++;
+  }
   model: RoomModel | null = null;
   libraryRevision = 0;
   players = new Map<string, number>();
@@ -18,7 +26,7 @@ export class Room {
   }
   snapshot() {
     this.adventure.configure(this.model);
-    return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:this.adventure.snapshot() };
+    return { type: 'state', players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:this.adventure.snapshot() };
   }
   reset() { this.solved = false; this.revision++; }
 }

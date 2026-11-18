@@ -344,11 +344,11 @@ let revision = 0;
 let socket: WebSocket;
 const adventure=new AdventureClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
 let retry: ReturnType<typeof setTimeout>;
-function showPlayers(players: { id: string; slot: number }[]) {
+function showPlayers(players: { id: string; slot: number;name?:string }[]) {
   element('players').replaceChildren(...[1, 2, 3, 4].map(slot => {
     const li = document.createElement('li');
     const player = players.find(p => p.slot === slot);
-    li.textContent = player ? `Joueur ${slot} connecté${player.id === ownId ? ' (vous)' : ''}` : `Place ${slot} libre`;
+    li.textContent = player ? `${player.name??`Joueur ${slot}`} connecté${player.id === ownId ? ' (vous)' : ''}` : `Place ${slot} libre`;
     return li;
   }));
 }

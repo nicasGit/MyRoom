@@ -1,5 +1,13 @@
 # Architecture MyRoom
 
+## Fondations modulaires — Phase 1 locale, 18 novembre 2026
+
+Le code distingue désormais MyRoom Engine (transport, pièces, sécurité spatiale et administration), Puzzle Engine (registre et modules purs), Adventure Engine (étapes, instances, inventaire et instantanés) et Adventure Catalog (manifestes versionnés). La façade historique `Adventure` conserve les commandes et l’état attendus par le client. Le coffre est encapsulé dans `symbol-chest`, le blackjack actuel dans `blackjack-legacy` ; aucun blackjack hybride n’est encore implémenté.
+
+L’administration choisit l’aventure et les noms des quatre places. La démonstration classique reste le choix initial ; `menthe27@0.1.0` joue le coffre puis s’arrête sur une étape prévue. Le catalogue externe se lit depuis `DATA_DIR/adventures/` ou `ADVENTURE_CATALOG_DIR`, sans modifier le moteur. Les anciennes pièces et A/B restent inchangés. Le contrat de restauration est purement en mémoire ; persistance des sessions/noms et placements séparés seront ajoutés en Phase 3. Aucun push ni déploiement de cette tranche sans validation.
+
+Voir la [cartographie, les contrats, les fichiers et les risques](docs/adventures/phase1-architecture.md), [Menthe 27](docs/adventures/menthe27.md) et le [guide des manifestes](docs/adventures/creating-adventures.md).
+
 ## Énigmes coopératives
 
 Depuis 0.4.2, `puzzles.panel` ajoute facultativement un mur et un décalage le long de celui-ci. Les anciennes pièces reçoivent une proposition normalisée, persistée à leur prochaine sauvegarde. Le panneau est orienté vers l’intérieur et centré à 1,35 m du sol ; sa zone est validée contre les ouvertures et obstacles déclarés. Les actions `press_symbol` utilisent sa position horizontale pour la proximité. Les logements reflètent `symbols.entered` ; la géométrie du coffre et son animation n’autorisent aucune résolution locale.

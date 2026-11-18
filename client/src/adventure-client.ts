@@ -59,7 +59,7 @@ export class AdventureClient {
       parseLibrary(data.library);this.result('Élément déplacé et enregistré. Vérifiez sa position avant le départ.');
     }catch(error){this.result(`Déplacement non enregistré : ${String(error)}`);}finally{this.moving=false;}
   }
-  story(){return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au panneau mural avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
+  story(){if(this.state?.phase==='pending')return this.state.message;return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au panneau mural avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
   result(message:string){this.pending=false;clearTimeout(this.requestTimer);for(const panel of this.panels)panel.status.textContent=message;this.notify(message);this.updateButtons();}
   updatePosition(local:THREE.Vector3|undefined){
     const calibration=this.calibration();this.position=local&&calibration?toRoom(local,calibration):undefined;
@@ -99,7 +99,7 @@ export class AdventureClient {
       const text=(message:string)=>{const p=document.createElement('p');p.textContent=message;panel.body.append(p);};
       if(!this.model?.puzzles||!this.state||this.state.phase==='unconfigured'){text('Activer une pièce et placer les énigmes depuis l’administration.');continue;}
       const state=this.state;
-      if(!state.running){
+      if(!state.running&&state.phase!=='pending'&&state.phase!=='complete'){
         text('Préparation : ajustez les éléments, puis commencez la partie depuis l’administration.');
         if(panel===this.panels[1]&&this.xrActive){
           const select=document.createElement('select');select.setAttribute('aria-label','Élément à déplacer');
@@ -120,7 +120,8 @@ export class AdventureClient {
         for(const [i,id] of (['four','eight','king'] as CardId[]).entries()){this.addAction(panel,state.blackjack.found.includes(id)?`Carte ${CARD_NAMES[id]} découverte`:`Découvrir l’indice de la carte ${i+1}`,'discover_card',id,id,!state.blackjack.found.includes(id));if(state.blackjack.found.includes(id))text(`${CARD_NAMES[id]} : ${CARD_CLUES[id]}`);}
         text(`Dernier essai : ${state.blackjack.chosen?CARD_NAMES[state.blackjack.chosen]+' → '+state.blackjack.total:'aucun'} · tentatives : ${state.blackjack.attempts}`);
         for(const id of ['four','eight','king'] as CardId[])this.addAction(panel,`Jouer ${CARD_NAMES[id]} à la table`,'choose_card',id,'table',state.blackjack.found.length===3);
-      }else {text('Les deux énigmes sont réussies ! Une clé virtuelle et le chiffre 7 sont révélés. L’administrateur peut recommencer la partie.');}
+      }else if(state.phase==='pending'){text(state.engine.step.title);text('Cette étape est prévue au catalogue mais son module n’est pas encore disponible. La progression acquise est conservée.');}
+      else {text('Les énigmes de cette aventure sont réussies. Récompenses : '+state.engine.inventory.map(reward=>reward.label).join(', '));}
       text(this.simulation?'Simulation PC active : positions virtuelles, aucun suivi physique.':'Approchez-vous à moins de 1,3 m. En AR : bouton tactile, ou visez l’élément et utilisez la gâchette.');
     }
     this.updateButtons();this.map();

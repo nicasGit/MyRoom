@@ -56,7 +56,7 @@ function wallConsole(model:RoomModel,state:AdventureState){
 export function adventureGroup(model:RoomModel,state:AdventureState){
   const group=new THREE.Group();if(!model.puzzles)return group;
   const at=(id:PuzzleItem)=>{const p=model.puzzles!.points[id],node=new THREE.Group();node.position.set(p.x,0,p.z);group.add(node);return node;};
-  const chest=at('chest'),crafted=createChest(state.phase==='blackjack'||state.phase==='complete');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
+  const chest=at('chest'),crafted=createChest(state.phase==='blackjack'||state.phase==='complete'||state.phase==='pending');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
   const panel=wallConsole(model,state);if(panel)group.add(panel);
   const heading=label(state.phase==='symbols'?'Le coffre':'Coffre ouvert','#ffe082');heading.position.y=1.05;chest.add(heading);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){

@@ -3,8 +3,9 @@ import { createPreview } from './model-view';
 import { area,type RoomLibrary } from '../../server/src/scene-schema.js';
 import { AdventureEditor } from './adventure-editor';
 import type { AdventureState } from '../../server/src/adventure.js';
-type Player = { id: string; slot: number; address?: string; userAgent?: string; connectedAt: string };
-type State = { players: Player[]; puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
+import type { AdventureManifest } from '../../server/src/engine/puzzle-types.js';
+type Player = { id: string; slot: number; name:string;address?: string; userAgent?: string; connectedAt: string };
+type State = { players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let token = '';
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -19,7 +20,18 @@ const preview=createPreview(el('admin-room-preview'));
 const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)=>api('rooms/save',{room,revision}),()=>{void refresh();});
 const startAdventure=document.createElement('button');startAdventure.textContent='Commencer les énigmes';startAdventure.id='adventure-start';el('adventure-reset').after(startAdventure);
 startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de commencer.';return;}void action('adventure/start',{});};
+const catalogPanel=document.createElement('section');catalogPanel.className='panel';
+catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Utiliser les noms suggérés</button></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
+el('dashboard').prepend(catalogPanel);
+let latestAdventureRevision=0,namesRevision=0,namesDirty=false,catalogKey='';
+let catalog:AdventureManifest[]=[];
+const nameFields=Array.from({length:4},(_,index)=>{const label=document.createElement('label');label.textContent=`Place ${index+1} `;const input=document.createElement('input');input.id=`player-name-${index+1}`;input.maxLength=40;input.required=true;input.oninput=()=>{namesDirty=true;};label.append(input);el('player-name-fields').append(label);return input;});
+el('player-names').onsubmit=event=>{event.preventDefault();void (async()=>{try{await api('players/names',{names:nameFields.map(input=>input.value),revision:namesRevision});namesDirty=false;await refresh();}catch(error){notice.textContent=String(error);}})();};
+el('suggest-names').onclick=()=>{const manifest=catalog.find(m=>`${m.id}@${m.version}`===el<HTMLSelectElement>('adventure-catalog').value);nameFields.forEach((input,index)=>{input.value=manifest?.players.suggestedNames[index]??`Joueur ${index+1}`;});namesDirty=true;};
+el('adventure-select').onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de changer d’aventure.';return;}const manifest=catalog.find(m=>`${m.id}@${m.version}`===el<HTMLSelectElement>('adventure-catalog').value);if(manifest&&confirm('Changer d’aventure et réinitialiser sa progression ?'))void action('adventure/select',{id:manifest.id,version:manifest.version,revision:latestAdventureRevision});};
+el('adventure-stop').onclick=()=>{void action('adventure/stop',{});};
 function logout() {
+  namesDirty=false;namesRevision=0;catalogKey='';catalog=[];nameFields.forEach(input=>{input.value='';});
   session++; token = ''; clearTimeout(timer); el<HTMLInputElement>('token').value = '';
   previousPlayers = '';
   library=undefined;libraryRevision=-1;el('rooms').replaceChildren();preview(null);
@@ -47,7 +59,16 @@ function node(tag: string, text: string, className?: string) {
   return value;
 }
 function render(state: State) {
-  startAdventure.disabled=state.adventure.running||state.adventure.phase==='unconfigured';
+  latestAdventureRevision=state.adventure.revision;catalog=state.adventures;
+  const engine=state.adventure.engine,key=JSON.stringify(state.adventures);
+  if(key!==catalogKey){catalogKey=key;el('adventure-catalog').replaceChildren(...catalog.map(m=>{const option=document.createElement('option');option.value=`${m.id}@${m.version}`;option.textContent=`${m.title} — ${m.version}`;return option;}));el<HTMLSelectElement>('adventure-catalog').value=`${engine.adventureId}@${engine.adventureVersion}`;}
+  const manifest=catalog.find(m=>m.id===engine.adventureId&&m.version===engine.adventureVersion);
+  el('adventure-description').textContent=`Active : ${manifest?.title??engine.adventureId}. ${manifest?.description??''}`;
+  el('adventure-progress').textContent=`Étape : ${engine.step.title} · Réussites : ${engine.completedSteps.length}/${manifest?.steps.length??0} · Inventaire : ${engine.inventory.map(r=>r.label).join(', ')||'vide'}`;
+  el<HTMLButtonElement>('adventure-select').disabled=state.adventure.running;
+  el<HTMLButtonElement>('adventure-stop').disabled=!state.adventure.running;
+  if(!namesDirty){namesRevision=state.playerNamesRevision;nameFields.forEach((input,index)=>{input.value=state.playerNames[index];});}
+  startAdventure.disabled=state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
   library=state.library;
   adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);
   el('adventure-overview').textContent=`${state.adventure.running?'Partie en cours':'Préparation'} · ${state.adventure.phase} · ${state.adventure.message}`;
@@ -73,11 +94,11 @@ function render(state: State) {
   el('revision').textContent = `Démo · révision ${state.puzzle.revision}`;
   el('uptime').textContent = `${Math.floor(state.uptimeSeconds / 3600)} h ${Math.floor(state.uptimeSeconds / 60) % 60} min`;
   el('origin').textContent = state.publicOrigin;
-  const playerKey = JSON.stringify(state.players);
+  const playerKey = JSON.stringify([state.players,state.playerNames]);
   if (playerKey !== previousPlayers) el('players').replaceChildren(...[1, 2, 3, 4].map(slot => {
     const player = state.players.find(p => p.slot === slot);
     const card = node('article', '', `player${player ? '' : ' empty'}`);
-    card.append(node('h3', `Joueur ${slot} · ${player ? 'connecté' : 'libre'}`));
+    card.append(node('h3', `${state.playerNames[slot-1]} · ${player ? 'connecté' : 'libre'}`));
     if (!player) { card.append(node('p', 'En attente d’un joueur')); return card; }
     card.append(node('code', player.id), node('p', player.address ?? 'Adresse indisponible'), node('p', player.userAgent ?? 'Navigateur inconnu'), node('p', `Depuis ${new Date(player.connectedAt).toLocaleTimeString('fr-CH')}`));
     const kick = node('button', 'Déconnecter', 'danger') as HTMLButtonElement;

@@ -6,7 +6,7 @@ import { WebSocket } from 'ws';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join,resolve,dirname } from 'node:path';
-import { parseRoom,suggestPuzzleLayout,findPuzzlePanel } from './scene-schema.js';
+import { parseRoom,suggestPuzzleLayout,findPuzzlePanel,puzzlePanel } from './scene-schema.js';
 
 function messageOfType(ws: WebSocket, type: string, revision?: number,modelId?:string|null): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -121,6 +121,42 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     const malformed=messageOfType(clients[1],'error');clients[1].send(JSON.stringify({...command,target:'invalid'}));assert.equal((await malformed).type,'error');
     assert.equal((await fetch(`${adminUrl}adventure/reset`,{method:'POST',headers,body:'{}'})).status,200);
     assert.deepEqual((await (await fetch(`${adminUrl}state`,{headers})).json()).adventure.symbols.found,[]);
+    const phase1=await (await fetch(`${adminUrl}state`,{headers})).json();
+    assert.ok(phase1.adventures.some((a:{id:string})=>a.id==='menthe27'));
+    const names=['Léon','Reno','Fabien','Nicolas'];
+    assert.equal((await fetch(`${adminUrl}players/names`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({names,revision:0})})).status,401);
+    assert.equal((await fetch(`${adminUrl}players/names`,{method:'POST',headers:{...headers,Origin:'https://other.test'},body:JSON.stringify({names,revision:0})})).status,403);
+    assert.equal((await fetch(`${adminUrl}players/names`,{method:'POST',headers,body:JSON.stringify({names:['a','b','c'],revision:0})})).status,400);
+    const namedStates=clients.slice(0,4).map(ws=>new Promise<any>((resolve,reject)=>{
+      const timeout=setTimeout(()=>{ws.off('message',receive);reject(new Error('Noms non diffusés'));},3000);
+      function receive(raw:unknown){const state=JSON.parse(String(raw));if(state.type==='state'&&state.players[0]?.name==='Léon'){clearTimeout(timeout);ws.off('message',receive);resolve(state);}}ws.on('message',receive);
+    }));
+    assert.equal((await fetch(`${adminUrl}players/names`,{method:'POST',headers,body:JSON.stringify({names,revision:0})})).status,200);
+    for(const state of await Promise.all(namedStates))assert.deepEqual(state.players.map((p:{name:string})=>p.name),names);
+    assert.equal((await fetch(`${adminUrl}players/names`,{method:'POST',headers,body:JSON.stringify({names,revision:0})})).status,400);
+    const selection={id:'menthe27',version:'0.1.0',revision:phase1.adventure.revision};
+    assert.equal((await fetch(`${adminUrl}adventure/select`,{method:'POST',headers:{...headers,Origin:'https://other.test'},body:JSON.stringify(selection)})).status,403);
+    assert.equal((await fetch(`${adminUrl}adventure/select`,{method:'POST',headers,body:JSON.stringify(selection)})).status,200);
+    assert.equal((await fetch(`${adminUrl}adventure/select`,{method:'POST',headers,body:JSON.stringify(selection)})).status,400);
+    assert.equal((await fetch(`${adminUrl}adventure/start`,{method:'POST',headers,body:'{}'})).status,200);
+    const active=await (await fetch(`${adminUrl}state`,{headers})).json();
+    assert.equal((await fetch(`${adminUrl}adventure/select`,{method:'POST',headers,body:JSON.stringify({id:'myroom-classic',version:'1.0.0',revision:active.adventure.revision})})).status,400);
+    for(const action of ['discover_symbol','press_symbol']){
+      for(const target of ['sun','tree','moon','star']){
+        const state=await (await fetch(`${adminUrl}state`,{headers})).json();
+        const ack=messageOfType(clients[0],'puzzle_result');
+        clients[0].send(JSON.stringify({type:'puzzle_action',revision:state.adventure.revision,libraryRevision:5,instanceId:'menthe-chest',action:{action,target},position:action==='press_symbol'?puzzlePanel(state.library.rooms.find((r:{id:string})=>r.id==='salon'))!.position:points[target as keyof typeof points],simulation:true}));
+        assert.equal((await ack).changed,true);
+      }
+      if(action==='discover_symbol'){
+        const departed=once(clients[1],'close');clients[1].close(1000,'Test reconnexion Phase 1');await departed;
+        const afterDisconnect=await (await fetch(`${adminUrl}state`,{headers})).json();assert.equal(afterDisconnect.adventure.symbols.found.length,4);assert.deepEqual(afterDisconnect.playerNames,names);
+      }
+    }
+    const pending=await (await fetch(`${adminUrl}state`,{headers})).json();
+    assert.equal(pending.adventure.phase,'pending');assert.equal(pending.adventure.engine.status,'pending');
+    assert.deepEqual(pending.adventure.engine.inventory,[{id:'casino-access',label:'Accès au casino'}]);
+    assert.equal(pending.library.revision,5);assert.deepEqual(pending.library.rooms.find((r:{id:string})=>r.id==='salon').puzzles.points,points);
     assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: '{"id":"absent"}' })).status, 404);
     const kicked = once(clients[3], 'close');
     assert.equal((await fetch(`${adminUrl}kick`, { method: 'POST', headers, body: JSON.stringify({ id: overview.players.find((p: {slot: number}) => p.slot === 4).id }) })).status, 200);

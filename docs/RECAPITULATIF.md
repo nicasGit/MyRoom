@@ -1,8 +1,25 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **17 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.2**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **18 novembre 2026**, fonctionnalités et corrections publiées jusqu’à **0.4.2**, avec une Phase 1 modulaire locale non publiée. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
+
+### 18 novembre 2026 — architecture modulaire, Phase 1 locale
+
+Branche locale `feat/modular-adventures-phase1`, à partir du commit publié `c893269`. Aucune modification de la version HAOS 0.4.2, aucun push, aucune publication ni essai matériel. Phase 2 non commencée, conformément à la demande utilisateur.
+
+- Lecture des consignes, de l’architecture et du présent récapitulatif avant modification. Présentation préalable de la cartographie, des contrats TypeScript, de la compatibilité, des fichiers et des risques ; détail durable dans [l’analyse Phase 1](adventures/phase1-architecture.md).
+- Contrats purs `PuzzleModule`, instances, objets, rôles, transformations futures, récompenses, manifestes et instantanés versionnés ; registre avec validation des configurations, états et actions.
+- Projection publique propre à chaque module, séparée de son état privé et de sa configuration ; test d’un module masqué pour préparer les futurs jeux à information cachée sans les implémenter.
+- Coffre encapsulé dans `symbol-chest`, blackjack actuel conservé dans `blackjack-legacy`. `adventure.ts` reste l’entrée publique et réexporte une façade de compatibilité séparant proximité/transport des règles. Anciennes commandes, neuf points, panneau mural, rendu détaillé et calibrage A/B conservés.
+- Moteur linéaire : instances indépendantes, révisions, transitions, inventaire dédupliqué et événements. Contrat pur de restauration JSON validant références, état des modules, réussite, étapes futures et inventaire, avant mutation. Aucune sauvegarde automatique de session ou API de restauration disque ajoutée.
+- Catalogue de manifestes validés : démonstration classique et `menthe27@0.1.0`, plus chargement optionnel de JSON externes sans changement de code moteur. Menthe 27 expose le coffre puis une étape `planned` ; aucun module `blackjack-hybrid`, aucun faux succès final ni récompense ♣/♥/♠.
+- Choix/arrêt de l’aventure dans l’administration ; saisie des quatre noms par place, suggestions Léon/Reno/Fabien/Nicolas, validation et révision côté serveur, diffusion aux clients. Noms, choix d’aventure et progression restent en mémoire ; le nom d’une place subsiste lors d’une déconnexion, sans devenir un compte joueur.
+- Nouvelle commande WebSocket `puzzle_action` avec ID d’instance, en complément de `adventure_action`. Adaptations limitées du client pour les noms, l’état générique et l’attente explicite d’une étape future. Les fichiers de modèle/stockage des pièces et de calibrage ne sont pas modifiés.
+
+Vérifications finales : `npm run typecheck`, `npm run build` et `npm test` réussis, avec 49 tests (les 39 existants et dix nouveaux). Un test de restauration a été corrigé pour ne pas tenter de redécouvrir une balise déjà acquise. Tests de modules sans Three.js/WebSocket, instances multiples, commandes périmées, récompenses, aller-retour JSON/corruption, ancienne bibliothèque non réécrite et catalogue externe. Le test réseau contrôle les noms aux quatre clients, sélection protégée, commandes génériques par instance, déconnexion sans perte des découvertes et attente après le coffre. Avertissement Vite conservé pour le bloc Three.js supérieur à 500 kB ; `git diff --check` sans erreur d’espacement.
+
+Dans Chrome local : sélection de Menthe 27, enregistrement des quatre noms suggérés, nom Léon dans la vue joueur, coffre résolu en simulation avec une erreur récupérable puis attente sans victoire finale. Aucun test physique téléphone, Quest ou HAOS. Les limites du rendu historique, des noms par place, de la restauration en mémoire et des phases différées sont décrites dans les nouveaux guides. La pièce temporaire créée pour cet essai a été supprimée ; aventure classique, noms par défaut et simulation désactivée rétablis après vérification.
 
 ### Ajout du 17 novembre 2026 — coffre détaillé et panneau mural, 0.4.2
 
