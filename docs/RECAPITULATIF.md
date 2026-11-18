@@ -4,11 +4,13 @@
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 - commandes téléphone absentes, correction et préparation 0.8.6
+### 18 novembre 2026 - commandes téléphone absentes, correction 0.8.6 publiée
 
 Après le retour utilisateur (main visible, pas de bouton ni autres éléments), branche `fix/mobile-ar-controls`. Extraction des commandes essentielles dans une barre directement rattachée à la racine DOM Overlay, indépendante du panneau de diagnostic repliable/défilant : Prendre/Relâcher, sélection au mur, pièces/jeu et sortie AR. Utilisation de bindPress au premier contact avec suppression des doublons synthétiques. Maintien de l'état fermé entre les images, annulation si suivi/calibrage indisponible. Le mode XR screen-space donne priorité à la simulation téléphone, même si le navigateur fournit un grip ; les entrées Quest suivies conservent leur fonctionnement. La barre reste présente avec explication lorsque la prise est désactivée.
 
 La scène ne conserve plus une clé de cache valide lorsqu'elle n'a pas pu être construite ; nouvelle tentative si le modèle arrive tard. Messages explicites hors panneau repliable pour pièce active absente, mode pièces ou serveur déconnecté. Aucun déplacement du menu partagé ou modification d'A/B. Test navigateur intégré 390×844 : visibilité dans l'écran, premier contact ferme, clic synthétique ne double pas, état conservé, second contact relâche, désactivation au suivi perdu. Il s'agit d'une vérification DOM sans vraie session AR. Typecheck, build, 95 tests et git diff --check réussis pour publication directe 0.8.6 (avertissement Vite du bloc Three.js de 574 kB) ; cause exacte sur l'appareil de l'utilisateur non observée matériellement.
+
+Publication confirmée : commit `7e2379b` sur main, workflow [44385997877](https://github.com/nicasGit/MyRoom/actions/runs/44385997877) réussi avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.8.6` vérifiée : Linux ARM64, label 0.8.6, digest `sha256:d0b694f51ed6dd73d3991debc70897b0e97671c8e6bcf38328bf60e4e8638d0b`. Branche conservée, aucun essai matériel effectué par l'agent.
 
 ### 18 novembre 2026 - publication directe autorisée et 0.8.5 confirmée
 
