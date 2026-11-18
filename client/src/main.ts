@@ -12,6 +12,7 @@ import { adventureGroup,animateAdventure,applyObjectPoses } from './adventure-vi
 import { GrabInputs,ObjectGrabber } from './object-grab';
 import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
+import { XRHandsView } from './xr-hands-view';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -23,7 +24,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.7.1');
+diagnostic('Version client', '0.7.2');
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
@@ -176,6 +177,7 @@ enter.onclick = async () => {
     const hudMaterial=new THREE.MeshBasicMaterial({map:hudTexture,side:THREE.DoubleSide,transparent:true,depthTest:false,depthWrite:false});
     const hud=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.55),hudMaterial);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
     const hudAnchor=new InfoPanelAnchor();
+    const handsView=new XRHandsView();scene.add(handsView.group);
     const handDots=[0,1].map(()=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(0.025,12,8),new THREE.MeshBasicMaterial({color:0x67e8f9,depthTest:false}));dot.renderOrder=1001;dot.visible=false;scene.add(dot);return dot;});
     let handStatus='';
     let hudKey='',lastScanUpdate=-Infinity;
@@ -246,7 +248,7 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { hudAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    disposeScene = () => { grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -313,6 +315,7 @@ enter.onclick = async () => {
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
       const hands=frame&&calibration?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
+      handsView.update(frame,reference,session!.inputSources,hands.filter(h=>h.pressed).map(h=>h.side));
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
       handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect());

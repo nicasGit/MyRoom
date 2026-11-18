@@ -7,6 +7,32 @@ import { gripTransform,GrabInputs,ObjectGrabber,type GrabHand } from '../../clie
 import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
+import { XRHandsView } from '../../client/src/xr-hands-view.js';
+
+test('mains visibles : articulations suivies, perte de suivi et retrait de source',()=>{
+  const view=new XRHandsView(),wrist={},thumb={},tip={};
+  const source={handedness:'left',hand:new Map([['wrist',wrist],['thumb-metacarpal',thumb],['thumb-tip',tip]])} as any;
+  let tracked=true;
+  const frame={getJointPose:(space:unknown)=>tracked?{radius:0.008,transform:{position:{x:space===wrist?0:0.03,y:1,z:0},orientation:{x:0,y:0,z:0,w:1}}}:null} as any;
+  view.update(frame,{} as any,[source] as any,['left']);
+  const left=view.group.getObjectByName('hand-left')!,right=view.group.getObjectByName('hand-right')!;
+  assert.equal(left.visible,true);assert.equal(right.visible,false);assert.equal(left.getObjectByName('wrist')!.visible,true);
+  assert.equal((left.getObjectByName('wrist') as THREE.Mesh<THREE.SphereGeometry,THREE.MeshBasicMaterial>).material.color.getHex(),0xffd54f);
+  assert.equal(left.getObjectByName('index-finger-tip')!.visible,false);
+  tracked=false;view.update(frame,{} as any,[source] as any);assert.equal(left.visible,false);
+  view.update(frame,{} as any,[] as any);assert.equal(left.visible,false);
+  view.dispose();assert.equal(view.group.children.length,0);
+});
+
+test('mains visibles : gant de contrôleur orienté par gripSpace, sans fausses articulations',()=>{
+  const view=new XRHandsView(),source={handedness:'right',gripSpace:{}} as any;
+  const frame={getPose:()=>({transform:{position:{x:1,y:1.2,z:-0.5},orientation:{x:0,y:0,z:0,w:1}}})} as any;
+  view.update(frame,{} as any,[source] as any);
+  const right=view.group.getObjectByName('hand-right')!,glove=right.getObjectByName('controller-glove')!;
+  assert.equal(right.visible,true);assert.equal(glove.visible,true);assert.deepEqual(glove.position.toArray(),[1,1.2,-0.5]);
+  assert.equal(right.getObjectByName('wrist')!.visible,false);
+  view.update(undefined,{} as any,[source] as any);assert.equal(right.visible,false);view.dispose();
+});
 
 test('panneau XR : hauteur lisible, position et orientation fixes après mouvement du regard',()=>{
   const panel=new THREE.Object3D(),anchor=new InfoPanelAnchor();

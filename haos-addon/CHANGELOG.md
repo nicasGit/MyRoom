@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.2
+
+- Mains articulées stylisées avec doigts suivant les poses WebXR disponibles, visibles dès l’entrée en session.
+- Gauche cyan, droite verte et jaune pendant une prise détectée ; disparition des articulations sans suivi.
+- Gants simplifiés pour les contrôleurs, sans modèle distant ni transmission du squelette aux autres joueurs.
+- 77 tests logiciels ; aucun essai physique de cet ajout effectué par l’agent.
+
 ## 0.7.1
 
 - Panneau d’informations fixe dans l’espace de session, à hauteur de lecture, au lieu de suivre le regard.
