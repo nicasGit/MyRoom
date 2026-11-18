@@ -1,6 +1,6 @@
 # Architecture MyRoom
 
-## Blackjack hybride — Phase 2, version 0.6.0 préparée
+## Blackjack hybride — Phase 2, version 0.6.0
 
 Le registre ajoute `blackjack-hybrid`, sans modifier le comportement des deux modules historiques. Le manifeste `menthe27@0.2.0` enchaîne coffre, trois manches de casino, puis une étape Vidéoclub prévue. La version 0.1.0 reste au catalogue pour les instantanés historiques. Aucun moteur générique ne contient de règle de Menthe 27.
 

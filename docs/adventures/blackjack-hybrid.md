@@ -1,6 +1,6 @@
 # Blackjack hybride — Phase 2
 
-Module `blackjack-hybrid@1`, aventure `menthe27@0.2.0`, add-on préparé 0.6.0. Le manifeste historique 0.1.0 reste lisible ; sélectionner explicitement 0.2.0 pour jouer les trois manches.
+Module `blackjack-hybrid@1`, aventure `menthe27@0.2.0`, add-on 0.6.0 publié (voir la confirmation du registre dans le récapitulatif). Le manifeste historique 0.1.0 reste lisible ; sélectionner explicitement 0.2.0 pour jouer les trois manches.
 
 ## Démarrage
 

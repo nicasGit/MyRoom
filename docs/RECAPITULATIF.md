@@ -1,10 +1,10 @@
 # MyRoom — Récapitulatif des réalisations
 
-État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.5.1**, avec la Phase 2 préparée en **0.6.0**. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.6.0**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 — Phase 2 préparée en 0.6.0 sur branche dédiée
+### 18 novembre 2026 — Phase 2 publiée en 0.6.0 depuis la branche dédiée
 
 Branche `feat/menthe27-blackjack-hybrid`, à partir de `b7617d4`. Lecture préalable des cinq documents demandés. Module indépendant `blackjack-hybrid` enregistré avec source aléatoire cryptographique injectée au point de composition serveur, sans dépendance Three.js/WebSocket dans les règles. Trois manches, paquet privé, projection masquée, capitaine issu des connexions, réservations de cartes de 15 secondes et dépôts dans trois logements. Contexte d’action fourni par le serveur, commandes et révisions validées. Récompenses intermédiaires via un contrat générique `earnedRewards`, maintenance des verrous et indices administrateur ; `symbol-chest` et `blackjack-legacy` restent inchangés.
 
@@ -14,7 +14,7 @@ Contrôles finaux locaux : `npm run typecheck`, `npm run build` et `npm test` r�
 
 Dans Chrome local : parcours des trois manches jusqu’au Vidéoclub en attente, commandes DOM par clics synthétiques (onglet partagé masqué), réservation d’une carte via projection d’un clic sur l’aperçu 3D, et capture Canvas du rendu Three.js inspectée. Inscriptions agrandies et boutons remontés pour dégager les logements. Canvas d’aperçu présent et vue du croupier masquée pendant la main. Pièce temporaire supprimée après essai ; aventure classique et simulation désactivée rétablies. Ces simulations ne constituent pas des essais WebXR physiques. Progression, paquet et noms restent en mémoire ; la persistance disque appartient toujours à la Phase 3. Aucun essai physique Quest/téléphone/HAOS.
 
-Version de l’add-on et diagnostic client portés à 0.6.0, changelog, architecture, README et guides actualisés. Le [guide hybride](adventures/blackjack-hybrid.md) décrit le fonctionnement et les limites. Publication sur `main` demandée explicitement ; workflow et registre restent à confirmer après le push de cette tranche.
+Version de l’add-on et diagnostic client portés à 0.6.0, changelog, architecture, README et guides actualisés. Le [guide hybride](adventures/blackjack-hybrid.md) décrit le fonctionnement et les limites. Publication sur `main` autorisée explicitement et confirmée : commit `ba58026` issu de la branche dédiée, workflow [44272739627](https://github.com/nicasGit/MyRoom/actions/runs/44272739627) réussi (validation Linux et publication). Après le workflow, manifeste `ghcr.io/nicasgit/myroom:0.6.0` vérifié pour Linux ARM64, label de version 0.6.0 ; digest `sha256:175bf5b410f1cdc15a4af3228e843a9fd999be3f29902e77eec29c7acf5d56dd`. Cela confirme la disponibilité de l’image, pas son exécution sur HAOS, Raspberry Pi ou Quest.
 
 Publication préalable 0.5.1 confirmée : commit `b7617d4`, workflow [44268181791](https://github.com/nicasGit/MyRoom/actions/runs/44268181791) réussi, manifeste Linux ARM64 `ghcr.io/nicasgit/myroom:0.5.1` vérifié après exécution, digest `sha256:fd9337f28208b5b6781e94640a27fbad4e11ee5b681530bab3493c1ac9eaf19b`. Les 51 tests, le typecheck et la compilation avaient réussi avant son push. La première commande globale commit/push avait été refusée par la revue automatique ; les douze fichiers ont été sélectionnés et inspectés explicitement, puis l’autorisation manuelle a confirmé la publication sur main.
 
