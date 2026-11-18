@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- Fondations modulaires : registre d’énigmes, catalogue versionné, étapes et inventaire partagé.
+- Choix de l’aventure et saisie des quatre noms dans l’administration.
+- Opération Menthe 27 : coffre jouable puis attente explicite du blackjack hybride, non implémenté dans cette version.
+- Démonstration classique, coffre 3D, panneau mural, anciennes pièces et calibrage A/B conservés.
+- Noms et progression en mémoire uniquement ; aucun essai matériel Quest ou HAOS effectué par l’agent.
+
 ## 0.4.2
 
 - Coffre détaillé en bois : corps creux, couvercle bombé, ferrures, poignées, rivets et serrure retirée à l’ouverture.

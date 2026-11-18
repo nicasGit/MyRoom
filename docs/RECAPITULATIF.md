@@ -4,6 +4,12 @@
 
 ## 1. Projet et architecture
 
+### 18 novembre 2026 — préparation de la publication 0.5.0
+
+Publication demandée explicitement après le commit `1b530bc` et son push sur `feat/modular-adventures-phase1`. Préparation de l’intégration sur `main`, version de l’add-on portée à 0.5.0 et changelog actualisé. Le workflow existant conserve Linux ARM64, HTTPS/WSS et les contrôles logiciels avant publication. Les pièces existantes ne sont pas migrées ni supprimées. Phase 2 toujours non commencée ; noms et progression en mémoire uniquement.
+
+Contrôles locaux de cette version : `npm run typecheck` et `npm run build` réussis ; `npm test` réussit avec 49 tests après relance. Le premier passage a rencontré un `EPERM` Windows sur le renommage atomique du fichier temporaire du test de bibliothèque ; la relance sans modification du code passe. Avertissement Vite habituel pour le bloc Three.js supérieur à 500 kB. La disponibilité effective de l’image sera consignée après exécution du workflow ; aucune publication ni validation matérielle supplémentaire n’est annoncée à ce stade.
+
 ### 18 novembre 2026 — architecture modulaire, Phase 1 locale
 
 Branche locale `feat/modular-adventures-phase1`, à partir du commit publié `c893269`. Aucune modification de la version HAOS 0.4.2, aucun push, aucune publication ni essai matériel. Phase 2 non commencée, conformément à la demande utilisateur.
