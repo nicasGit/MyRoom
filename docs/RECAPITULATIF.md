@@ -4,9 +4,9 @@
 
 ## 1. Projet et architecture
 
-### 18 novembre 2026 - préparation de publication 0.8.4
+### 18 novembre 2026 - publication 0.8.4 confirmée
 
-Publication autorisée : accueil mural, mode pièces et correction tactile. Version add-on et diagnostic client portés à 0.8.4, changelog complété. Les derniers contrôles complets ont réussi : typecheck, build et 94 tests ; seuls version et documents sont adaptés depuis. Le workflow GitHub relance ces contrôles avant publication ARM64. Disponibilité du registre à confirmer ; aucun essai matériel annoncé.
+Publication autorisée : accueil mural, mode pièces et correction tactile. Version add-on et diagnostic client portés à 0.8.4, changelog complété. Les derniers contrôles complets ont réussi : typecheck, build et 94 tests ; seuls version et documents sont adaptés depuis. Commit `e0bf037` sur main ; workflow [44377664201](https://github.com/nicasGit/MyRoom/actions/runs/44377664201) réussi avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.8.4` vérifiée : Linux ARM64, label 0.8.4, digest `sha256:971ad08704a9ad1a0f6e57cb93e0c4bc09893e36648a5f50c4ae53019ff16050`. Branche conservée ; aucun essai matériel annoncé.
 
 ### 18 novembre 2026 - accueil mural, mode pièces et correction de la main, travail local
 

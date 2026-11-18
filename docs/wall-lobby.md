@@ -1,6 +1,6 @@
 # Accueil mural et mode pièces
 
-Évolution locale après 0.8.3, non publiée. Aucune validation physique téléphone ou Quest effectuée par l'agent.
+Version 0.8.4 publiée : workflow GitHub réussi et image Linux ARM64 vérifiée. Aucune validation physique téléphone ou Quest effectuée par l'agent.
 
 Après A/B, le menu Team Portal apparaît sur le mur validé du panneau existant, à hauteur fixe de 1,35 m. Il reste dans le repère de pièce et ne suit pas le regard. Les anciennes pièces et leur panneau restent lisibles ; pas de nouvelle ancre spatiale. Sans pièce active ou mur libre, utiliser **Mode pièces** dans la barre tactile pour relever la pièce avant d'obtenir un menu mural.
 
