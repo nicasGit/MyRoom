@@ -2,6 +2,8 @@
 
 Implémentation en cours sur `feature/team-portal`. Aucun essai physique Quest effectué par l’agent. Le rituel ne constitue pas une énigme et n’ajoute aucune condition de victoire.
 
+**État de validation : publication bloquée.** Le contrôle TypeScript et la compilation réussissent ; 83 tests sur 84 passent. Le scénario réseau à quatre joueurs dépasse son délai en attendant une traversée. Conformément au workflow demandé, arrêt sans fusion ni publication ; commit de développement `7714031`. Les fonctions décrites ci-dessous sont implémentées mais le parcours complet n’est pas encore validé.
+
 ## Architecture et compatibilité
 
 Le manifeste peut déclarer `introduction: { type: "team-portal", schemaVersion: 1, config: ... }`. Sans ce champ, le démarrage conserve son comportement historique. Menthe 27 `0.3.0` reprend exactement les étapes, objets et règles de `0.2.0` et ajoute cette introduction ; les versions antérieures restent au catalogue. `PuzzleModule`, le coffre et les règles du blackjack sont conservés. Le démarrage de l’AdventureEngine est appelé une seule fois par le coordinateur de salle, après le rituel.
