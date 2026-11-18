@@ -27,18 +27,26 @@ export function parsePuzzleCommand(value:unknown):PuzzleCommand{
   const v=envelope(value,'puzzle_action');if(typeof v.instanceId!=='string'||!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(v.instanceId))throw new Error('Instance invalide.');return v as unknown as PuzzleCommand;
 }
 export class Adventure {
+  private beforeTest:ReturnType<AdventureEngine['snapshot']>|undefined;
   readonly engine:AdventureEngine;
   private key='';private configured=false;private revision=0;private testMode=false;private message='Configurer les énigmes dans l’administration.';
   constructor(registry:PuzzleRegistry=createRegistry(),private catalog:AdventureCatalog=createCatalog(registry)){
     this.engine=new AdventureEngine(registry,catalog,'myroom-classic','1.0.0');
   }
   configure(model:RoomModel|null){const key=JSON.stringify(model);if(key!==this.key){this.key=key;this.reset(!!model?.puzzles);}}
-  reset(configured=this.configured){this.configured=configured;this.engine.reset();this.revision++;this.message=configured?'Retrouvez les quatre balises, puis entrez les symboles au panneau mural.':'Configurer les énigmes dans l’administration.';}
+  reset(configured=this.configured){this.beforeTest=undefined;this.configured=configured;this.engine.reset();this.revision++;this.message=configured?'Retrouvez les quatre balises, puis entrez les symboles au panneau mural.':'Configurer les énigmes dans l’administration.';}
   start(){if(!this.configured)throw new Error('Configurez les placements avant de commencer.');const previous=this.engine.snapshot().revision;this.engine.start();if(this.engine.snapshot().revision!==previous)this.revision++;}
   stop(){const previous=this.engine.snapshot().revision;this.engine.stop();if(this.engine.snapshot().revision!==previous)this.revision++;}
-  setTestMode(enabled:boolean){if(enabled!==this.testMode){this.testMode=enabled;this.revision++;}}
+  setTestMode(enabled:boolean){if(enabled!==this.testMode){if(!enabled&&this.beforeTest){this.engine.restore(this.beforeTest);this.beforeTest=undefined;this.message=this.engine.currentStep().narrative;}this.testMode=enabled;this.revision++;}}
+  testStep(stepId:string,revision:number){
+    if(!this.testMode)throw new Error('Activez le mode test avant de choisir une énigme.');
+    if(!this.configured)throw new Error('Configurez les placements avant de tester.');
+    if(revision!==this.revision)throw new Error('La partie a changé. Actualisez avant de tester.');
+    const previous=this.engine.snapshot();this.engine.testStep(stepId,previous.revision);
+    this.beforeTest??=previous;this.revision++;this.message='Session de test temporaire : '+this.engine.currentStep().narrative;
+  }
   listAdventures(){return this.catalog.list();}
-  select(id:string,version:string,revision:number){if(revision!==this.revision)throw new Error('La partie a changé. Actualisez avant de sélectionner.');const manifest=this.catalog.get(id,version);if(manifest.objects.some(o=>o.objectId!==o.placementKey))throw new Error('Ce placement nécessite le futur moteur de rendu par aventure.');this.engine.select(id,version);this.revision++;this.message=this.engine.currentStep().narrative;}
+  select(id:string,version:string,revision:number){if(this.beforeTest)throw new Error('Quittez le mode test avant de changer d’aventure.');if(revision!==this.revision)throw new Error('La partie a changé. Actualisez avant de sélectionner.');const manifest=this.catalog.get(id,version);if(manifest.objects.some(o=>o.objectId!==o.placementKey))throw new Error('Ce placement nécessite le futur moteur de rendu par aventure.');this.engine.select(id,version);this.revision++;this.message=this.engine.currentStep().narrative;}
   snapshot():AdventureState{
     const engine=this.engine.publicState(),active=this.engine.activeInstance();
     const symbols=active?.type==='symbol-chest'?active:engine.instances.find(i=>i.type==='symbol-chest'),blackjack=active?.type==='blackjack-legacy'?active:engine.instances.find(i=>i.type==='blackjack-legacy');

@@ -119,6 +119,20 @@ test('WebSocket : quatre joueurs, cinquième refusé, état partagé et origine 
     for(const state of await Promise.all(shared))assert.deepEqual(state.adventure.symbols.found,['sun']);
     const stale=messageOfType(clients[1],'adventure_result');clients[1].send(JSON.stringify(command));assert.equal((await stale).changed,false);
     const malformed=messageOfType(clients[1],'error');clients[1].send(JSON.stringify({...command,target:'invalid'}));assert.equal((await malformed).type,'error');
+    const beforeTest=(await (await fetch(`${adminUrl}state`,{headers})).json()).adventure;
+    const direct={stepId:'blackjack',revision:beforeTest.revision};
+    assert.equal((await fetch(`${adminUrl}adventure/test-step`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(direct)})).status,401);
+    assert.equal((await fetch(`${adminUrl}adventure/test-step`,{method:'POST',headers:{...headers,Origin:'https://other.test'},body:JSON.stringify(direct)})).status,403);
+    assert.equal((await fetch(`${adminUrl}adventure/test-step`,{method:'POST',headers,body:JSON.stringify({...direct,extra:true})})).status,400);
+    const testStates=clients.slice(0,4).map(ws=>messageOfType(ws,'state'));
+    assert.equal((await fetch(`${adminUrl}adventure/test-step`,{method:'POST',headers,body:JSON.stringify(direct)})).status,200);
+    for(const state of await Promise.all(testStates)){assert.equal(state.adventure.phase,'blackjack');assert.equal(state.adventure.engine.testStartStepId,'blackjack');assert.deepEqual(state.adventure.engine.inventory,[]);}
+    assert.equal((await fetch(`${adminUrl}adventure/test-step`,{method:'POST',headers,body:JSON.stringify(direct)})).status,400);
+    assert.equal((await fetch(`${adminUrl}adventure/test-mode`,{method:'POST',headers,body:'{"enabled":false}'})).status,200);
+    const normal=(await (await fetch(`${adminUrl}state`,{headers})).json()).adventure;
+    assert.deepEqual(normal.symbols,beforeTest.symbols);assert.deepEqual(normal.engine.inventory,beforeTest.engine.inventory);assert.equal(normal.running,true);assert.equal(normal.engine.testStartStepId,undefined);
+    assert.equal((await fetch(`${adminUrl}adventure/test-step`,{method:'POST',headers,body:JSON.stringify({...direct,revision:normal.revision})})).status,400);
+    assert.equal((await fetch(`${adminUrl}adventure/test-mode`,{method:'POST',headers,body:'{"enabled":true}'})).status,200);
     assert.equal((await fetch(`${adminUrl}adventure/reset`,{method:'POST',headers,body:'{}'})).status,200);
     assert.deepEqual((await (await fetch(`${adminUrl}state`,{headers})).json()).adventure.symbols.found,[]);
     const phase1=await (await fetch(`${adminUrl}state`,{headers})).json();

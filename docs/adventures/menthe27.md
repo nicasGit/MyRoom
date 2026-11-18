@@ -4,6 +4,12 @@ Manifeste `menthe27@0.1.0`, schéma 1. Première tranche de développement, pas 
 
 ## Essayer localement
 
+### Accès direct en mode test
+
+Dans l’administration, activez **Autoriser la simulation PC**, puis utilisez **Accès direct aux énigmes → Tester cette énigme**. Une session temporaire part de l’énigme choisie, sans attribuer les récompenses des étapes ignorées. Désactiver la simulation restaure la partie qui précédait le premier accès direct. Réinitialiser ou changer de pièce abandonne cette copie en mémoire ; un redémarrage serveur la perd également. Le changement concerne tous les joueurs connectés.
+
+Seules les énigmes implémentées sont sélectionnables : Menthe 27 propose actuellement le coffre. Pour tester directement le blackjack historique, choisissez la **Démonstration classique** avant d’ouvrir la session temporaire. Le blackjack hybride reste indisponible.
+
 1. Démarrer MyRoom avec le jeton administrateur habituel et ouvrir `/admin.html`.
 2. Dans **Aventure et équipe**, sélectionner **Opération Menthe 27 — 0.1.0**, puis **Choisir cette aventure**. Arrêter d’abord une partie en cours. Le changement recommence la progression.
 3. Renseigner les quatre champs de noms, ou cliquer **Utiliser les noms suggérés**, puis **Enregistrer les noms**.

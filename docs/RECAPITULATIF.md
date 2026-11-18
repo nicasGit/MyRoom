@@ -4,6 +4,17 @@
 
 ## 1. Projet et architecture
 
+### 18 novembre 2026 — accès direct aux énigmes en mode test, préparation 0.5.1
+
+Publication 0.5.1 demandée par l’utilisateur avant la Phase 2. Version et changelog préparés ; disponibilité du registre à vérifier après le workflow. Utilisation de la compétence commit pour enregistrer ces changements sans modification des règles du coffre et du blackjack historique.
+
+- Administration : sélecteur « Accès direct aux énigmes », activé par la case existante « Autoriser la simulation PC ». Le bouton « Tester cette énigme » démarre immédiatement l’énigme choisie pour tous les joueurs, sans résoudre les précédentes. Les étapes prévues mais non implémentées sont désactivées ; Menthe 27 ne donne toujours pas accès au blackjack hybride.
+- Commande protégée `POST /api/admin/adventure/test-step` : jeton, origine, JSON strict, étape disponible, placements configurés, mode test et révision courante requis. Refus explicites et journal `adventure_test_step`, sans modification des pièces ou du calibrage A/B.
+- Session temporaire identifiée par `testStartStepId`, état initial de l’énigme ciblée, inventaire indépendant et états diffusés aux joueurs. Le premier accès garde une copie en mémoire de la partie normale ; les accès suivants réinitialisent uniquement la session de test. Désactiver le mode test restaure cette copie et abandonne les récompenses de test. Un changement de pièce ou une réinitialisation abandonne également la copie ; elle ne survit pas à un redémarrage serveur. Changer d’aventure pendant un accès direct est refusé jusqu’à la sortie du mode test.
+- Contrat de restauration validant le point de départ temporaire, les étapes ignorées et l’inventaire, sans assouplir la restauration des sessions normales. Bandeau de test dans les commandes joueur et statut explicite dans l’administration.
+
+Vérifications : `npm run typecheck`, `npm run build` et `npm test` réussis avec **51 tests**. Deux nouveaux tests couvrent accès direct, états isolés, fin et restauration JSON de test, étapes indisponibles, commandes périmées et retour à la progression normale. Test réseau étendu : authentification/origine, champs inconnus, révision périmée, refus sans mode test, diffusion aux quatre joueurs et restauration de la partie précédente. Dans Chrome local, connexion admin puis activation du mode, choix du blackjack historique, démarrage direct et retour au coffre en préparation à la désactivation vérifiés par les commandes de l’interface. Aucun essai physique téléphone/Quest/HAOS. Avertissement Vite habituel sur le bloc Three.js supérieur à 500 kB. Aucune publication d’image ou modification de version dans cette tranche.
+
 ### 18 novembre 2026 — préparation de la publication 0.5.0
 
 Publication confirmée : commit `ffe92e5` intégré sur `main` après autorisation explicite, workflow [44262750589](https://github.com/nicasGit/MyRoom/actions/runs/44262750589) terminé avec succès. Manifeste `ghcr.io/nicasgit/myroom:0.5.0` vérifié après le workflow : Linux ARM64 et label de version 0.5.0 ; digest `sha256:f77c8f24e0cdf3af4f6955355413353e9ea9f03ea9f936a2446ae8a30fef7507`. La disponibilité du registre ne constitue pas un essai sur HAOS, Raspberry Pi, téléphone ou Quest. La revue automatique avait bloqué le premier push sur `main` ; une autorisation manuelle explicite a ensuite permis cette intégration et publication.

@@ -31,6 +31,7 @@ export type AdventureManifest = {
 export type ProgressEvent = { type:'puzzle-solved'|'reward-added'|'step-changed'; id:string };
 export type RuntimeInstance = { id:string;type:string;schemaVersion:number;config:unknown;state:unknown;solved:boolean;hintLevel:number };
 export type AdventureSnapshot = {
+  testStartStepId?:string;
   schemaVersion:1; adventureId:string;adventureVersion:string;revision:number;
   running:boolean;stepId:string;instances:RuntimeInstance[];inventory:Reward[];
   completedSteps:string[];status:'ready'|'playing'|'pending'|'complete';

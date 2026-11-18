@@ -110,6 +110,7 @@ export class AdventureClient {
           text('Sélectionnez un élément, visez sa nouvelle position au sol, puis placez-le. Chaque déplacement est enregistré sur le serveur.');panel.body.append(select,token,place);
         }
       }
+      if(state.engine.testStartStepId)text('MODE TEST — session temporaire, sans progression pour l’aventure normale.');
       if(state.phase==='symbols'){
         text('Le coffre des quatre symboles');text('« Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. »');
         text(`Balises découvertes : ${state.symbols.found.length}/4 · combinaison : ${state.symbols.entered.map(id=>SYMBOL_NAMES[id]).join(' → ')||'vide'} · erreurs : ${state.symbols.attempts}`);

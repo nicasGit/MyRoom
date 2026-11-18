@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- Accès direct aux énigmes implémentées depuis l’administration en mode test.
+- Session temporaire partagée ; sortie du mode test restaurant la progression précédente.
+- Contrôles des révisions et de l’accès administrateur, état de test visible aux joueurs.
+
 ## 0.5.0
 
 - Fondations modulaires : registre d’énigmes, catalogue versionné, étapes et inventaire partagé.

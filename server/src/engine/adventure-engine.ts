@@ -15,6 +15,12 @@ export class AdventureEngine {
   activeInstance(){const step=this.currentStep();return step.kind==='puzzle'?structuredClone(this.state.instances.find(i=>i.id===step.instanceId)):undefined;}
   select(id:string,version:string){if(this.state.running)throw new Error('Arrêtez la partie avant de changer d’aventure.');const manifest=this.catalog.get(id,version);this.manifest=manifest;this.state=this.initial(this.state.revision+1);}
   reset(){this.state=this.initial(this.state.revision+1);}
+  testStep(stepId:string,revision:number){
+    if(revision!==this.state.revision)throw new Error('La partie a changé. Actualisez avant de tester.');
+    const step=this.manifest.steps.find(step=>step.id===stepId);
+    if(!step||step.kind!=='puzzle')throw new Error('Cette énigme est indisponible.');
+    this.state={...this.initial(this.state.revision+1),stepId,testStartStepId:stepId,running:true,status:'playing'};
+  }
   start(){if(this.state.status==='pending'||this.state.status==='complete')throw new Error('Étape indisponible ou aventure terminée.');if(!this.state.running){this.state.running=true;this.state.status='playing';this.state.revision++;}}
   stop(){if(this.state.running){this.state.running=false;this.state.status='ready';this.state.revision++;}}
   act(instanceId:string,revision:number,action:unknown){
@@ -44,26 +50,30 @@ export class AdventureEngine {
   }
   // Pure validation/restore contract. Disk persistence and admin restoration are Phase 3.
   restore(value:unknown){
-    const s=record(value,['schemaVersion','adventureId','adventureVersion','revision','running','stepId','instances','inventory','completedSteps','status']);
+    const s=record(value,['schemaVersion','adventureId','adventureVersion','revision','running','stepId','instances','inventory','completedSteps','status','testStartStepId']);
     if(s.schemaVersion!==1||s.adventureId!==this.manifest.id||s.adventureVersion!==this.manifest.version)throw new Error('Session d’une autre aventure ou version.');
     const revision=integer(s.revision),running=bool(s.running),stepId=identifier(s.stepId),stepIndex=this.manifest.steps.findIndex(step=>step.id===stepId);
     if(stepIndex<0||!['ready','playing','pending','complete'].includes(String(s.status)))throw new Error('Étape ou statut invalide.');
+    const testStartStepId=s.testStartStepId===undefined?undefined:identifier(s.testStartStepId);
+    const startIndex=testStartStepId===undefined?0:this.manifest.steps.findIndex(step=>step.id===testStartStepId&&step.kind==='puzzle');
+    if(startIndex<0||startIndex>stepIndex)throw new Error('Départ de test invalide.');
     const instances:RuntimeInstance[]=list(s.instances,32).map(value=>{const i=record(value,['id','type','schemaVersion','config','state','solved','hintLevel']),spec=this.manifest.instances.find(spec=>spec.id===i.id);
       if(!spec||spec.type!==i.type||spec.schemaVersion!==i.schemaVersion||JSON.stringify(spec.config)!==JSON.stringify(i.config))throw new Error('Configuration de session incompatible.');
       const module=this.registry.get(spec.type,spec.schemaVersion),state=module.parseState(i.state,spec.config),solved=bool(i.solved),hintLevel=integer(i.hintLevel,0,module.hints(spec.config).length);
       if(solved!==module.isSolved(spec.config,state))throw new Error('Réussite de session incohérente.');return {...structuredClone(spec),state,solved,hintLevel};});
     unique(instances.map(i=>i.id));if(instances.length!==this.manifest.instances.length)throw new Error('Instances manquantes.');
     const completedSteps=unique(list(s.completedSteps,32).map(identifier)),expectedCompleted=this.manifest.steps.filter(step=>step.kind==='puzzle'&&instances.find(i=>i.id===step.instanceId)?.solved).map(step=>step.id);
-    if(JSON.stringify(completedSteps)!==JSON.stringify(expectedCompleted)||completedSteps.some(id=>this.manifest.steps.findIndex(step=>step.id===id)>stepIndex))throw new Error('Progression incohérente.');
-    for(let index=0;index<stepIndex;index++)if(!completedSteps.includes(this.manifest.steps[index].id))throw new Error('Étape précédente non résolue.');
+    if(JSON.stringify(completedSteps)!==JSON.stringify(expectedCompleted)||completedSteps.some(id=>{const index=this.manifest.steps.findIndex(step=>step.id===id);return index>stepIndex||index<startIndex;}))throw new Error('Progression incohérente.');
+    for(let index=startIndex;index<stepIndex;index++)if(!completedSteps.includes(this.manifest.steps[index].id))throw new Error('Étape précédente non résolue.');
     for(let index=stepIndex+1;index<this.manifest.steps.length;index++){
       const future=this.manifest.steps[index];if(future.kind==='puzzle'){const i=instances.find(i=>i.id===future.instanceId)!;const module=this.registry.get(i.type,i.schemaVersion);if(JSON.stringify(i.state)!==JSON.stringify(module.initialState(i.config))||i.hintLevel!==0)throw new Error('Une étape future a déjà progressé.');}
     }
     const expectedInventory=completedSteps.flatMap(id=>{const step=this.manifest.steps.find(s=>s.id===id)!;if(step.kind!=='puzzle')return [];const i=instances.find(i=>i.id===step.instanceId)!;return this.registry.get(i.type,i.schemaVersion).rewards(i.config);}).filter((r,index,array)=>array.findIndex(other=>other.id===r.id)===index);
     const inventory=list(s.inventory,256).map(value=>{const r=record(value,['id','label']);return {id:identifier(r.id),label:text(r.label,64)};});
     if(JSON.stringify(inventory)!==JSON.stringify(expectedInventory))throw new Error('Inventaire incohérent.');
-    const step=this.manifest.steps[stepIndex],complete=this.manifest.victory.requiredSteps.every(id=>completedSteps.includes(id));
+    for(let index=0;index<startIndex;index++){const prior=this.manifest.steps[index];if(prior.kind==='puzzle'){const i=instances.find(i=>i.id===prior.instanceId)!;const module=this.registry.get(i.type,i.schemaVersion);if(JSON.stringify(i.state)!==JSON.stringify(module.initialState(i.config))||i.hintLevel!==0)throw new Error('Progression antérieure au test invalide.');}}
+    const step=this.manifest.steps[stepIndex],complete=testStartStepId===undefined?this.manifest.victory.requiredSteps.every(id=>completedSteps.includes(id)):step.next===null&&completedSteps.includes(step.id);
     if((s.status==='complete')!==complete||(s.status==='pending')!==(step.kind==='planned')||(running!==(s.status==='playing'))||(!complete&&step.kind==='puzzle'&&completedSteps.includes(stepId)))throw new Error('Statut de session incohérent.');
-    this.state={schemaVersion:1,adventureId:this.manifest.id,adventureVersion:this.manifest.version,revision:Math.max(this.state.revision,revision)+1,running,stepId,instances,inventory,completedSteps,status:s.status as AdventureSnapshot['status']};
+    this.state={schemaVersion:1,adventureId:this.manifest.id,adventureVersion:this.manifest.version,revision:Math.max(this.state.revision,revision)+1,running,stepId,instances,inventory,completedSteps,status:s.status as AdventureSnapshot['status'],...(testStartStepId===undefined?{}:{testStartStepId})};
   }
 }

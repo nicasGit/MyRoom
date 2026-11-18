@@ -23,6 +23,9 @@ startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent=
 const catalogPanel=document.createElement('section');catalogPanel.className='panel';
 catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Utiliser les noms suggérés</button></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
 el('dashboard').prepend(catalogPanel);
+const testPanel=document.createElement('div');testPanel.innerHTML='<h3>Accès direct aux énigmes</h3><p>Activez le mode test PC ci-dessous, puis choisissez une énigme. Une session temporaire démarre pour tous les joueurs. Désactiver le mode test restaure la progression précédente. Réinitialiser ou changer de pièce efface cette sauvegarde temporaire.</p><select id="test-step" aria-label="Énigme à tester"></select><button id="test-step-open">Tester cette énigme</button><p id="test-step-status"></p>';catalogPanel.append(testPanel);
+let testStepsKey='';
+el('test-step-open').onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez les placements avant de tester.';return;}void action('adventure/test-step',{stepId:el<HTMLSelectElement>('test-step').value,revision:latestAdventureRevision});};
 let latestAdventureRevision=0,namesRevision=0,namesDirty=false,catalogKey='';
 let catalog:AdventureManifest[]=[];
 const nameFields=Array.from({length:4},(_,index)=>{const label=document.createElement('label');label.textContent=`Place ${index+1} `;const input=document.createElement('input');input.id=`player-name-${index+1}`;input.maxLength=40;input.required=true;input.oninput=()=>{namesDirty=true;};label.append(input);el('player-name-fields').append(label);return input;});
@@ -63,9 +66,14 @@ function render(state: State) {
   const engine=state.adventure.engine,key=JSON.stringify(state.adventures);
   if(key!==catalogKey){catalogKey=key;el('adventure-catalog').replaceChildren(...catalog.map(m=>{const option=document.createElement('option');option.value=`${m.id}@${m.version}`;option.textContent=`${m.title} — ${m.version}`;return option;}));el<HTMLSelectElement>('adventure-catalog').value=`${engine.adventureId}@${engine.adventureVersion}`;}
   const manifest=catalog.find(m=>m.id===engine.adventureId&&m.version===engine.adventureVersion);
+  const stepsKey=JSON.stringify([engine.adventureId,engine.adventureVersion,manifest?.steps]);
+  if(stepsKey!==testStepsKey){testStepsKey=stepsKey;el('test-step').replaceChildren(...(manifest?.steps??[]).map(step=>{const option=document.createElement('option');option.value=step.id;option.textContent=step.title+(step.kind==='planned'?' — bientôt disponible':'');option.disabled=step.kind!=='puzzle';return option;}));}
+  el<HTMLSelectElement>('test-step').disabled=!state.adventure.testMode;
+  el<HTMLButtonElement>('test-step-open').disabled=!state.adventure.testMode||state.adventure.phase==='unconfigured'||!manifest?.steps.some(step=>step.kind==='puzzle');
+  el('test-step-status').textContent=engine.testStartStepId?'Session de test temporaire active : les résultats seront abandonnés en quittant le mode test.':state.adventure.testMode?'Mode test actif : choisissez une énigme disponible.':'Accès direct désactivé : activez le mode test PC.';
   el('adventure-description').textContent=`Active : ${manifest?.title??engine.adventureId}. ${manifest?.description??''}`;
   el('adventure-progress').textContent=`Étape : ${engine.step.title} · Réussites : ${engine.completedSteps.length}/${manifest?.steps.length??0} · Inventaire : ${engine.inventory.map(r=>r.label).join(', ')||'vide'}`;
-  el<HTMLButtonElement>('adventure-select').disabled=state.adventure.running;
+  el<HTMLButtonElement>('adventure-select').disabled=state.adventure.running||!!engine.testStartStepId;
   el<HTMLButtonElement>('adventure-stop').disabled=!state.adventure.running;
   if(!namesDirty){namesRevision=state.playerNamesRevision;nameFields.forEach((input,index)=>{input.value=state.playerNames[index];});}
   startAdventure.disabled=state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
