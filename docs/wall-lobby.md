@@ -19,6 +19,8 @@ Les changements de groupe, aventure et noms se propagent via WebSocket. L'appare
 
 ## Main virtuelle et écran allégé
 
+Correction 0.8.6 : les commandes Prendre/Relâcher, Sélectionner au mur, Pièces/Jeu et Quitter AR sont dans une barre indépendante du panneau repliable. Elles restent accessibles avec DOM Overlay ; la prise agit dès le contact, sans double bascule sur le clic synthétique. Une pièce absente ou un serveur déconnecté produit une explication visible. Sans DOM Overlay, les commandes restent celles exposées nativement par le navigateur et les contrôleurs ; ce correctif ne peut pas imposer une interface DOM à un navigateur qui ne la fournit pas.
+
 Les sources tactiles `screen` sont exclues des prises Quest même si elles annoncent un grip. Seules des entrées suivies `tracked-pointer` avec main/grip désactivent la main virtuelle automatique. Le bouton de prise est visible sur téléphone avant calibrage mais explique qu'il faut terminer A/B ; après calibrage, la main suit le téléphone à 55 cm devant lui. Il s'agit d'une simulation, pas d'un suivi optique.
 
 Après calibrage, en mode jeu : croix et cible au sol masquées, HUD de diagnostic et outils de relevé retirés de l'écran. La barre tactile garde les commandes essentielles et un retour court. Le mode pièces réaffiche les outils de construction et la visée ; le menu mural reste présent dans l'accueil. Les énigmes retrouvent leur propre rendu après le vortex.

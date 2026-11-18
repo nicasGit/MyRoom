@@ -15,9 +15,10 @@ import { InfoPanelAnchor } from './xr-info-panel';
 import { PortalClient } from './portal/portal-client';
 import { portalView } from './portal/portal-view';
 import { XRHandsView } from './xr-hands-view';
-import { phoneHand,hasTrackedHands } from './phone-hand';
+import { phoneHand,usePhoneHand } from './phone-hand';
 import { WallLobby } from './portal/wall-lobby';
 import { handPreview } from './hand-preview';
+import { PhoneControls } from './phone-controls';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -29,7 +30,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.8.5');
+diagnostic('Version client', '0.8.6');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -105,7 +106,7 @@ for(const button of alignmentButtons)button.onclick=()=>{
 };
 overlay.addEventListener('beforexrselect', event => {
   // Touching a DOM control must not also place a point through the XR select event.
-  if (event.target instanceof Element && event.target.closest('.xr-panel')) event.preventDefault();
+  if (event.target instanceof Element && event.target.closest('.xr-panel, .xr-phone-controls')) event.preventDefault();
 });
 enter.onclick = async () => {
   if (!navigator.xr) return;
@@ -147,11 +148,11 @@ enter.onclick = async () => {
     let gameKey='';
     updateAdventureScene=()=>{
       const view=adventure.viewState(),key=JSON.stringify([view?.model,view?.state.revision,portal.state?.revision,calibration,survey.hasDraft()]);
-      if(key===gameKey){if(gameGroup)applyObjectPoses(gameGroup,view?.state.objects);return;}gameKey=key;
+      if(key===gameKey&&gameGroup){applyObjectPoses(gameGroup,view?.state.objects);return;}
       const previousLid=gameGroup?.userData.lid as THREE.Group|undefined;
       const previousAngle=previousLid?.rotation.x,previousTarget=previousLid?.userData.targetAngle;
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
-      if(!calibration||!view||survey.hasDraft())return;
+      if(!calibration||!view||survey.hasDraft()){gameKey='';return;}gameKey=key;
       gameGroup=portal.visible()&&portal.state?portalView(portal.state,ownSlot):adventureGroup(view.model,view.state,ownId);
       applyObjectPoses(gameGroup,view.state.objects);
       const lid=gameGroup.userData.lid as THREE.Group|undefined;
@@ -185,12 +186,8 @@ enter.onclick = async () => {
     const hud=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.55),hudMaterial);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
     const hudAnchor=new InfoPanelAnchor();
     const handsView=new XRHandsView();scene.add(handsView.group);
-    const phoneButton=document.createElement('button');phoneButton.textContent='Prendre (main virtuelle)';phoneButton.setAttribute('aria-pressed','false');phoneButton.hidden=true;
-    element('xr-exit').before(phoneButton);
-    let phonePressed=false;
-    phoneButton.onclick=()=>{phonePressed=!phonePressed;phoneButton.textContent=phonePressed?'Relâcher (main virtuelle)':'Prendre (main virtuelle)';phoneButton.setAttribute('aria-pressed',String(phonePressed));};
-    const menuButton=document.createElement('button');menuButton.textContent='Sélectionner au mur';menuButton.hidden=true;
-    let menuRequested=false;menuButton.onclick=()=>{menuRequested=true;};phoneButton.before(menuButton);
+    let menuRequested=false;
+    const phoneControls=new PhoneControls(overlay,()=>{menuRequested=true;},{rooms:()=>wallLobby.setRoomMode(!wallLobby.roomMode),exit:()=>{void session?.end();}});
     const handDots=[0,1].map(()=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(0.025,12,8),new THREE.MeshBasicMaterial({color:0x67e8f9,depthTest:false}));dot.renderOrder=1001;dot.visible=false;scene.add(dot);return dot;});
     let handStatus='';
     let hudKey='',lastScanUpdate=-Infinity;
@@ -262,7 +259,7 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { hudAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { phoneButton.remove();menuButton.remove();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    disposeScene = () => { phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -330,28 +327,28 @@ enter.onclick = async () => {
     });
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
+      if(!gameGroup&&calibration&&!survey.hasDraft())updateAdventureScene();
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
       portal.update(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       gameGroup?.userData.animatePortal?.(Date.now());
-      const hands=frame&&calibration?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
-      const phoneAvailable=touchOverlay&&!hasTrackedHands(session!.inputSources);
+      const screenInput=session!.interactionMode==='screen-space';
+      const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
+      const phoneAvailable=usePhoneHand(touchOverlay,session!.interactionMode,session!.inputSources);
       const phoneEnabled=phoneAvailable&&!!calibration&&!!pose&&!wallLobby.roomMode&&!survey.hasDraft()&&!hands.length;
-      phoneButton.hidden=!phoneAvailable;phoneButton.disabled=!phoneEnabled;
-      phoneButton.title=calibration?'Approchez la main virtuelle de votre bâton.':'Terminez le calibrage A/B pour afficher la main.';
-      menuButton.hidden=!touchOverlay||!calibration||!portal.visible();
+      const context=!calibration?'Terminez le calibrage A/B.':socket?.readyState!==WebSocket.OPEN?'Serveur de jeu déconnecté : vérifiez la connexion.':!adventure.viewState()?'Aucune pièce active : ouvrez Pièces / Jeu.':wallLobby.roomMode?'Mode pièces actif : la prise est désactivée.':!pose?'Suivi AR indisponible.':!phoneAvailable?'Entrées suivies actives : utilisez la pince ou la poignée.':portal.visible()?'Accueil Vortex : regardez autour de vous pour trouver le panneau mural et votre bâton.':'Partie active : approchez la main de l’objet avant de prendre.';
+      phoneControls.update(touchOverlay,phoneEnabled,!!calibration&&!!pose&&portal.visible(),context);
       wallLobby.tick(performance.now());
       if(calibration){wallLobby.view.group.position.copy(calibration.origin);wallLobby.view.group.rotation.y=-calibration.yaw;}
       wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&portal.visible();
       overlay.classList.toggle('xr-lobby-ready',!!calibration);overlay.classList.toggle('xr-room-mode',wallLobby.roomMode);
       element('survey-panel').hidden=!calibration||!wallLobby.roomMode;if(surveyGroup)surveyGroup.visible=wallLobby.roomMode;if(gameGroup)gameGroup.visible=!wallLobby.roomMode;
       if(menuRequested&&pose){menuRequested=false;wallLobby.pick(new THREE.Vector3().copy(pose.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));}
-      if(!phoneEnabled){phonePressed=false;phoneButton.textContent=!calibration?'Terminez A/B pour la main':wallLobby.roomMode?'Main inactive en mode pièces':'Suivi AR requis pour la main';phoneButton.setAttribute('aria-pressed','false');}
       handsView.update(frame,reference,session!.inputSources,hands.filter(h=>h.pressed).map(h=>h.side));
       if(phoneEnabled&&pose&&calibration){
         const orientation=new THREE.Quaternion().copy(pose.transform.orientation);
-        const simulated=phoneHand(new THREE.Vector3().copy(pose.transform.position),orientation,calibration,phonePressed);
-        hands.push(simulated.hand);handsView.simulateRight(simulated.local,orientation,phonePressed);
+        const simulated=phoneHand(new THREE.Vector3().copy(pose.transform.position),orientation,calibration,phoneControls.pressed);
+        hands.push(simulated.hand);handsView.simulateRight(simulated.local,orientation,phoneControls.pressed);
       }
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
       handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration&&!phoneEnabled;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});

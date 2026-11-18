@@ -30,3 +30,8 @@ input { color: #e6edf7; background: #17283f; border: 1px solid #68829b; border-r
 .xr-lobby-ready .xr-toolbar { position: static; background: transparent; }
 [data-lobby-auth] { padding: 8px; background: #102035; }
 #room-preview { min-height: 100px; width: 100%; }
+.xr-phone-controls { position: fixed; z-index: 40; left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); padding: 8px; border-radius: 12px; background: rgb(12 23 39 / 90%); pointer-events: auto; }
+.xr-phone-controls button { min-height: 48px; touch-action: manipulation; }
+.xr-phone-controls button[aria-pressed="true"] { background: #ffd166; color: #102030; }
+.xr-phone-controls p { font-size: 13px; margin: 6px 0 0; }
+#xr-overlay:has(.xr-phone-controls:not([hidden])).xr-lobby-ready:not(.xr-room-mode) .xr-panel { bottom: max(145px, calc(env(safe-area-inset-bottom) + 135px)); }

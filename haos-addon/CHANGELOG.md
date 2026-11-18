@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.6
+
+- Commandes tactiles essentielles dans une barre indépendante des panneaux repliables : prise, sélection, pièces/jeu et sortie.
+- Prise au premier contact, sans double bascule au clic synthétique ; mode screen-space reconnu même si un grip est déclaré.
+- Reprise de construction de scène quand le modèle arrive après calibrage, indication explicite de pièce absente ou serveur déconnecté.
+- Vérification navigateur en format téléphone ; aucun essai matériel effectué par l'agent.
+
 ## 0.8.5
 
 - Mains 3D WebXR articulées avec matériau couleur peau, servies localement et accompagnées de leur licence MIT.

@@ -8,7 +8,7 @@ import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
 import { XRHandsView } from '../../client/src/xr-hands-view.js';
-import { phoneHand,hasTrackedHands } from '../../client/src/phone-hand.js';
+import { phoneHand,hasTrackedHands,usePhoneHand } from '../../client/src/phone-hand.js';
 import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view.js';
 import { makeCalibration } from '../../client/src/calibration.js';
 import { RealisticHand } from '../../client/src/realistic-hand.js';
@@ -36,6 +36,10 @@ test('realistic hands: local GLBs, smooth grip animation, tracking loss and disp
   }
 });
 test('phone: touchscreen grip does not disable simulation; tracked Quest inputs do',()=>{
+  const tracked=[{targetRayMode:'tracked-pointer' as const,gripSpace:{} as XRSpace}];
+  assert.equal(usePhoneHand(true,'screen-space',tracked),true);
+  assert.equal(usePhoneHand(true,'world-space',tracked),false);
+  assert.equal(usePhoneHand(false,'screen-space',[]),false);
   assert.equal(hasTrackedHands([{targetRayMode:'screen',gripSpace:{} as XRSpace}]),false);
   assert.equal(hasTrackedHands([{targetRayMode:'tracked-pointer',gripSpace:{} as XRSpace}]),true);
   const inputs=new GrabInputs();let read=false;
