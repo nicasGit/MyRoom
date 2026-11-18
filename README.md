@@ -1,6 +1,6 @@
 # MyRoom
 
-Version add-on 0.7.0 : prise des objets avec une ou deux mains et indice sous le coffre ([guide Quest](docs/quest-grabbing.md)). [Opération Menthe 27](docs/adventures/menthe27.md) version 0.2.0 propose le coffre puis trois manches de blackjack hybride coopératif, avec capitaine, cartes 3D et récompenses ♣ ♥ ♠. La suite reste en attente. L’administration permet de saisir les noms, tester directement une énigme, partager des indices et réinitialiser l’énigme active. La disponibilité de l’image est consignée dans le [récapitulatif](docs/RECAPITULATIF.md).
+Version add-on 0.7.1 : prise des objets avec une ou deux mains et indice sous le coffre ([guide Quest](docs/quest-grabbing.md)). [Opération Menthe 27](docs/adventures/menthe27.md) version 0.2.0 propose le coffre puis trois manches de blackjack hybride coopératif, avec capitaine, cartes 3D et récompenses ♣ ♥ ♠. La suite reste en attente. L’administration permet de saisir les noms, tester directement une énigme, partager des indices et réinitialiser l’énigme active. La disponibilité de l’image est consignée dans le [récapitulatif](docs/RECAPITULATIF.md).
 
 Deux énigmes coopératives : **Le coffre des quatre symboles**, puis **La table du dernier As**. Placement dans l’administration et simulation solo sur PC : [guide des énigmes](docs/first-puzzles.md).
 
