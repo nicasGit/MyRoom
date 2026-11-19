@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — option debug facultative, 0.9.3 en validation
+### 19 novembre 2026 — option debug facultative, 0.9.3 publiée
 
 Erreur rapportée par l'utilisateur : Supervisor refuse l'ancienne configuration contenant
 seulement public_origin et admin_token, car debug_without_admin_token était requis.
@@ -15,9 +15,15 @@ Contournement immédiat communiqué : ajouter debug_without_admin_token: true po
 activer volontairement le debug, ou false pour le laisser désactivé. Typecheck, build
 et 111 tests réussis ; premier passage de tests interrompu par le refus Windows EPERM
 connu de RoomStore, relance complète réussie sans changement de cette logique.
-Contrôle de diff réussi, avertissement Vite habituel 574 kB. Publication en cours ;
+Contrôle de diff réussi, avertissement Vite habituel 574 kB ;
 pas d'essai Supervisor ou Quest matériel.
 Source : [Options / Schema officiel](https://github.com/home-assistant/developers.home-assistant/blob/master/docs/apps/configuration.md).
+
+Publication confirmée : commit `4da8132` sur main, workflow
+[44531094724](https://github.com/nicasGit/MyRoom/actions/runs/44531094724) réussi
+avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.9.3`
+vérifiée Linux ARM64, label 0.9.3, digest
+`sha256:56b8c7c0c36f8edc53db83a4a202cd05bd239b0712211dc3dce22f9650a0dd23`.
 
 ### 19 novembre 2026 — menus Quest, bâtons et debug administrateur, 0.9.2 publiée
 
@@ -135,7 +141,7 @@ réussi, contrôles Linux et publication ARM64 inclus. Image
 `sha256:90a29c15e8236099196d4cd7223b5a967370e84a06fcbfe68bf9e41ceacc29f2`.
 Voir [le guide et les limites](display-modes.md).
 
-État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.2**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.3**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
