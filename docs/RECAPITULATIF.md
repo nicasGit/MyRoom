@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — correction Quest, version 0.9.1 en validation
+### 19 novembre 2026 — correction Quest, version 0.9.1 publiée
 
 Retour utilisateur sur casque : superposition des panneaux, contour impossible à fermer,
 absence de sortie pendant le relevé, mains contrôleurs trop plates. Branche
@@ -29,6 +29,12 @@ serveur ni session WebXR dans cet exercice. Les entrées world-space utilisent l
 commandes 3D même si DOM Overlay est déclaré disponible, afin d'éviter un panneau
 HTML superposé dans le casque. Aucun nouvel essai matériel Quest effectué par
 l'agent. Le retour casque provient de l'utilisateur et concerne la version précédente.
+
+Publication confirmée : commit `dd3a1b5` sur main, workflow
+[44525747590](https://github.com/nicasGit/MyRoom/actions/runs/44525747590) réussi
+avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.9.1`
+vérifiée Linux ARM64, label 0.9.1, digest
+`sha256:165fd5d4cba90ab458c74bd9dba9aa47e8b17e146e9547f5ae080e62b4fa6c60`.
 
 ### 19 novembre 2026 — trois modes d'affichage, version 0.9.0 publiée
 
@@ -65,7 +71,7 @@ réussi, contrôles Linux et publication ARM64 inclus. Image
 `sha256:90a29c15e8236099196d4cd7223b5a967370e84a06fcbfe68bf9e41ceacc29f2`.
 Voir [le guide et les limites](display-modes.md).
 
-État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.0**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.1**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
