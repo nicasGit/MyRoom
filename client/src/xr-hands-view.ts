@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { RealisticHand } from './realistic-hand';
+import { RealisticHand,controllerHandOrientation } from './realistic-hand';
 
 const fingers:XRHandJoint[][]=[
   ['wrist','thumb-metacarpal','thumb-phalanx-proximal','thumb-phalanx-distal','thumb-tip'],
@@ -37,7 +37,7 @@ export class XRHandsView {
     for(const rig of this.rigs.values())rig.root.visible=false;
     const rig=this.rigs.get('right')!;rig.root.visible=true;rig.controller.visible=true;
     for(const node of rig.joints.values())node.visible=false;for(const bone of rig.bones)bone.visible=false;
-    rig.controller.position.copy(position);rig.controller.quaternion.copy(orientation);
+    rig.controller.position.copy(position);rig.controller.quaternion.copy(controllerHandOrientation(orientation,'right',true));
     rig.material.color.setHex(pressed?0xffd54f:0xa7f3a0);
     rig.realistic.group.visible=false;if(rig.realistic.grip(position,orientation,pressed,performance.now(),true))rig.controller.visible=false;
   }
@@ -64,7 +64,7 @@ export class XRHandsView {
         });
       }else if(source.gripSpace){
         const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;
-        rig.controller.position.copy(pose.transform.position);rig.controller.quaternion.copy(pose.transform.orientation);rig.controller.visible=true;rig.root.visible=true;
+        rig.controller.position.copy(pose.transform.position);rig.controller.quaternion.copy(controllerHandOrientation(new THREE.Quaternion().copy(pose.transform.orientation),source.handedness));rig.controller.visible=true;rig.root.visible=true;
         if(rig.realistic.grip(new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation),pressed.includes(source.handedness)))rig.controller.visible=false;
       }
     }

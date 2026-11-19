@@ -30,3 +30,19 @@ Correctif publié en 0.7.1 après le retour utilisateur sur Quest : le panneau d
 Les coordonnées et le nombre de prises sont déclarés par le client : ils ne prouvent pas une présence physique. Le serveur vérifie les types, bornes, proximité déclarée, deux points distincts pour un gros objet, propriétaire, bail, séquence monotone, hauteur, contour, obstacles et vitesse par mise à jour. Il ne simule ni gravité ni collisions complètes des volumes ; vérifier les passages et meubles réels. A/B reste un repère manuel commun, sans ancre partagée.
 
 Références primaires : [WebXR Hand Input](https://www.w3.org/TR/webxr-hand-input-1/) et [événements de saisie WebXR](https://www.w3.org/TR/webxr/). Les tests logiciels et poses synthétiques ne remplacent pas un essai physique sur Quest 2, Quest 3 ou Quest 3S.
+## Correction 0.9.1 : relevé et pose des mains
+
+Dans les sessions world-space, le relevé utilise un panneau 3D fixe à gauche et
+masque le menu d'administration concurrent. Viser un bouton puis presser la gâchette.
+Après au moins trois coins valides : **Fermer le contour**, puis **Enregistrer et
+activer** avec l'autorisation organisateur préalable. **Annuler et revenir au jeu**
+supprime explicitement le brouillon non enregistré ; **Quitter la réalité mixte**
+termine la session XR et reste accessible pendant une requête d'enregistrement.
+Une sauvegarde déjà envoyée peut se terminer après cette sortie : vérifier la bibliothèque.
+Sans pièce active, les outils apparaissent après A/B. Le panneau reste fixe jusqu'au
+prochain calibrage ; il ne constitue pas une ancre partagée.
+
+Les mains représentées aux contrôleurs sont inclinées en miroir autour de la pose
+de poignée ; cette correction est visuelle. Les véritables articulations suivies et
+les coordonnées de prise ne sont pas modifiées. Inclinaison et lisibilité restent à
+confirmer sur casque réel ; tests logiciels uniquement pour cette correction.

@@ -1,3 +1,5 @@
+import { WallMenuView } from './portal/wall-menu-view';
+import { surveyButtons,runSurveyCommand,useTouchOverlay } from './quest-survey-controls';
 import { SimulatorScene } from './modes/simulator-scene';
 import { DisplayClient } from './modes/display-client';
 import { Virtual3D,CameraAR,QuestWebXR } from './modes/adapters';
@@ -33,7 +35,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.9.0');
+diagnostic('Version client', '0.9.1');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -129,7 +131,7 @@ enter.onclick = async () => {
       requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection','hand-tracking'], domOverlay: { root: overlay },
     });
     currentXRSession=session;
-    const touchOverlay = !!session.domOverlayState;
+    const touchOverlay = useTouchOverlay(!!session.domOverlayState,session.interactionMode);
     adventure.setXRActive(true);
     xrEvent('session_started', { overlay: touchOverlay });
     diagnostic('Commandes tactiles DOM dans cette session', touchOverlay ? 'disponibles' : 'indisponibles ; sélection XR native si proposée par le navigateur');
@@ -190,6 +192,7 @@ enter.onclick = async () => {
     const hudMaterial=new THREE.MeshBasicMaterial({map:hudTexture,side:THREE.DoubleSide,transparent:true,depthTest:false,depthWrite:false});
     const hud=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.55),hudMaterial);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
     const hudAnchor=new InfoPanelAnchor();
+    const surveyMenu=new WallMenuView(true),surveyAnchor=new InfoPanelAnchor(-.95);surveyMenu.group.visible=false;scene.add(surveyMenu.group);let surveyMenuKey='';
     const handsView=new XRHandsView();scene.add(handsView.group);
     let menuRequested=false;
     const phoneControls=new PhoneControls(overlay,()=>{menuRequested=true;},{rooms:()=>wallLobby.setRoomMode(!wallLobby.roomMode),exit:()=>{void session?.end();}});
@@ -198,6 +201,12 @@ enter.onclick = async () => {
     let hudKey='',lastScanUpdate=-Infinity;
     const questButtons=new QuestButtons();
     const updateScan=(frame:XRFrame,pose:XRViewerPose|null)=>{
+      surveyMenu.group.visible=!touchOverlay&&!!calibration&&wallLobby.roomMode;
+      if(surveyMenu.group.visible&&pose){
+        surveyAnchor.place(surveyMenu.group,new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation));
+        const buttons=surveyButtons(id=>element(id) as HTMLButtonElement,survey.hasDraft()),lines=[survey.instruction,(element('survey-save-status').textContent??'').slice(0,72),(feedback.textContent??'').slice(0,72),'Viser un bouton puis utiliser la gâchette.'];
+        const key=JSON.stringify([buttons,lines]);if(key!==surveyMenuKey){surveyMenuKey=key;surveyMenu.draw('Création de pièces',lines,buttons);}
+      }
       if(!wallLobby.roomMode&&calibration){hud.visible=false;return;}
       for(const action of questButtons.poll(session!.inputSources)){
         if(action==='import')requestImport();
@@ -221,7 +230,7 @@ enter.onclick = async () => {
           xrEvent('scan_imported',{reason:feedback.textContent.slice(0,160)});
         }catch(error){feedback.textContent=String(error);xrEvent('scan_error',{reason:String(error).slice(0,160)});}
       }
-      hud.visible=!touchOverlay&&(!calibration||wallLobby.roomMode);
+      hud.visible=!touchOverlay&&!calibration;
       if(!touchOverlay&&pose){
         hudAnchor.place(hud,new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation));
         const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${handStatus}\n${(feedback.textContent??'').slice(0,180)}\n${(portal.story()||adventure.story()||scanStatus.textContent||'').slice(0,240)}`;
@@ -263,8 +272,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { hudAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { hudAnchor.reset();surveyAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -285,7 +294,7 @@ enter.onclick = async () => {
           feedback.textContent = '✓ B placé. Calibrage terminé.';
           xrEvent('placement_accepted', { step: 'B', x: point.x, y: point.y, z: point.z });
           xrEvent('calibration_completed', { distance: calibration.distance });
-          survey.refresh();
+          survey.refresh();if(!survey.current())wallLobby.setRoomMode(true);
           calibrationMessage(`Calibré : A → B = ${calibration.distance.toFixed(2)} m ; B dans la pièce = (${roomPoint.x.toFixed(2)}, ${roomPoint.z.toFixed(2)}). Recommencez pour changer les repères.`);
         } catch (error) { rejectPlacement(`${String(error)} Visez B plus loin de A.`); }
       }
@@ -309,6 +318,7 @@ enter.onclick = async () => {
       }, 1500);
     });
     session.addEventListener('select', event => {
+      if(surveyMenu.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(surveyMenu.intersects(origin,direction)){const id=surveyMenu.pick(origin,direction);if(id)runSurveyCommand(id,key=>element(key) as HTMLButtonElement,()=>wallLobby.setRoomMode(false),()=>{void session?.end();});return;}}}
       if(calibration&&wallLobby.view.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);
         if(ray&&wallLobby.pick(new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation))))return;
       }
@@ -345,7 +355,7 @@ enter.onclick = async () => {
       phoneControls.update(touchOverlay,phoneEnabled,!!calibration&&!!pose&&portal.visible(),context);
       wallLobby.tick(performance.now());
       if(calibration){wallLobby.view.group.position.copy(calibration.origin);wallLobby.view.group.rotation.y=-calibration.yaw;}
-      wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&portal.visible();
+      wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&portal.visible()&&!wallLobby.roomMode;
       overlay.classList.toggle('xr-lobby-ready',!!calibration);overlay.classList.toggle('xr-room-mode',wallLobby.roomMode);
       element('survey-panel').hidden=!calibration||!wallLobby.roomMode;if(surveyGroup)surveyGroup.visible=wallLobby.roomMode;if(gameGroup)gameGroup.visible=!wallLobby.roomMode;
       if(menuRequested&&pose){menuRequested=false;wallLobby.pick(new THREE.Vector3().copy(pose.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));}

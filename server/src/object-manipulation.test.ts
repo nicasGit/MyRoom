@@ -11,7 +11,27 @@ import { XRHandsView } from '../../client/src/xr-hands-view.js';
 import { phoneHand,hasTrackedHands,usePhoneHand } from '../../client/src/phone-hand.js';
 import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view.js';
 import { makeCalibration } from '../../client/src/calibration.js';
-import { RealisticHand } from '../../client/src/realistic-hand.js';
+import { RealisticHand,controllerHandOrientation } from '../../client/src/realistic-hand.js';
+import { surveyButtons,runSurveyCommand,useTouchOverlay } from '../../client/src/quest-survey-controls.js';
+
+test('Quest survey: close respects validation, cancel then return, exit available while saving',()=>{
+  assert.equal(useTouchOverlay(true,'world-space'),false);assert.equal(useTouchOverlay(true,'screen-space'),true);assert.equal(useTouchOverlay(false,undefined),false);
+  const events:string[]=[],disabled=new Set(['survey-close']);
+  const read=(id:string)=>({disabled:disabled.has(id),click:()=>{events.push(id);}});
+  assert.equal(surveyButtons(read,true).find(b=>b.id==='survey-close')?.disabled,true);
+  runSurveyCommand('survey-close',read,()=>events.push('back'),()=>events.push('exit'));assert.deepEqual(events,[]);
+  disabled.clear();runSurveyCommand('survey-close',read,()=>{},()=>{});assert.deepEqual(events,['survey-close']);
+  runSurveyCommand('return',read,()=>events.push('back'),()=>{});assert.deepEqual(events.slice(-2),['survey-cancel','back']);
+  disabled.add('survey-cancel');runSurveyCommand('return',read,()=>events.push('bad-back'),()=>{});
+  runSurveyCommand('exit',read,()=>{},()=>events.push('exit'));assert.equal(events.at(-1),'exit');assert.equal(events.includes('bad-back'),false);
+});
+test('controller hands: mirrored local tilt retains controller orientation without altering optical tracking',()=>{
+  const orientation=new THREE.Quaternion().setFromEuler(new THREE.Euler(.2,.4,-.1)),before=orientation.clone();
+  const left=orientation.clone().invert().multiply(controllerHandOrientation(orientation,'left'));
+  const right=orientation.clone().invert().multiply(controllerHandOrientation(orientation,'right'));
+  assert.ok(left.z<0&&right.z>0);assert.ok(Math.abs(left.z+right.z)<1e-10);assert.deepEqual(orientation,before);
+  assert.ok(controllerHandOrientation(orientation,'right').angleTo(orientation)>.5);
+});
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { readFileSync } from 'node:fs';
 

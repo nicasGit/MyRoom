@@ -1,5 +1,35 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — correction Quest, version 0.9.1 en validation
+
+Retour utilisateur sur casque : superposition des panneaux, contour impossible à fermer,
+absence de sortie pendant le relevé, mains contrôleurs trop plates. Branche
+`fix/quest-survey-controls` : panneau 3D dédié au relevé, fixe dans le référentiel local
+et décalé à gauche, disponible sans DOM Overlay. Boutons nouvelle/modifier, fermeture
+du contour, retrait, obstacle, enregistrement, annulation, annuler et revenir au jeu,
+et quitter la réalité mixte. La sortie XR reste accessible pendant une sauvegarde ;
+le retour au jeu annule explicitement le brouillon et reste bloqué pendant son écriture.
+Les commandes réutilisent les validations et boutons Survey existants. Les zones
+désactivées ne déclenchent pas un placement de coin à travers le panneau.
+
+Le menu administratif est masqué pendant le relevé ; le panneau d'informations
+historique reste limité au calibrage et ne se superpose plus aux outils. Sans pièce
+active, les outils s'ouvrent après A/B. Les mains simulées ont une inclinaison locale
+opposée gauche/droite et un angle de poignée ; modèles et primitives de repli suivent
+la même correction. Les poses optiques des vraies mains restent inchangées.
+
+Typecheck et build réussis, 106 tests réussis. Deux passages intermédiaires ont
+rencontré le refus Windows EPERM connu du test RoomStore ; le dernier passage complet
+réussit sans changer cette logique. Tests ajoutés : disponibilité de fermeture,
+annulation avant retour, sortie pendant écriture et inclinaison symétrique des mains.
+Dans Chrome, contrôle du panneau Canvas, neuf boutons, bouton désactivé non sélectionné,
+puis exercice Survey avec calibrage injecté : trois points, fermeture effective,
+enregistrement rendu disponible et annulation du brouillon. Aucun enregistrement
+serveur ni session WebXR dans cet exercice. Les entrées world-space utilisent les
+commandes 3D même si DOM Overlay est déclaré disponible, afin d'éviter un panneau
+HTML superposé dans le casque. Aucun nouvel essai matériel Quest effectué par
+l'agent. Le retour casque provient de l'utilisateur et concerne la version précédente.
+
 ### 19 novembre 2026 — trois modes d'affichage, version 0.9.0 publiée
 
 Branche `feat/display-modes` : adaptateurs Virtual3D, CameraAR expérimental et

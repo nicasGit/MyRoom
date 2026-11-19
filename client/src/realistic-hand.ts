@@ -7,6 +7,9 @@ const chains:XRHandJoint[][]=[
 ];
 const jointNames=[...new Set(chains.flat())];
 type Rest={position:THREE.Vector3;quaternion:THREE.Quaternion};
+export function controllerHandOrientation(orientation:THREE.Quaternion,side:'left'|'right',phone=false){
+  return orientation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(phone?.65:.25,0,side==='left'?-.65:.65)));
+}
 export class RealisticHand {
   readonly group=new THREE.Group();ready=false;
   private bones=new Map<XRHandJoint,THREE.Object3D>();private rest=new Map<XRHandJoint,Rest>();
@@ -35,8 +38,7 @@ export class RealisticHand {
     if(!this.ready)return false;
     const dt=this.lastTime===undefined?.016:Math.min(.05,Math.max(0,(time-this.lastTime)/1000));this.lastTime=time;
     this.curl=THREE.MathUtils.damp(this.curl,pressed?1:0,16,dt);
-    this.group.position.copy(position);this.group.quaternion.copy(orientation);
-    if(phone)this.group.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.65));
+    this.group.position.copy(position);this.group.quaternion.copy(controllerHandOrientation(orientation,this.side,phone));
     this.group.position.add(new THREE.Vector3(0,0,.055).applyQuaternion(orientation));
     for(const chain of chains){
       const delta=new THREE.Quaternion();

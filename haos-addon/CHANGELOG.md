@@ -1,3 +1,9 @@
+## 0.9.1
+
+- Panneau de relevé 3D utilisable aux contrôleurs Quest : fermer le contour, enregistrer, annuler, revenir et quitter XR.
+- Masquage des panneaux concurrents pendant la création de pièce.
+- Inclinaison symétrique des mains simulées aux contrôleurs ; suivi optique conservé.
+
 ## 0.9.0
 
 - Virtual 3D, experimental camera overlay and native Quest display adapters.
