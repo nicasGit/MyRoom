@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — refus du rituel et accueil WebXR, préparation 0.10.2
+### 19 novembre 2026 — refus du rituel et accueil WebXR, 0.10.2 publiée
 
 Branche `fix/ritual-errors-home-launch`. Le menu envoyait correctement `{}` à
 adventure/start, mais la capture générale de l'API remplaçait les exceptions métier
@@ -20,7 +20,12 @@ DisplayClient manquait querySelector, ajouté au double ; contrôles finaux réu
 `npm run typecheck`, `npm run build`, `npm test` (120 tests), `git diff --check`.
 Avertissement Vite habituel : chunk Three.js 574 kB.
 Accueil vérifié dans Chrome PC : bouton avant modes, installation et diagnostics.
-Aucun essai physique Quest effectué. Publication en cours.
+Aucun essai physique Quest effectué. Publication confirmée : commit `564dae6`
+intégré sur main, workflow
+[44546009704](https://github.com/nicasGit/MyRoom/actions/runs/44546009704) réussi.
+Image `ghcr.io/nicasgit/myroom:0.10.2` vérifiée dans le registre : Linux ARM64,
+label 0.10.2, digest
+`sha256:f942b5b459e0f132e632b486453e176cf2de36901c3d8aa5db871284116fc668`.
 
 ### 19 novembre 2026 — mains, bâtons et panneau à distance, 0.10.1 publiée
 
