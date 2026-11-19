@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — mains, bâtons et panneau à distance, préparation 0.10.1
+### 19 novembre 2026 — mains, bâtons et panneau à distance, 0.10.1 publiée
 
 Retour utilisateur : scan Quest satisfaisant, mains encore à incliner vers le bas,
 bâton impossible à prendre et panneau mural trop éloigné. Branche
@@ -36,7 +36,12 @@ rapprochement du panneau et protection contre le clic au relâchement.
 Chargement des quatre modèles avec textures et hauteur normalisée vérifié dans
 Chrome PC via les vrais fichiers glTF/GLB, ainsi que la protection d'un chargement
 tardif après destruction de la scène. Avertissement Vite connu : Three.js 574 kB.
-Aucun essai physique Quest effectué par l'agent. Publication en cours.
+Aucun essai physique Quest effectué par l'agent.
+Publication confirmée : commit `4f73100` intégré sur main, workflow
+[44542918168](https://github.com/nicasGit/MyRoom/actions/runs/44542918168) réussi.
+Image `ghcr.io/nicasgit/myroom:0.10.1` contrôlée dans le registre : Linux ARM64,
+label version 0.10.1, digest
+`sha256:91c1b4c916168872d8449f71ae279210521a5c8fa11bc52867ae7dde35da163e`.
 
 ### 19 novembre 2026 — édition des obstacles Quest, 0.10.0 publiée
 
