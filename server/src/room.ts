@@ -9,11 +9,12 @@ import { DEFAULT_PORTAL } from './portal/portal-types.js';
 import type { PortalPlacementStore } from './portal/placement-store.js';
 import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
+import { suggestPortalPlacement } from './portal/portal-placement.js';
 export class Room {
   display=new DisplayModes();
   portal=new TeamPortal();seats=new SeatSessions();portalStore?:PortalPlacementStore;private portalKey='';
   syncPortal(){const key=JSON.stringify(this.model);
-    if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;this.portal.configure(this.portalStore?.get(this.placementKey())??this.portalStore?.legacyForRoom(this.model?.id??'no-room')??structuredClone(DEFAULT_PORTAL));}
+    if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;let config=this.portalStore?.get(this.placementKey())??this.portalStore?.legacyForRoom(this.model?.id??'no-room');if(!config){try{config=suggestPortalPlacement(this.model);}catch{config=structuredClone(DEFAULT_PORTAL);}}this.portal.configure(config);}
     this.portal.setRoom(this.model);this.portal.prepare(this.playerNames,[...this.players.values()]);}
   placementKey(){return (this.model?.id??'no-room')+'@team-portal@1';}
   startSession(simulation=false){this.adventure.configure(this.model);this.syncPortal();if(!this.model?.puzzles)throw Error('Configurez les placements avant le rituel.');if(this.portal.snapshot().config.enabled){if(this.adventure.snapshot().running||this.adventure.engine.snapshot().completedSteps.length||this.adventure.engine.snapshot().status!=='ready')throw Error('Arretez et reinitialisez la partie avant un nouveau rituel.');this.portal.begin(randomUUID(),this.playerNames,this.model,Date.now(),simulation);}else this.adventure.start();}

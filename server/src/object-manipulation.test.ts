@@ -12,7 +12,7 @@ import { XRHandsView } from '../../client/src/xr-hands-view.js';
 import { phoneHand,hasTrackedHands,usePhoneHand } from '../../client/src/phone-hand.js';
 import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view.js';
 import { makeCalibration } from '../../client/src/calibration.js';
-import { RealisticHand,controllerHandOrientation } from '../../client/src/realistic-hand.js';
+import { RealisticHand,controllerHandOrientation,controllerFingerPose } from '../../client/src/realistic-hand.js';
 import { surveyButtons,runSurveyCommand,useTouchOverlay } from '../../client/src/quest-survey-controls.js';
 import { MenuMover,MenuPointers } from '../../client/src/xr-menu-interactions.js';
 import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
@@ -36,6 +36,14 @@ test('controller hands: mirrored local tilt retains controller orientation witho
   assert.ok(controllerHandOrientation(orientation,'right').angleTo(orientation)>.5);
   const pitch=new THREE.Euler().setFromQuaternion(right,'XYZ').x;
   assert.ok(Math.abs(pitch-(.25-Math.PI/6))<1e-8);
+});
+
+test('controller fingers: relaxed rest, independent analog trigger/grip and thumb contact',()=>{
+  const buttons=Array.from({length:6},()=>({value:0,pressed:false,touched:false})),source={gamepad:{buttons}} as unknown as XRInputSource;
+  const rest=controllerFingerPose(source,false);assert.ok(rest.index>0&&rest.grip>0);
+  buttons[0].value=.5;let pose=controllerFingerPose(source,false);assert.ok(pose.index>rest.index);assert.equal(pose.grip,rest.grip);
+  buttons[1].value=1;buttons[3].touched=true;pose=controllerFingerPose(source,false);assert.equal(pose.grip,1);assert.ok(pose.thumb>rest.thumb);
+  assert.equal(controllerFingerPose({gamepad:undefined},true).grip,1);
 });
 
 test('remote menu: nearest ray target comes within reach, faces the user, then follows grip and blocks release clicks',()=>{
@@ -140,6 +148,11 @@ test('realistic hands: local GLBs, smooth grip animation, tracking loss and disp
     assert.ok(tip.position.distanceTo(open)>.02);assert.ok(tip.position.toArray().every(Number.isFinite));
     for(let i=31;i<=90;i++)hand.grip(position,orientation,false,i*16,true);
     assert.ok(tip.position.distanceTo(open)<.001);
+    const middle=gltf.scene.getObjectByName('middle-finger-tip')!,middleOpen=middle.position.clone();
+    for(let i=91;i<=120;i++)hand.grip(position,orientation,false,i*16,false,{index:1,grip:0,thumb:0});
+    assert.ok(tip.position.distanceTo(open)>.02);assert.ok(middle.position.distanceTo(middleOpen)<.001);
+    for(let i=121;i<=180;i++)hand.grip(position,orientation,false,i*16,false,{index:0,grip:1,thumb:0});
+    assert.ok(tip.position.distanceTo(open)<.001);assert.ok(middle.position.distanceTo(middleOpen)>.02);
     const source=new Map<string,XRJointSpace>();for(const node of gltf.scene.children[0].children)if(node instanceof THREE.Bone)source.set(node.name,{} as XRJointSpace);
     const pose={transform:{position:new THREE.Vector3(.1,.2,.3),orientation:new THREE.Quaternion()},radius:.008};
     assert.equal(hand.tracked({getJointPose:()=>pose} as unknown as XRFrame,{} as XRReferenceSpace,source as unknown as XRHand),true);

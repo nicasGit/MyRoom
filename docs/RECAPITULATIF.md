@@ -1,5 +1,44 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — préparation du portail et mains aux manettes, préparation 0.10.3
+
+Branche `fix/portal-preparation-controller-hands`. Le changement du nombre de joueurs
+était refusé par la validation intégrale d'un couloir inchangé. La configuration
+autorise maintenant les réglages sans déplacer la géométrie invalide ; un espace
+invalide perd sa confirmation. Une modification spatiale ou une confirmation
+positive exigent toujours la validation géométrique. Sessions actives et réduction
+du groupe sous des places connectées restent protégées.
+
+Pour les pièces sans placement portail enregistré, proposition calculée dans le
+contour, avec obstacles, rotations et place pour les bâtons. Repli compact si utile,
+sans confirmation automatique. Les placements enregistrés restent prioritaires.
+« Adapter le portail à la pièce » dans Paramètres du menu mural permet de recalculer
+explicitement un ancien placement ; il faut ensuite confirmer l'espace physique.
+Si aucun couloir exploitable n'est trouvé, le démarrage reste refusé et l'utilisateur
+doit corriger l'espace ou réduire le groupe. A/B inchangé, aucune garantie de mesure
+physique à partir du seul relevé.
+
+L'API prépare les neuf emplacements d'énigmes uniquement lorsqu'ils manquent, via
+le générateur existant, validation du modèle et écriture atomique de la bibliothèque.
+Cette préparation peut être sauvegardée même si une autre condition du rituel bloque
+ensuite son démarrage. Les anciennes pièces et placements existants sont conservés.
+Application aussi aux commandes reset et simulation du portail.
+
+Aux manettes : doigts animés séparément depuis les valeurs analogiques de gâchette
+et poignée, pouce depuis les contacts exposés, repos légèrement fléchi et transitions
+lissées. Il s'agit d'une pose simulée, pas d'un suivi réel des doigts avec manettes.
+Les poses articulaires des mains suivies restent inchangées.
+
+Contrôles réussis : `npm run typecheck`, `npm run build`, `npm test` (123 tests),
+`git diff --check`. Tests : compte du groupe malgré un ancien couloir invalide,
+confirmation toujours refusée si invalide, proposition dans une pièce décalée,
+absence d'espace libre, préparation HTTP de points manquants, conservation des
+points existants, recalcul explicite du portail, entrées analogiques et animation
+indépendante des doigts sur les deux vrais modèles GLB. Un passage intermédiaire
+a rencontré EPERM dans RoomStore et un retour 400 de sauvegarde dans le test réseau ;
+relance complète sans changement de code réussie. Avertissement Vite connu : 574 kB.
+Aucun test matériel Quest réalisé par l'agent. Publication en cours.
+
 ### 19 novembre 2026 — refus du rituel et accueil WebXR, 0.10.2 publiée
 
 Branche `fix/ritual-errors-home-launch`. Le menu envoyait correctement `{}` à

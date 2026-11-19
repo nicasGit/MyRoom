@@ -4,11 +4,12 @@ import type { WebSocket } from 'ws';
 import type { Room } from './room.js';
 import { log, recentLogs } from './logger.js';
 import type { RoomStore } from './room-store.js';
-import { parsePortalConfig,validatePlacement } from './portal/portal-types.js';
 import { record,integer } from './engine/validation.js';
 import { puzzlePanel } from './scene-schema.js';
 import { PUZZLE_ITEMS,findPuzzlePanel } from './scene-schema.js';
 import { adminAccess } from './admin-access.js';
+import { configurePortalPlacement,suggestPortalPlacement } from './portal/portal-placement.js';
+import { parseRoom,suggestPuzzleLayout } from './scene-schema.js';
 
 export type Connection = { socket: WebSocket; address?: string; userAgent?: string; connectedAt: string };
 const started = Date.now();
@@ -17,6 +18,13 @@ function reply(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore) {
+  const preparePlacements=()=>{
+    if(!room.model||room.model.puzzles)return;
+    const model=parseRoom({...room.model,puzzles:suggestPuzzleLayout(room.model)});
+    const library=store.change('save',room.libraryRevision,model);
+    room.model=store.active();room.libraryRevision=library.revision;
+    log('adventure_placements_prepared',{roomId:model.id,revision:library.revision});broadcast();
+  };
   const token = process.env.ADMIN_TOKEN ?? '';
   const access=adminAccess(token);
   const roomSave=access.roomSaveWithoutToken&&req.method==='POST'&&req.url==='/api/admin/rooms/save';
@@ -73,13 +81,14 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       try{room.snapshot();const c=record(body,['action','revision','config','slot']),action=c.action;
         const expected=action==='configure'?'action,config,revision':['cross','release-seat','simulate-claim','simulate-cross'].includes(String(action))?'action,revision,slot':'action,revision';if(Object.keys(c).sort().join(',')!==expected)throw Error('Champs de commande invalides.');
         if(integer(c.revision)!==room.portal.snapshot().revision)throw Error('Le portail a change. Actualisez.');
-        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=parsePortalConfig(c.config);if([...room.players.values()].some(slot=>slot>(config.playerCount??4)))throw Error("Deconnectez les places au-dessus du nombre choisi avant de reduire le groupe.");if(config.enabled)validatePlacement(config,room.model);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
-        else if(action==='reset'){room.portal.cancel();room.startSession();}
+        if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=configurePortalPlacement(room.portal.snapshot().config,c.config,room.model);if([...room.players.values()].some(slot=>slot>(config.playerCount??4)))throw Error("Deconnectez les places au-dessus du nombre choisi avant de reduire le groupe.");room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
+        else if(action==='auto-place'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arrêtez la session avant de replacer le portail.');const config=suggestPortalPlacement(room.model,room.portal.snapshot().config);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
+        else if(action==='reset'){room.portal.cancel();preparePlacements();room.startSession();}
         else if(action==='stop')room.portal.cancel();
         else if(action==='skip')room.portal.skip();
         else if(action==='cross')room.portal.adminCross(integer(c.slot,1,4));
         else if(action==='release-seat')room.seats.release(integer(c.slot,1,4));
-        else if(action==='simulate-start'){if(!room.adventure.snapshot().testMode)throw Error('Activez le mode test PC.');room.startSession(true);}
+        else if(action==='simulate-start'){if(!room.adventure.snapshot().testMode)throw Error('Activez le mode test PC.');preparePlacements();room.startSession(true);}
         else if(action==='simulate-claim'||action==='simulate-cross'){if(!room.adventure.snapshot().testMode)throw Error('Mode test PC requis.');room.portal.simulate(integer(c.slot,1,4),action==='simulate-cross');}
         else throw Error('Commande administrateur inconnue.');
         log('portal_admin',{action});broadcast();reply(res,200,{ok:true});
@@ -127,7 +136,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       if(req.url.endsWith('/start')){
         if(Object.keys(body).length){reply(res,400,{error:'Objet vide attendu.'});return;}
         if(!room.model||!puzzlePanel(room.model)){reply(res,400,{error:'Aucun mur libre pour le panneau des symboles.'});return;}
-        try{room.startSession();}
+        try{preparePlacements();room.startSession();}
         catch(error){const message=error instanceof Error?error.message:'Démarrage du rituel impossible.';log('adventure_start_refused',{message});reply(res,400,{error:message});return;}
       }
       else if(req.url.endsWith('/stop')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.stopSession();}

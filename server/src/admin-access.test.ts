@@ -35,14 +35,26 @@ test('admin HTTP: debug access keeps origin and data validation; configured toke
         assert.equal((await fetch(base+'reset',{method:'POST',headers:{...headers,Origin:'https://elsewhere.test'},body:'{}'})).status,403);
         assert.equal((await fetch(base+'display-modes',{method:'POST',headers,body:'{"extra":true}'})).status,400);
         const post=(path:string,body:unknown)=>fetch(base+path,{method:'POST',headers,body:JSON.stringify(body)});
-        const missing=await post('adventure/start',{});assert.equal(missing.status,400);assert.match((await missing.json()).error,/placements/);
+        const missing=await post('adventure/start',{});assert.equal(missing.status,400);assert.match((await missing.json()).error,/confirmer/);
+        const prepared=await(await fetch(base+'state')).json();assert.ok(prepared.library.rooms[0].puzzles);assert.equal(prepared.portal.active,false);
         const room:RoomModel={id:'ritual',name:'Ritual',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};room.puzzles=suggestPuzzleLayout(room,()=>.4);
-        assert.equal((await post('rooms/save',{revision:1,room})).status,200);
+        const saved=await post('rooms/save',{revision:prepared.library.revision,room});assert.equal(saved.status,200);const savedLibrary=(await saved.json()).library;
         const unconfirmed=await post('adventure/start',{});assert.equal(unconfirmed.status,400);assert.match((await unconfirmed.json()).error,/confirmer/);
-        const state=await(await fetch(base+'state')).json();
+        let state=await(await fetch(base+'state')).json();assert.equal(state.library.revision,savedLibrary.revision);assert.deepEqual(state.library.rooms.find((r:RoomModel)=>r.id===room.id),room);
+        assert.equal((await post('portal',{action:'configure',revision:state.portal.revision,config:{...state.portal.config,playerCount:1}})).status,200);
+        state=await(await fetch(base+'state')).json();assert.equal(state.portal.config.playerCount,1);
+        assert.equal((await post('portal',{action:'auto-place',revision:state.portal.revision})).status,200);
+        state=await(await fetch(base+'state')).json();assert.equal(state.portal.config.confirmed,false);
         assert.equal((await post('portal',{action:'configure',revision:state.portal.revision,config:{...state.portal.config,confirmed:true}})).status,200);
         assert.equal((await post('adventure/start',{})).status,200);assert.equal((await(await fetch(base+'state')).json()).portal.active,true);
         const malformed=await fetch(base+'adventure/start',{method:'POST',headers,body:'{'});assert.equal(malformed.status,400);assert.match((await malformed.json()).error,/JSON/);
+        assert.equal((await post('adventure/stop',{})).status,200);state=await(await fetch(base+'state')).json();
+        const raw={...room,id:'raw-scan',puzzles:undefined};
+        assert.equal((await post('rooms/save',{revision:state.library.revision,room:raw})).status,200);state=await(await fetch(base+'state')).json();
+        assert.equal((await post('portal',{action:'configure',revision:state.portal.revision,config:{...state.portal.config,confirmed:true}})).status,200);
+        const rawRevision=state.library.revision;
+        assert.equal((await post('adventure/start',{})).status,200);state=await(await fetch(base+'state')).json();
+        assert.equal(state.portal.active,true);assert.equal(state.portal.config.confirmed,true);assert.equal(state.library.revision,rawRevision+1);assert.ok(state.library.rooms.find((r:RoomModel)=>r.id==='raw-scan').puzzles);
       }
     }finally{child.kill();await once(child,'exit');rmSync(directory,{recursive:true,force:true});}
   }

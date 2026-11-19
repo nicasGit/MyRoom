@@ -61,7 +61,7 @@ export class WallLobby {
       lines[0]=`Groupe : ${p.config.playerCount??4} joueur(s)`;
       buttons.push({id:'less',title:'Moins de joueurs'},{id:'more',title:'Plus de joueurs'});
       l.names.forEach((name,i)=>buttons.push({id:`name:${i}`,title:`${i+1}. ${name}`}));
-      buttons.push({id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
+      buttons.push({id:'fit-portal',title:'Adapter le portail à la pièce'},{id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
     }
     if(this.tab==='rooms')buttons.push({id:'edit-mode',title:this.roomMode?'Revenir au jeu':'Ouvrir les outils de pièce'},{id:'new-room',title:'Nouvelle pièce'},{id:'edit-room',title:'Modifier la pièce active'},{id:'save-room',title:'Enregistrer la pièce'},{id:'cancel-room',title:'Annuler le brouillon'},{id:'import-room',title:'Importer les plans Quest'});
     if(this.tab==='keyboard'){
@@ -90,6 +90,7 @@ export class WallLobby {
     try{
       const state=await this.request('state') as AdminState;
       if(id==='start'){if(this.roomMode)throw Error('Quittez le mode pièces avant de démarrer.');await this.request('adventure/start',{});}
+      else if(id==='fit-portal')await this.request('portal',{action:'auto-place',revision:state.portal.revision});
       else if(id==='stop')await this.request('adventure/stop',{});
       else if(id==='less'||id==='more'||id==='verify-space'){
         const config=structuredClone(state.portal.config);if(id==='verify-space')config.confirmed=!config.confirmed;

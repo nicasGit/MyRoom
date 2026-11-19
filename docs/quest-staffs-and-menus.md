@@ -1,5 +1,20 @@
 # Bâtons et panneaux Quest — 0.10.1
 
+## Préparation simplifiée — 0.10.3
+
+Dans Paramètres du menu mural, choisissez le nombre de joueurs. Si un ancien
+placement du portail est hors de la pièce, utilisez « Adapter le portail à la pièce ».
+MyRoom propose un couloir tenant compte du contour et des obstacles enregistrés,
+avec assez de place pour les bâtons du groupe. Vérifiez vous-même le passage réel,
+puis utilisez « Confirmer espace physique ». Cette confirmation n'est jamais faite
+automatiquement. Si la recherche échoue, corrigez le relevé ou réduisez le groupe.
+
+Au démarrage, les emplacements des énigmes sont proposés et enregistrés lorsqu'ils
+manquent. Les placements déjà sauvegardés restent conservés ; vous pouvez ensuite
+les ajuster via les outils existants. Les mains aux manettes utilisent la gâchette
+pour l'index, la poignée pour les autres doigts et les contacts disponibles pour le
+pouce. C'est une animation simulée ; les manettes ne mesurent pas les articulations.
+
 Après mise à jour, fermez puis rouvrez MyRoom et vérifiez la version du client.
 Terminez A/B et quittez le mode création de pièces avant de jouer.
 

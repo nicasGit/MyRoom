@@ -1,5 +1,16 @@
 # Architecture MyRoom
 
+## Préparation spatiale 0.10.3
+
+`portal/portal-placement.ts` calcule une proposition de couloir dans le modèle de
+pièce et distingue modification des réglages, déplacement et confirmation physique.
+Le serveur conserve les placements portail enregistrés ; la proposition initiale
+concerne les pièces sans configuration. Un recalcul explicite invalide la confirmation.
+Les commandes de démarrage préparent via le générateur existant les neuf points
+d'énigmes absents, puis sauvegardent atomiquement le modèle avant le rituel. Aucun
+placement existant n'est remplacé. Les règles et le format des aventures ne changent
+pas. Voir [la préparation dans le casque](docs/quest-staffs-and-menus.md).
+
 ## Adaptateurs d'affichage 0.9.0
 
 Virtual3D et CameraAR utilisent une scène commune et les mêmes vues d'énigmes,

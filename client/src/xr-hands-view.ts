@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { RealisticHand,controllerHandOrientation } from './realistic-hand';
+import { RealisticHand,controllerHandOrientation,controllerFingerPose } from './realistic-hand';
 
 const fingers:XRHandJoint[][]=[
   ['wrist','thumb-metacarpal','thumb-phalanx-proximal','thumb-phalanx-distal','thumb-tip'],
@@ -65,7 +65,7 @@ export class XRHandsView {
       }else if(source.gripSpace){
         const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;
         rig.controller.position.copy(pose.transform.position);rig.controller.quaternion.copy(controllerHandOrientation(new THREE.Quaternion().copy(pose.transform.orientation),source.handedness));rig.controller.visible=true;rig.root.visible=true;
-        if(rig.realistic.grip(new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation),pressed.includes(source.handedness)))rig.controller.visible=false;
+        if(rig.realistic.grip(new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation),pressed.includes(source.handedness),performance.now(),false,controllerFingerPose(source,pressed.includes(source.handedness))))rig.controller.visible=false;
       }
     }
   }

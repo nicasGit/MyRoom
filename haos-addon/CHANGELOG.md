@@ -1,3 +1,11 @@
+## 0.10.3
+
+- Nombre de joueurs modifiable même si l'ancien couloir est invalide ; la confirmation physique reste exigée.
+- Portail proposé selon la pièce pour les nouveaux relevés, bouton « Adapter le portail à la pièce » dans les paramètres du menu mural.
+- Préparation et sauvegarde automatique des neuf emplacements manquants avant le rituel, sans remplacer les placements existants.
+- Mains avec manettes : pose de repos souple, index à la gâchette, autres doigts à la poignée, pouce selon les contacts disponibles.
+- Aucune validation matérielle Quest annoncée.
+
 ## 0.10.2
 
 - Démarrage du rituel : renvoyer le motif réel du refus (placements, espace à confirmer, session), au lieu de « Requête JSON invalide » pour un JSON correct.

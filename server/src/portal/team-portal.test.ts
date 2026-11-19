@@ -12,8 +12,26 @@ import { tmpdir } from 'node:os';import { join } from 'node:path';
 import { Room } from '../room.js';
 import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
+import { suggestPortalPlacement,configurePortalPlacement } from './portal-placement.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
+
+test('portal preparation: count changes do not require a valid old corridor; confirmation still does',()=>{
+  const old=structuredClone(DEFAULT_PORTAL),shifted={...model,floor:model.floor.map(p=>({x:p.x+10,z:p.z+10}))};
+  const next=configurePortalPlacement(old,{...old,playerCount:1},shifted);
+  assert.equal(next.playerCount,1);assert.equal(next.confirmed,false);
+  assert.throws(()=>configurePortalPlacement(next,{...next,confirmed:true},shifted));
+  const placed=suggestPortalPlacement(shifted,next);validatePlacement(placed,shifted);
+  assert.equal(placed.confirmed,false);assert.equal(placed.playerCount,1);assert.ok(placed.portal.x>=10);
+  assert.equal(configurePortalPlacement(placed,{...placed,confirmed:true},shifted).confirmed,true);
+  assert.deepEqual(old,DEFAULT_PORTAL);
+});
+
+test('portal preparation: no usable space is rejected without moving or confirming saved configuration',()=>{
+  const blocked={...model,obstacles:[{name:'Full',x:4,z:4,width:8,depth:8,height:1}]};
+  assert.throws(()=>suggestPortalPlacement(blocked,config),/couloir/);
+  assert.equal(config.confirmed,true);
+});
 test('wall lobby: public catalog metadata and names refresh without private configuration',()=>{
   const room=new Room(),first=room.snapshot();assert.ok(first.lobby.adventures.length>0);
   assert.deepEqual(Object.keys(first.lobby.adventures[0]).sort(),['id','title','version']);
