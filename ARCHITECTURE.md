@@ -1,5 +1,16 @@
 # Architecture MyRoom
 
+## Adaptateurs d'affichage 0.9.0
+
+Virtual3D et CameraAR utilisent une scène commune et les mêmes vues d'énigmes,
+AdventureClient et commandes autoritaires que QuestWebXR. Ce dernier adapte le
+cycle natif existant sans modifier A/B. DisplayModes conserve la politique
+administrateur versionnée et atomique, séparée des pièces et de la progression.
+Les capacités et modes clients sont des métadonnées de connexion, non une preuve
+de suivi spatial. Les méthodes de passage du portail sont distinguées côté serveur.
+Les ajustements de superposition caméra restent locaux et séparés des poses de jeu.
+Voir [modes d'affichage et limites](docs/display-modes.md).
+
 ## Team Portal — introduction de session facultative
 
 Depuis 0.8.1 : Team Portal devient l’accueil global de MyRoom, activé par défaut pour chaque pièce et présenté avant les objets d’aventure. Sa clé de placement est `pièce@team-portal@1`, indépendante du manifeste ; les anciens placements par aventure restent lisibles comme secours sans supprimer leurs fichiers. Le choix d’aventure ne réinitialise plus l’accueil. Les métadonnées `introduction` des manifestes historiques restent lisibles mais ne décident plus de l’activation globale. Une désactivation explicite dans l’administration et les accès de test temporaires permettent de contourner cet accueil intentionnellement. Le calibrage et la confirmation physique restent nécessaires avant les interactions.

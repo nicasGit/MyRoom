@@ -1,3 +1,4 @@
+import { DisplayModes } from './display-modes.js';
 import type { RoomModel } from './scene-schema.js';
 import { Adventure } from './adventure.js';
 import { text,integer,list } from './engine/validation.js';
@@ -8,6 +9,7 @@ import type { PortalPlacementStore } from './portal/placement-store.js';
 import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
 export class Room {
+  display=new DisplayModes();
   portal=new TeamPortal();seats=new SeatSessions();portalStore?:PortalPlacementStore;private portalKey='';
   syncPortal(){const key=JSON.stringify(this.model);
     if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;this.portal.configure(this.portalStore?.get(this.placementKey())??this.portalStore?.legacyForRoom(this.model?.id??'no-room')??structuredClone(DEFAULT_PORTAL));}
@@ -18,7 +20,7 @@ export class Room {
   objects=new ObjectManipulation();
   captainId:string|undefined;
   maintain(now=Date.now()){this.syncPortal();const presence=this.portal.active&&this.portal.presence([...this.players.values()],now);const transition=this.portal.tick(now,()=>this.adventure.start());this.objects.configure(this.model,this.adventure.sceneEpoch,this.portal.staffPoses());const moved=this.objects.maintain([...this.players.keys()],now);if(!this.captainId||!this.players.has(this.captainId))this.captainId=[...this.players].sort((a,b)=>a[1]-b[1])[0]?.[0];return this.adventure.maintain({captainId:this.captainId,players:[...this.players.keys()],now})||moved||presence||transition;}
-  leave(id:string){this.players.delete(id);this.maintain();}
+  leave(id:string){this.display.remove(id);this.players.delete(id);this.maintain();}
   constructor(public adventure=new Adventure()){}
   playerNames=['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
   playerNamesRevision=0;
@@ -44,7 +46,7 @@ export class Room {
   snapshot() {
     this.adventure.configure(this.model);
     this.maintain();
-    return { type: 'state',lobby:{adventures:this.adventure.listAdventures().map(({id,version,title})=>({id,version,title})),names:[...this.playerNames],namesRevision:this.playerNamesRevision},portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
+    return { type: 'state',display:{policy:this.display.snapshot(),clients:this.display.clients().map(({id,mode})=>({id,mode}))},lobby:{adventures:this.adventure.listAdventures().map(({id,version,title})=>({id,version,title})),names:[...this.playerNames],namesRevision:this.playerNamesRevision},portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
   }
   reset() { this.solved = false; this.revision++; }
 }

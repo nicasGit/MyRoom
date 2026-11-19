@@ -23,6 +23,7 @@ export class AdventureClient {
   private virtual:Point2|undefined;
   private simulation=false;
   private xrActive=false;
+  private externalActive=false;
   private connected=false;
   private pending=false;
   private requestTimer:ReturnType<typeof setTimeout>|undefined;
@@ -39,7 +40,7 @@ export class AdventureClient {
     for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!,status=document.createElement('p'),body=document.createElement('div');status.setAttribute('role','status');root.append(status,body);this.panels.push({root,status,body});}
     this.hybridHost=document.createElement('div');this.hybridHost.id='blackjack-preview';this.hybridHost.setAttribute('aria-label','Table de blackjack 3D');this.panels[0].root.append(this.hybridHost);this.hybridHost.hidden=true;
     const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;
-    toggle.onchange=()=>{this.simulation=toggle.checked&&!this.xrActive&&!!this.state?.testMode;this.virtual=undefined;this.render(true);};
+    toggle.onchange=()=>{this.simulation=toggle.checked&&!this.xrActive&&!this.externalActive&&!!this.state?.testMode;this.virtual=undefined;this.render(true);};
   }
   setConnected(value:boolean){this.connected=value;if(!value){this.pending=false;clearTimeout(this.requestTimer);}this.updateButtons();}
   setXRActive(value:boolean){this.xrActive=value;this.position=undefined;this.simulation=false;this.virtual=undefined;(document.getElementById('adventure-simulation') as HTMLInputElement).checked=false;this.render(true);}
@@ -54,6 +55,8 @@ export class AdventureClient {
     else if(objectChanged){this.updateButtons();this.map();this.changed();}
   }
   viewState(){return this.model&&this.state?{model:this.model,state:this.state}:undefined;}
+  setExternalActive(value:boolean){this.externalActive=value;this.simulation=false;this.position=undefined;this.render(true);}
+  updateVirtualPosition(position:THREE.Vector3){if(!this.externalActive)return;this.position={x:position.x,z:position.z};if(performance.now()-this.lastPositionUpdate>200){this.lastPositionUpdate=performance.now();this.updateButtons();}}
   updateAim(local:THREE.Vector3|undefined){const calibration=this.calibration();this.aim=local&&calibration?toRoom(local,calibration):undefined;this.aimAt=performance.now();}
   private async movePrepared(id:InteractionTarget,input:HTMLInputElement){
     if(!this.model?.puzzles||this.state?.running||!this.xrActive||!this.calibration()||this.moving)return;
@@ -105,7 +108,7 @@ export class AdventureClient {
   private updateButtons(){
     for(const item of this.hybridButtons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo('table');
     for(const item of this.buttons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo(item.target);
-    const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;toggle.disabled=!this.state?.testMode||this.xrActive;toggle.checked=this.simulation;
+    const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;toggle.disabled=!this.state?.testMode||this.xrActive||this.externalActive;toggle.checked=this.simulation;
   }
   private addAction(panel:Panel,label:string,action:AdventureCommand['action'],id:string,target:InteractionTarget,ready:boolean){
     const row=document.createElement('div');row.className='xr-actions';const button=document.createElement('button');button.textContent=label;button.dataset.gameAction=action;button.dataset.target=id;button.onclick=()=>this.perform(action,id,target);row.append(button);
@@ -115,8 +118,8 @@ export class AdventureClient {
   }
   private render(force=false){
     const key=JSON.stringify([this.state,this.model?.id,this.simulation,this.xrActive]);if(!force&&key===this.key)return;this.key=key;this.buttons=[];this.hybridButtons=[];
-    this.hybridHost.hidden=!this.state?.hybrid||this.xrActive;
-    if(this.state?.hybrid&&!this.xrActive){try{this.hybridPreview??=new BlackjackPreview(this.hybridHost,action=>this.performHybrid(action));this.hybridPreview.update(this.state.hybrid,this.actorId,this.state.captainId);}catch{/* Text and touch controls remain usable if WebGL is unavailable. */}}
+    this.hybridHost.hidden=!this.state?.hybrid||this.xrActive||this.externalActive;
+    if(this.state?.hybrid&&!this.xrActive&&!this.externalActive){try{this.hybridPreview??=new BlackjackPreview(this.hybridHost,action=>this.performHybrid(action));this.hybridPreview.update(this.state.hybrid,this.actorId,this.state.captainId);}catch{/* Text and touch controls remain usable if WebGL is unavailable. */}}
     for(const panel of this.panels){
       panel.body.replaceChildren();panel.status.textContent=this.state?.message??'Connexion aux énigmes…';
       const text=(message:string)=>{const p=document.createElement('p');p.textContent=message;panel.body.append(p);};

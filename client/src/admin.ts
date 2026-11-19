@@ -1,3 +1,5 @@
+import { DisplayAdmin,type DisplayClient } from './display-admin';
+import type { ModePolicy } from '../../server/src/display-modes.js';
 import './admin.css';
 import { PortalAdmin } from './portal/portal-admin';
 import type { PortalPublic } from '../../server/src/portal/portal-types.js';
@@ -7,7 +9,7 @@ import { AdventureEditor } from './adventure-editor';
 import type { AdventureState } from '../../server/src/adventure.js';
 import type { AdventureManifest } from '../../server/src/engine/puzzle-types.js';
 type Player = { id: string; slot: number; name:string;address?: string; userAgent?: string; connectedAt: string };
-type State = { portal:PortalPublic;players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
+type State = { displayPolicy?:ModePolicy;displayClients?:DisplayClient[]; portal:PortalPublic;players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let token = '';
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -73,7 +75,9 @@ function node(tag: string, text: string, className?: string) {
   if (className) value.className = className;
   return value;
 }
+const displayAdmin=new DisplayAdmin(el('dashboard'),policy=>api('display-modes',policy));
 function render(state: State) {
+  displayAdmin.receive(state.displayPolicy,state.displayClients);
   portalAdmin.receive(state.portal);
   latestAdventureRevision=state.adventure.revision;catalog=state.adventures;
   objectRevision=state.adventure.objects?.revision??0;saveObjects.disabled=state.adventure.running||!state.adventure.objects||!!state.adventure.objects.held.length;

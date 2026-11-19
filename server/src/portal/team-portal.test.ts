@@ -69,6 +69,18 @@ function fixture(){const portal=new TeamPortal();portal.configure(config);portal
 function pose(portal:TeamPortal,slot:number,seq:number,at:number,d=0.6){const s=portal.snapshot();portal.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,at);}
 function open(){const portal=fixture();for(let i=1;i<=4;i++)pose(portal,i,1,1100);portal.tick(1100,()=>{});for(let i=1;i<=4;i++)portal.claim(i,STAFF_IDS[i-1]);portal.tick(1200,()=>{});portal.tick(6200,()=>{});return portal;}
 
+test('portal modes: camera never auto-crosses; virtual and physical crossings remain distinct',()=>{
+  const p=open();
+  for(const [index,d] of [.6,.2,-.1,-.4].entries())for(let slot=1;slot<=3;slot++){
+    const s=p.snapshot();p.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq:index+2,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,6500+index*300,slot===1?'camera-ar':slot===2?'virtual-3d':'quest-webxr');
+  }
+  let s=p.snapshot();assert.equal(s.players[0].crossed,false);assert.equal(s.players[1].validationMethod,'virtual-crossing');assert.equal(s.players[2].validationMethod,'physical-xr');
+  p.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq:6,action:'confirm'},1,model,7600,'camera-ar');
+  assert.equal(p.snapshot().players[0].validationMethod,'camera-confirmation');
+  p.clearTracking(4);assert.equal(p.snapshot().players[3].ready,false);
+  assert.throws(()=>p.adminCross(4));
+});
+
 test('portail : schémas stricts, placements et ancienne aventure sans introduction',()=>{
   assert.throws(()=>parsePortalConfig({...config,extra:true}));assert.throws(()=>parsePortalConfig({...config,portal:{...config.portal,width:Infinity}}));
   assert.throws(()=>parsePortalCommand({type:'portal_action',sessionId:'s',revision:0,commandId:'x',seq:1,action:'pose',position:{x:NaN,y:1,z:2}}));

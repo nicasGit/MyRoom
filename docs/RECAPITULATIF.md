@@ -1,5 +1,31 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — trois modes d'affichage, version 0.9.0 en validation
+
+Branche `feat/display-modes` : adaptateurs Virtual3D, CameraAR expérimental et
+QuestWebXR partageant les vues et commandes d'énigmes. Simulation sans WebXR ni
+caméra, navigation clavier/souris et joystick tactile, pièce et interactions communes.
+Superposition vidéo transparente, activation explicite, gestes de placement locaux,
+recentrage, retour de sécurité 3D et nettoyage des pistes, y compris après permission
+tardive. Libellé sans ancrage spatial permanent. Politique administrateur persistante
+avec validation, révisions et écriture atomique ; défaut appliqué aux futures connexions,
+pas de remise à zéro de progression. Capacités déclarées visibles dans l'administration.
+Le portail distingue les passages virtuels, confirmations caméra, poses XR et actions
+administrateur ; changement de mode nettoie l'historique des poses. Pièces, neuf
+emplacements, A/B, HTTPS/WSS et image HAOS aarch64 conservés.
+
+Contrôles finaux : typecheck, build et 104 tests réussis, dont blackjack réseau à
+modes mixtes, changement de politique sans perte de progression, méthodes de passage,
+navigation concave, permissions simulées, libération vidéo et cycle de sortie Quest
+via adaptateur testé sans matériel. Contrôle de diff réussi.
+Une relance intermédiaire a rencontré le refus Windows EPERM connu au renommage
+atomique du test RoomStore ; le dernier passage complet réussit sans modifier cette logique.
+L'ouverture du navigateur intégré n'a pas abouti : vérification visuelle non effectuée.
+Avertissement Vite habituel du bloc
+Three.js de 574 kB. Aucun essai matériel iPad, Android ou Quest, aucune validation
+WebKit réelle annoncée. Version non encore annoncée disponible.
+Voir [le guide et les limites](display-modes.md).
+
 État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.8.1**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture

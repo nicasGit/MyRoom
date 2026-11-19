@@ -36,6 +36,10 @@ export class PortalClient {
     if(now-this.last>=300){this.last=now;const point=toRoom(local,calibration);if(this.audio){this.audio.listener.positionX.value=point.x;this.audio.listener.positionY.value=point.y;this.audio.listener.positionZ.value=point.z;}this.command('pose',point);this.wasReady=true;}
   }
   confirm(){this.command('confirm');}
+  updateVirtual(position:THREE.Vector3,now=performance.now()){
+    if(!this.state?.active||this.state.simulation)return;
+    if(now-this.last>=300){this.last=now;this.command('pose',position);this.wasReady=true;}
+  }
   raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera){group.updateMatrixWorld(true);const ray=new THREE.Raycaster(origin,direction,0,8);ray.camera=camera;if(ray.intersectObject(group,true).some(hit=>hit.object.userData.portalConfirm))this.confirm();}
   private chime(state:PortalPublic){try{if(!this.audio||this.audio.state!=='running')return;const oscillator=this.audio.createOscillator(),gain=this.audio.createGain(),panner=this.audio.createPanner();panner.panningModel='HRTF';panner.positionX.value=state.config.portal.x;panner.positionY.value=1.2;panner.positionZ.value=state.config.portal.z;oscillator.frequency.setValueAtTime(220,this.audio.currentTime);oscillator.frequency.linearRampToValueAtTime(660,this.audio.currentTime+1);gain.gain.setValueAtTime(0.08,this.audio.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,this.audio.currentTime+1.2);oscillator.connect(gain).connect(panner).connect(this.audio.destination);oscillator.start();oscillator.stop(this.audio.currentTime+1.2);oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();panner.disconnect();};}catch{}}
 }

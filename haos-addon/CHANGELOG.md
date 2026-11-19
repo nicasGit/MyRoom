@@ -1,3 +1,9 @@
+## 0.9.0
+
+- Virtual 3D, experimental camera overlay and native Quest display adapters.
+- Persistent administrator mode policy, client capabilities and distinct portal passage methods.
+- Camera lifecycle cleanup and mixed-mode multiplayer regression tests.
+
 # Changelog
 
 ## 0.8.6

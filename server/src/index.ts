@@ -1,3 +1,4 @@
+import { DisplayModes,parseModeCommand } from './display-modes.js';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -16,6 +17,7 @@ import { parseObjectCommand } from './object-manipulation.js';
 const registry=createRegistry();
 const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
 const room = new Room(new Adventure(registry,catalog));
+room.display=new DisplayModes(process.env.DATA_DIR??'data');
 const store = new RoomStore(process.env.DATA_DIR ?? 'data');
 room.portalStore=new PortalPlacementStore(process.env.DATA_DIR??'data');
 room.model = store.active(); room.libraryRevision = store.snapshot().revision;
@@ -81,9 +83,14 @@ wss.on('connection', (ws, req) => {
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      if(message&&typeof message==='object'&&'type' in message&&message.type==='display_mode'){
+        counted=true;if(++count>30){ws.close(1008,'Trop de messages');return;}
+        try{const command=parseModeCommand(message);const previousMode=room.display.mode(id);const result=room.display.act(id,command);if(previousMode!==result.mode)room.portal.clearTracking(slot!);ws.send(JSON.stringify(result));log('display_mode',{id,slot,mode:result.mode,action:command.action});broadcast();}
+        catch(error){ws.send(JSON.stringify({type:'display_mode_result',accepted:false,message:error instanceof Error?error.message:'Mode refuse.'}));}return;
+      }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='portal_action'){
         counted=true;if(++portalCount>60){ws.close(1008,'Trop de poses portail');return;}
-        try{room.snapshot();const command=parsePortalCommand(message);room.portal.act(command,slot!,room.model,Date.now());room.maintain();ws.send(JSON.stringify({type:'portal_result',accepted:true,commandId:command.commandId}));broadcast();}
+        try{room.snapshot();const command=parsePortalCommand(message);const alreadyCrossed=room.portal.snapshot().players.find(p=>p.slot===slot)?.crossed;room.portal.act(command,slot!,room.model,Date.now(),room.display.mode(id));if(!alreadyCrossed&&room.portal.snapshot().players.find(p=>p.slot===slot)?.crossed)log('portal_validation',{id,slot,method:room.portal.snapshot().players.find(p=>p.slot===slot)?.validationMethod});room.maintain();ws.send(JSON.stringify({type:'portal_result',accepted:true,commandId:command.commandId}));broadcast();}
         catch(error){ws.send(JSON.stringify({type:'portal_result',accepted:false,message:error instanceof Error?error.message:'Commande refusee.'}));}return;
       }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='object_action'){

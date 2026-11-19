@@ -26,6 +26,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
   if (req.method === 'GET' && req.url === '/api/admin/state') {
     reply(res, 200, {
       portal:room.snapshot().portal,
+      displayPolicy:room.display.snapshot(),displayClients:room.display.clients(),
       uptimeSeconds: Math.floor((Date.now() - started) / 1000),
       publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
       puzzle: room.snapshot().puzzle,
@@ -40,7 +41,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -60,6 +61,10 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     }
     const body: unknown = JSON.parse(Buffer.concat(chunks).toString());
     if (!body || typeof body !== 'object' || Array.isArray(body)) { reply(res, 400, { error: 'Objet JSON attendu.' }); return; }
+    if(req.url==='/api/admin/display-modes'){
+      try{const policy=room.display.configure(body);log('display_policy',{revision:policy.revision,defaultMode:policy.defaultMode});broadcast();reply(res,200,{policy});}
+      catch(error){reply(res,400,{error:error instanceof Error?error.message:'Configuration invalide.'});}return;
+    }
     if(req.url==='/api/admin/portal'){
       try{room.snapshot();const c=record(body,['action','revision','config','slot']),action=c.action;
         const expected=action==='configure'?'action,config,revision':['cross','release-seat','simulate-claim','simulate-cross'].includes(String(action))?'action,revision,slot':'action,revision';if(Object.keys(c).sort().join(',')!==expected)throw Error('Champs de commande invalides.');

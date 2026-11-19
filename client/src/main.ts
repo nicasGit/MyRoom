@@ -1,3 +1,6 @@
+import { SimulatorScene } from './modes/simulator-scene';
+import { DisplayClient } from './modes/display-client';
+import { Virtual3D,CameraAR,QuestWebXR } from './modes/adapters';
 import * as THREE from 'three';
 import './install';
 import { makeCalibration, toRoom, projectToFloor,nudgeCalibration } from './calibration';
@@ -30,7 +33,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.8.6');
+diagnostic('Version client', '0.9.0');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -67,6 +70,7 @@ function rejectPlacement(reason: string, details: Record<string, unknown> = {}) 
   feedback.textContent = reason;
   xrEvent('placement_rejected', { step: firstPoint ? 'B' : 'A', reason: reason.slice(0, 160), ...details });
 }
+let currentXRSession:XRSession|undefined;
 let resetScene = () => {};
 let updateSurveyScene = () => {};
 let updateAdventureScene = () => {};
@@ -124,6 +128,7 @@ enter.onclick = async () => {
     session = await navigator.xr.requestSession('immersive-ar', {
       requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection','hand-tracking'], domOverlay: { root: overlay },
     });
+    currentXRSession=session;
     const touchOverlay = !!session.domOverlayState;
     adventure.setXRActive(true);
     xrEvent('session_started', { overlay: touchOverlay });
@@ -133,11 +138,11 @@ enter.onclick = async () => {
     session.addEventListener('end', () => {
       grabber.cancel();handCards.cancel();
       adventure.setXRActive(false);
-      xrEvent('session_ended');
+      xrEvent('session_ended');currentXRSession=undefined;
       renderer?.setAnimationLoop(null); resetCalibration(); enter.disabled = false;
       overlay.hidden = true; disposeScene(); resetScene = () => {};
       element('xr-exit').onclick = null; place.onclick = null;
-      status.textContent = 'Session XR terminée.';
+      status.textContent = 'Session XR terminée.';displayClient.questEnded();
     });
     await renderer.xr.setSession(session);
     const reference = renderer.xr.getReferenceSpace();
@@ -406,6 +411,17 @@ const handCards=new HandCards(()=>ownId,action=>adventure.handAction(action),mes
 const portal=new PortalClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
 const wallLobby=new WallLobby(message=>{feedback.textContent=message;},()=>{grabber.cancel();handCards.cancel();survey.refresh();},token=>survey.authorize(token));
 document.addEventListener('myroom-portal-confirm',()=>portal.confirm());
+const startQuest=enter.onclick!;
+const simulator=new SimulatorScene(document.querySelector('main')!,{
+  intro:()=>portal.visible(),wall:wallLobby.view.group,wallPick:(origin,direction)=>wallLobby.pick(origin,direction),
+  position:position=>{adventure.updateVirtualPosition(position);portal.updateVirtual(position);wallLobby.tick(performance.now());},
+  select:(group,origin,direction,camera)=>{if(portal.visible())portal.raycast(group,origin,direction,camera);else adventure.raycast(group,origin,direction,camera);},
+  grab:(group,hands,enabled)=>grabber.update(group,hands,enabled),notify:message=>{status.textContent=message;},
+});
+const quest=new QuestWebXR(async()=>{await startQuest.call(enter,new PointerEvent('click'));if(!currentXRSession)throw Error('WebXR non actif.');},async()=>{if(currentXRSession)await currentXRSession.end();},()=>{status.textContent='Pour recentrer le Quest, refaites le calibrage A/B.';});
+const cameraAR=new CameraAR(simulator,simulator.video,constraints=>{if(!navigator.mediaDevices?.getUserMedia)throw Error('Camera indisponible dans ce contexte HTTPS.');return navigator.mediaDevices.getUserMedia(constraints);},()=>displayClient.fallback('camera-failed'));
+const displayClient=new DisplayClient(document.querySelector('main')!,{'virtual-3d':new Virtual3D(simulator),'camera-ar':cameraAR,'quest-webxr':quest},message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},mode=>{grabber.cancel();handCards.cancel();adventure.setExternalActive(mode!=='quest-webxr');});
+enter.onclick=async event=>{if(displayClient.current!=='quest-webxr'){displayClient.choose('quest-webxr');status.textContent='Choisissez WebXR, puis appuyez de nouveau pour entrer.';return;}await displayClient.activate();};
 let ownSlot=0;
 let retry: ReturnType<typeof setTimeout>;
 function showPlayers(players: { id: string; slot: number;name?:string }[]) {
@@ -431,7 +447,8 @@ function connect() {
   socket.onmessage = event => {
     try {
       const message = JSON.parse(String(event.data));
-      if (message.type === 'welcome') {ownId = message.id;adventure.setIdentity(message.id);try{if(message.resumeToken)sessionStorage.setItem('myroom-seat',message.resumeToken);}catch{}}
+      if (message.type === 'display_mode_result')displayClient.receive(message);
+      if (message.type === 'welcome') {ownId = message.id;void displayClient.hello();adventure.setIdentity(message.id);try{if(message.resumeToken)sessionStorage.setItem('myroom-seat',message.resumeToken);}catch{}}
       if (message.type === 'adventure_result'||message.type==='puzzle_result') adventure.result(message.message);
       if(message.type==='object_result'&&!message.changed)grabber.reject(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
@@ -441,6 +458,8 @@ function connect() {
         survey.receive(message.model??null,message.libraryRevision??0);
         if(message.adventure)adventure.receive(message.model??null,message.adventure,message.libraryRevision??0);
         if(message.lobby&&message.portal&&message.adventure)wallLobby.receive(message.model??null,message.portal,message.adventure,message.lobby);
+        if(message.display)displayClient.receivePolicy(message.display.policy);
+        if(message.portal&&message.adventure)simulator.receive({model:message.model??null,portal:message.portal,adventure:message.adventure,slot:ownSlot,actor:ownId});
         element('puzzle').textContent = `Démo : ${message.puzzle.solved ? 'résolue' : 'à résoudre'} · révision ${revision}`;
         solve.disabled = message.puzzle.solved;
       }
@@ -449,6 +468,7 @@ function connect() {
     } catch { status.textContent = 'Réponse serveur invalide.'; }
   };
   socket.onclose = event => {
+    displayClient.disconnect();
       portal.update(undefined);grabber.cancel();handCards.cancel();
     adventure.setConnected(false);
     solve.disabled = true; showPlayers([]);

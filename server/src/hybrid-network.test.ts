@@ -19,6 +19,12 @@ test('hybride réseau : quatre joueurs, secret, capitaine, concurrence, verrous,
   try{
     await Promise.race([once(child.stdout!,'data'),once(child,'exit').then(()=>{throw Error('Server startup failed');})]);
     for(let index=0;index<4;index++){const ws=new WebSocket('ws://localhost:13018/ws',{origin:'https://myroom.test'});clients.push(ws);const message=wait(ws,'welcome');await once(ws,'open');ids.push((await message).id);}
+    assert.equal((await post('display-modes',{version:1,revision:0,defaultMode:'virtual-3d',allowPlayerChange:true,cameraAREnabled:true})).status,200);
+    for(let index=0;index<4;index++){
+      let response=wait(clients[index],'display_mode_result');clients[index].send(JSON.stringify({type:'display_mode',action:'hello',requestId:'hello',capabilities:{webgl:true,webxr:true,immersiveAR:true,camera:true,touch:true,secureContext:true}}));assert.equal((await response).accepted,true);
+      response=wait(clients[index],'display_mode_result');clients[index].send(JSON.stringify({type:'display_mode',action:'change',requestId:'change',mode:['virtual-3d','camera-ar','quest-webxr','virtual-3d'][index]}));assert.equal((await response).accepted,true);
+    }
+    assert.deepEqual((await state()).displayClients.map((c:any)=>c.mode),['virtual-3d','camera-ar','quest-webxr','virtual-3d']);
     const model:RoomModel={id:'test-hybrid',name:'Test hybrid',height:2.5,floor:[{x:0,z:0},{x:8,z:0},{x:8,z:6},{x:0,z:6}],obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model);
     assert.equal((await post('rooms/save',{revision:0,room:model})).status,200);
     let s=await state();assert.equal((await post('adventure/select',{id:'menthe27',version:'0.2.0',revision:s.adventure.revision})).status,200);
@@ -31,6 +37,10 @@ test('hybride réseau : quatre joueurs, secret, capitaine, concurrence, verrous,
     assert.equal((await command(1,{action:'deal'})).changed,false);s=await accepted(0,{action:'deal'});
     const checkSecret=(s:any)=>{const instance=s.adventure.engine.instances.find((i:any)=>i.type==='blackjack-hybrid');assert.ok(!('config' in instance));assert.ok(!('shoe' in instance.state));if(s.adventure.hybrid.status==='playing'){assert.equal(s.adventure.hybrid.dealer[1],null);assert.equal(s.adventure.hybrid.dealerTotal,null);}};
     checkSecret(s);
+    const beforePolicy=s.adventure;
+    assert.equal((await post('display-modes',{...(await state()).displayPolicy,allowPlayerChange:false,defaultMode:'quest-webxr'})).status,200);
+    assert.deepEqual((await state()).adventure,beforePolicy);
+    const refused=wait(clients[0],'display_mode_result');clients[0].send(JSON.stringify({type:'display_mode',action:'change',requestId:'locked',mode:'camera-ar'}));assert.equal((await refused).accepted,false);
     clients[0].close();await once(clients[0],'close');
     for(let tries=0;tries<30;tries++){s=await state();if(s.adventure.captainId===ids[1])break;await new Promise(resolve=>setTimeout(resolve,10));}assert.equal(s.adventure.captainId,ids[1]);
     for(let tries=0;s.adventure.hybrid.status!=='won'&&tries<10;tries++){const action=s.adventure.hybrid.status==='playing'?'stand':'retry';s=await accepted(1,{action});checkSecret(s);}assert.equal(s.adventure.hybrid.status,'won');assert.deepEqual(s.adventure.engine.inventory.map((r:any)=>r.label),['♣']);
