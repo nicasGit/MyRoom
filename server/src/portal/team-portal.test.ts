@@ -13,6 +13,7 @@ import { Room } from '../room.js';
 import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 import { suggestPortalPlacement,configurePortalPlacement } from './portal-placement.js';
+import { PortalWaiting } from '../../../client/src/portal/portal-waiting.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
 
@@ -86,6 +87,46 @@ test('accueil global : visible par défaut, placement et rituel indépendants du
 function fixture(){const portal=new TeamPortal();portal.configure(config);portal.begin('session',['Un','Deux','Trois','Quatre'],model,1000);portal.presence([1,2,3,4],1000);return portal;}
 function pose(portal:TeamPortal,slot:number,seq:number,at:number,d=0.6){const s=portal.snapshot();portal.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,at);}
 function open(){const portal=fixture();for(let i=1;i<=4;i++)pose(portal,i,1,1100);portal.tick(1100,()=>{});for(let i=1;i<=4;i++)portal.claim(i,STAFF_IDS[i-1]);portal.tick(1200,()=>{});portal.tick(6200,()=>{});return portal;}
+
+test('head passage: physical XR validates at four centimetres; other players and adventure still wait',()=>{
+  const p=open();
+  for(const [index,d] of [.5,.15,-.02,-.05].entries()){
+    for(let slot=1;slot<=2;slot++){
+      const s=p.snapshot();p.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq:index+2,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,6500+index*300,slot===1?'quest-webxr':'virtual-3d');
+    }
+    if(index===2)assert.equal(p.snapshot().players[0].crossed,false);
+  }
+  const s=p.snapshot();assert.equal(s.players[0].validationMethod,'physical-xr');
+  assert.equal(s.players.slice(1).some(p=>p.crossed),false);
+  let starts=0;p.tick(7500,()=>starts++);assert.equal(starts,0);assert.equal(p.snapshot().phase,'portal-open');
+  p.clearTracking(1);assert.equal(p.snapshot().players[0].crossed,true);
+});
+
+test('head visual transition: local peek, acknowledgement, loss of tracking and session reset',()=>{
+  const s=open().snapshot(),waiting=new PortalWaiting();let now=1000;
+  const sample=(d:number,state=s,head=true)=>waiting.update(state,1,head?{x:4,y:1.6,z:3+d}:undefined,now+=300);
+  assert.equal(sample(-.1),false); // Starting behind is not a crossing.
+  assert.equal(sample(.5),false);assert.equal(sample(.1),false);assert.equal(sample(-.02),true);
+  assert.equal(sample(.07),false); // Unacknowledged peek is reversible.
+  assert.equal(sample(.4),false); // A second entry must approach again.
+  assert.equal(sample(-.02),true);
+  s.players[0].crossed=true;assert.equal(sample(-.1),true);
+  assert.equal(sample(-.1,s,false),false);
+  assert.equal(sample(-.1),true); // Recovered confirmed seat.
+  assert.equal(sample(-.1,{...s,sessionId:'new',players:s.players.map(p=>({...p,crossed:false}))}),false);
+  assert.equal(sample(-.1,{...s,active:false}),false);
+  assert.equal(sample(-.1,{...s,phase:'completed'}),false);
+});
+
+test('head visual transition: rotated reverse portal, aperture, readiness and discontinuities',()=>{
+  const s=open().snapshot(),waiting=new PortalWaiting();s.config.portal.yaw=Math.PI/2;s.config.portal.direction=-1;
+  let now=1000;const sample=(d:number,z=3)=>waiting.update(s,1,{x:4-d,y:1.6,z},now+=300);
+  assert.equal(sample(.5),false);assert.equal(sample(.1),false);assert.equal(sample(-.02),true);
+  waiting.reset();for(const d of [.5,.1,-.02])assert.equal(sample(d,4),false);
+  waiting.reset();sample(.5);now+=1500;assert.equal(sample(-.02),false);
+  waiting.reset();sample(.5);assert.equal(sample(-1),false);
+  waiting.reset();s.players[3].ready=false;for(const d of [.5,.1,-.02])assert.equal(sample(d),false);
+});
 
 test('portal modes: camera never auto-crosses; virtual and physical crossings remain distinct',()=>{
   const p=open();

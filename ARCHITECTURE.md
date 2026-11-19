@@ -1,5 +1,17 @@
 # Architecture MyRoom
 
+## Couloir personnel 0.12.0
+
+`PortalWaiting` sépare la prédiction visuelle locale du franchissement validé par
+`TeamPortal`. Les poses de tête XR utilisent toujours A/B ; le détecteur géométrique
+partagé conserve approche, sens, rectangle utile et contrôles de continuité.
+WebXR valide à 4 cm derrière le plan ; le simulateur conserve 30 cm. Aucun nouveau
+message, format de pièce ou état de puzzle. `waiting-corridor.ts` rend une enveloppe
+opaque et un tunnel procédural dans le repère calibré, avec panneau fixe par entrée.
+Le rendu est personnel ; l'état public autoritaire fournit le compteur collectif.
+La caméra n'est jamais déplacée et les protections du casque ne sont pas modifiées.
+Voir [le comportement et ses limites](docs/team-portal.md#couloir-personnel-0120).
+
 ## Bâtons et vortex 0.11.0
 
 Le protocole de manipulation accepte un quaternion facultatif normalisé uniquement

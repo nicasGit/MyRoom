@@ -26,6 +26,8 @@ import { phoneHand,usePhoneHand } from './phone-hand';
 import { WallLobby } from './portal/wall-lobby';
 import { handPreview } from './hand-preview';
 import { PhoneControls } from './phone-controls';
+import { PortalWaiting } from './portal/portal-waiting';
+import { waitingCorridor } from './portal/waiting-corridor';
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -37,7 +39,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.11.0');
+diagnostic('Version client', '0.12.0');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -152,6 +154,9 @@ enter.onclick = async () => {
     const reference = renderer.xr.getReferenceSpace();
     if (!reference) throw new Error('Référentiel XR indisponible');
     const scene = new THREE.Scene();
+    const waiting=new PortalWaiting(),corridor=waitingCorridor();
+    scene.add(corridor.group);
+    const corridorBackground=new THREE.Color(0x030614);
     scene.add(wallLobby.view.group);
     let gameGroup:THREE.Group|undefined;
     let gameKey='';
@@ -278,8 +283,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -353,7 +358,16 @@ enter.onclick = async () => {
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
       portal.update(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
+      if(portal.visible())gameGroup?.children.forEach(child=>{child.visible=true;});
       gameGroup?.userData.animatePortal?.(Date.now());
+      const roomHead=pose&&calibration&&!survey.hasDraft()&&!wallLobby.roomMode&&portal.visible()?toRoom(new THREE.Vector3().copy(pose.transform.position),calibration):undefined;
+      const inCorridor=waiting.update(portal.state,ownSlot,roomHead,_time);
+      if(inCorridor&&roomHead&&calibration&&portal.state){
+        corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
+        corridor.update(portal.state,ownSlot,roomHead,_time/1000);
+        if(gameGroup){const staffs=Object.values(gameGroup.userData.grabbables??{});for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
+      }else corridor.group.visible=false;
+      scene.background=inCorridor?corridorBackground:null;
       const screenInput=session!.interactionMode==='screen-space';
       const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration,portal.visible()&&!!portal.state?.active):[];
       const phoneAvailable=usePhoneHand(touchOverlay,session!.interactionMode,session!.inputSources);
@@ -362,7 +376,7 @@ enter.onclick = async () => {
       phoneControls.update(touchOverlay,phoneEnabled,!!calibration&&!!pose&&portal.visible(),context);
       wallLobby.tick(performance.now());
       if(calibration){wallLobby.view.group.position.copy(calibration.origin);wallLobby.view.group.rotation.y=-calibration.yaw;}
-      wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&portal.visible()&&!wallLobby.roomMode;
+      wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&portal.visible()&&!wallLobby.roomMode&&!inCorridor;
       overlay.classList.toggle('xr-lobby-ready',!!calibration);overlay.classList.toggle('xr-room-mode',wallLobby.roomMode);
       element('survey-panel').hidden=!calibration||!wallLobby.roomMode;if(surveyGroup)surveyGroup.visible=wallLobby.roomMode;if(gameGroup)gameGroup.visible=!wallLobby.roomMode;
       if(menuRequested&&pose){menuRequested=false;wallLobby.pick(new THREE.Vector3().copy(pose.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));}
@@ -406,7 +420,7 @@ enter.onclick = async () => {
         : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';
       lastTrackingReason = reason;
       overlay.classList.toggle('xr-tracking-valid', valid);
-      target.visible = valid&&(canPlace||wallLobby.roomMode)&&!menuPointers.aiming;
+      target.visible = valid&&(canPlace||wallLobby.roomMode)&&!menuPointers.aiming&&!inCorridor;
       if (point) target.position.copy(point).setY(0.005);
       const ready = placement.update(point?.clone());
       if (ready && canPlace) {

@@ -40,7 +40,12 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
     }
     clients[3].close();await once(clients[3],'close');await until(s=>!s.portal.players[3].present);await connect(3,tokens[3]);clients[3].on('message',raw=>{const data=JSON.parse(String(raw));if(data.type==='state')latest=data;});await until(s=>s.portal.players[3].ready);assert.equal((await state()).portal.players[3].claimed,true);
     await until(s=>s.portal.phase==='portal-open');
-    for(let i=0;i<4;i++){for(const d of [.2,-.1,-.4]){depth[i]=d;await new Promise(resolve=>setTimeout(resolve,450));}await until(s=>s.portal.players[i].crossed,3000);}
+    for(let i=0;i<4;i++){
+      for(const d of [.2,-.05]){depth[i]=d;await new Promise(resolve=>setTimeout(resolve,450));}
+      const crossed=await until(s=>s.portal.players[i].crossed,3000);
+      assert.equal(crossed.portal.players[i].validationMethod,'physical-xr');
+      if(i<3){assert.equal(crossed.adventure.running,false);assert.equal(crossed.portal.players.filter((p:any)=>p.crossed).length,i+1);}
+    }
     s=await until(s=>s.adventure.running);assert.equal(s.portal.phase,'completed');assert.equal(s.adventure.engine.stepId,'symbols');assert.deepEqual(s.library.rooms[0],room);
     const revision=s.adventure.revision;await new Promise(resolve=>setTimeout(resolve,1100));assert.equal((await state()).adventure.revision,revision);
     assert.equal((await post('adventure/stop',{})).status,200);s=await state();assert.equal((await post('portal',{action:'simulate-start',revision:s.portal.revision})).status,400);

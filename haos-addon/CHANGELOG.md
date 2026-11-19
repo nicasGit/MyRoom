@@ -1,3 +1,11 @@
+## 0.12.0
+
+- Couloir de vortex personnel après le franchissement de la tête en WebXR : décor opaque animé et compteur des passages en direct, sans déplacer la caméra.
+- Validation physique à 4 cm derrière le plan, après une approche de 30 cm ; passage virtuel et confirmation accessible restent identifiés séparément.
+- Les autres joueurs restent devant le portail jusqu'à leur propre passage ; l'aventure attend tout le groupe.
+- Bâton toujours manipulable pendant l'attente. Fin du rituel, perte de suivi ou sortie XR nettoient le décor.
+- Aucun essai matériel Quest annoncé ; limites détaillées dans la documentation Team Portal.
+
 ## 0.11.0
 
 - Bâtons : orientation complète de la main (inclinaison, roulis et rotation), synchronisée pendant l'attente des autres joueurs et conservée au relâchement dans la session.

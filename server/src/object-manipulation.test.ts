@@ -16,9 +16,19 @@ import { RealisticHand,controllerHandOrientation,controllerFingerPose } from '..
 import { surveyButtons,runSurveyCommand,useTouchOverlay } from '../../client/src/quest-survey-controls.js';
 import { MenuMover,MenuPointers } from '../../client/src/xr-menu-interactions.js';
 import { vortexView } from '../../client/src/portal/vortex-view.js';
+import { waitingTunnel } from '../../client/src/portal/waiting-corridor.js';
 import { disposeGroup } from '../../client/src/model-view.js';
 import { applyObjectPoses } from '../../client/src/adventure-view.js';
 import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
+
+test('waiting universe: opaque enclosing geometry, stable room transform, animation and cleanup',()=>{
+  const view=waitingTunnel(),start=view.group.matrix.clone();
+  view.animate(10);view.animate(20);
+  assert.deepEqual(view.group.matrix.elements,start.elements);
+  let count=0;
+  view.group.traverse(node=>{if(node instanceof THREE.Mesh){count++;assert.equal(node.material.transparent,false);assert.equal(node.material.side,THREE.BackSide);for(const value of node.geometry.attributes.position.array)assert.ok(Number.isFinite(value));}});
+  assert.equal(count,2);disposeGroup(view.group);assert.equal(view.group.userData.disposed,true);
+});
 
 test('staff orientation: full wrist rotation follows its grip pivot without changing heavy-object rules',()=>{
   const a:GrabHand={side:'right',position:new THREE.Vector3(1,1,1),pressed:true,yaw:0,orientation:new THREE.Quaternion()};

@@ -62,7 +62,45 @@ Les poses de tête sont envoyées environ trois fois par seconde uniquement pend
 
 ## Traversée et concurrence
 
-Le détecteur exige un départ à au moins 30 cm devant le plan, une intersection du rectangle utile et une arrivée à au moins 30 cm derrière. Les bords ont une marge de 8 cm. Les sauts excessifs et trous de suivi annulent l’historique ; des oscillations autour du plan ne suffisent pas. Le sens, la hauteur et la largeur sont contrôlés. Une place ne peut valider qu’un passage par session.
+Le détecteur exige un départ à au moins 30 cm devant le plan et une intersection du rectangle utile. Depuis 0.12.0, l'arrivée WebXR est validée à 4 cm derrière le plan de tête ; le simulateur virtuel conserve une arrivée à 30 cm. Les bords ont une marge de 8 cm. Les sauts excessifs et trous de suivi annulent l’historique ; des oscillations autour du plan ne suffisent pas. Le sens, la hauteur et la largeur sont contrôlés. Une place ne peut valider qu’un passage par session.
+
+## Couloir personnel 0.12.0
+
+Avec un suivi WebXR calibré, approcher depuis la flèche, à au moins 30 cm devant
+le portail, puis passer doucement la tête dans son ouverture. Dès 1,5 cm derrière
+le plan, un aperçu local remplace le passthrough par un tunnel bleu/violet animé,
+inspiré d'un voyage entre univers. Le serveur valide le passage à 4 cm derrière
+le plan lors de la prochaine pose reçue (environ 300 ms). L'aperçu n'attribue aucune
+progression. Revenir devant le plan avant validation annule l'aperçu ; une nouvelle
+entrée demande de refaire l'approche. Après validation, le couloir reste visible
+jusqu'à la fin du rituel, même en reculant : le retour visuel n'est pas un nouveau
+passage et ne retire pas une validation déjà acquise.
+
+Chaque casque voit son propre décor. Les joueurs non passés gardent le portail
+et la pièce réelle. Le panneau du couloir affiche les passages validés en direct
+et demande de rester sur place ; il est fixé dans le repère A/B à l'entrée,
+pas attaché au regard. Son bâton et ses mains restent visibles et manipulables.
+L'aventure ne démarre qu'après tous les passages des joueurs choisis, avec suivi
+et présence de tous, puis les deux secondes de transition collective existantes.
+Une reconnexion à la même place conserve le passage validé après reprise du suivi.
+
+Le tunnel donne une profondeur visuelle : il ne représente pas un couloir réel à
+parcourir. Aucune translation de caméra, aucune modification de Guardian/Boundary,
+aucune sortie de la zone du casque. Le décor masque volontairement le passthrough
+pendant l'attente : rester dans l'espace dégagé confirmé. Une perte de pose,
+un recalibrage ou la sortie XR retire le décor ; annulation et fin du rituel aussi.
+La fin revient au rendu MR de l'aventure existante, pas à un nouvel environnement
+persistant. Il n'y a pas encore de rendu d'autres joueurs à travers la surface du
+portail, ni de découpe par œil comparable à l'effet système du casque. Le changement
+est déclenché par la pose centrale de tête déclarée par WebXR, pas par une API
+Guardian. Les confirmations accessibles et administrateur conservent leur méthode
+distincte ; le mode caméra ne devient pas un franchissement physique.
+
+Cette première version du couloir concerne la session immersive WebXR ; les modes
+Virtual3D et CameraAR conservent leur rendu et leurs méthodes de passage existants.
+Le style est procédural et original, sans ressource de Doctor Who. Validation
+logicielle et aperçu Chrome uniquement ; tester alignement, confort, suivi, opacité
+du rendu immersive-ar et performances sur Quest avant une utilisation collective.
 
 Les commandes portent session, révision, identifiant unique et séquence. Les commandes discrètes exigent la révision courante ; les poses tolèrent les révisions antérieures de la même session pour ne pas bloquer quatre flux concurrents, avec séquence strictement croissante et contrôle du déplacement. Refus explicites, limite dédiée de débit et identité déduite de la connexion. L’expiration du suivi retire l’état prêt. Les protections de saisie existantes restent actives.
 

@@ -1,5 +1,42 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — couloir personnel après passage de tête, 0.12.0
+
+Branche `feat/head-crossing-waiting-corridor`. Dans la session immersive WebXR,
+le passage de la tête dans le plan du vortex affiche individuellement un couloir
+bleu/violet procédural opaque, sans translation artificielle de caméra. Aperçu
+local à 1,5 cm derrière le plan, progression validée uniquement par le serveur à
+4 cm, après une approche de 30 cm. Sens, rectangle utile, marges, historique,
+sauts, lacunes de suivi, révisions et séquences restent contrôlés. Le simulateur
+virtuel conserve son seuil de 30 cm et le mode caméra ne valide pas physiquement.
+
+Le panneau du couloir reste fixé dans le repère A/B à l'entrée et affiche en
+direct les passages validés et l'attente du groupe. Les autres casques gardent
+le portail jusqu'à leur passage. Mains et bâton restent utilisables ; le menu
+mural extérieur et les effets du portail sont masqués pendant l'attente. Toutes
+les présences et passages sont toujours nécessaires au départ unique, après
+la transition collective existante. Reconnexion à la même place : validation
+conservée après reprise du suivi. Fin, annulation, perte de pose, recalibrage et
+sortie XR retirent le décor et restaurent le fond transparent. Aperçu non validé
+réversible ; après validation, rester dans le couloir jusqu'à la fin du rituel.
+
+Aucun changement de format de pièce, des neuf placements, des puzzles ou d'A/B.
+Guardian/Boundary inchangé. Le couloir ne doit pas être parcouru physiquement ;
+rester dans l'espace réel dégagé. Pas de découpe par œil, de fenêtre montrant les
+autres joueurs ou de second environnement persistant après le lancement.
+Modes Virtual3D/CameraAR inchangés. Voir [Team Portal](team-portal.md#couloir-personnel-0120).
+
+Contrôles réussis : `npm run typecheck`, `npm run build`, `npm test` (130 tests).
+Premier test ciblé : attente incorrecte d'une seconde entrée sans nouvelle
+approche ; corrigée pour respecter l'hystérésis existante, sans assouplir ce garde.
+Tests ajoutés : seuil physique distinct du virtuel, attente des autres joueurs,
+aperçu/réversibilité, acquittement, reprise, suivi perdu, nouvelle session, sens
+inversé et angle, ouverture utile, sauts et lacunes ; géométrie opaque, animation
+sans déplacement de caméra et nettoyage. Aperçu Chrome inspecté : trois programmes
+compilés, six appels de dessin pour couloir et panneau. Avertissement Vite habituel
+sur le chunk Three.js de 574 kB. Aucun essai matériel Quest effectué par l'agent.
+Publication et image ARM64 à confirmer après le workflow.
+
 ### 19 novembre 2026 — bâtons libres et vortex, 0.11.0 publiée
 
 Branche `feat/free-staff-rotation-vortex`. Les bâtons peuvent suivre l'orientation
