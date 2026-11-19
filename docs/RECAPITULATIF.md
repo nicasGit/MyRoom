@@ -20,7 +20,10 @@ navigation concave, permissions simulées, libération vidéo et cycle de sortie
 via adaptateur testé sans matériel. Contrôle de diff réussi.
 Une relance intermédiaire a rencontré le refus Windows EPERM connu au renommage
 atomique du test RoomStore ; le dernier passage complet réussit sans modifier cette logique.
-L'ouverture du navigateur intégré n'a pas abouti : vérification visuelle non effectuée.
+Une nouvelle page Chrome intégrée a permis de confirmer la version 0.9.0,
+le mode virtual-3d, le Canvas et le joystick, sans flux caméra au chargement.
+La scène est placée directement sous le choix de mode. Aucun essai complet d'énigme
+ni permission caméra réelle dans ce contrôle DOM, faute de pièce active locale.
 Avertissement Vite habituel du bloc
 Three.js de 574 kB. Aucun essai matériel iPad, Android ou Quest, aucune validation
 WebKit réelle annoncée. Version non encore annoncée disponible.

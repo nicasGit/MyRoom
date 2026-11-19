@@ -24,7 +24,7 @@ export class SimulatorScene {
     this.message.setAttribute('role','status');this.target.setAttribute('aria-label','Objet de superposition à placer');
     const reset=document.createElement('button');reset.textContent='Recentrer';reset.onclick=()=>this.recenter();
     this.adjustButton.textContent='Placer la superposition';this.adjustButton.onclick=()=>{this.adjusting=!this.adjusting;this.adjustButton.setAttribute('aria-pressed',String(this.adjusting));};
-    this.host.append(this.message,reset,this.adjustButton,this.target,this.surface);this.surface.append(this.video);parent.append(this.host);this.scene.add(this.world);
+    this.host.append(this.message,reset,this.adjustButton,this.target,this.surface);this.surface.append(this.video);parent.prepend(this.host);this.scene.add(this.world);
     const joystick=document.createElement('div');joystick.className='simulator-joystick';joystick.textContent='Déplacer';joystick.setAttribute('aria-label','Joystick tactile de déplacement');this.surface.append(joystick);
     const steer=(event:PointerEvent)=>{const rect=joystick.getBoundingClientRect();this.moveX=THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/35,-1,1);this.moveZ=THREE.MathUtils.clamp(-(event.clientY-rect.top-rect.height/2)/35,-1,1);};
     joystick.onpointerdown=event=>{event.preventDefault();joystick.setPointerCapture(event.pointerId);steer(event);};joystick.onpointermove=event=>{if(joystick.hasPointerCapture(event.pointerId))steer(event);};
