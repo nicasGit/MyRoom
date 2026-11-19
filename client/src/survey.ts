@@ -60,6 +60,7 @@ export class Survey {
     };
     el('survey-cancel').onclick=()=>this.cancel();
     el('survey-save').onclick=()=>{void this.save();};
+    el('survey-rename').onclick=()=>{if(el<HTMLButtonElement>('survey-rename').disabled)return;const event=new Event('myroom-room-name',{cancelable:true});if(document.dispatchEvent(event))el<HTMLInputElement>('survey-name').focus();};
     for(const id of ['survey-name','survey-height']) el(id).onchange=()=> {
       if(!this.draft||this.saving)return;
       this.draft.name=el<HTMLInputElement>('survey-name').value;
@@ -149,6 +150,7 @@ export class Survey {
   refresh(){
     el('survey-panel').hidden=!this.getCalibration();
     el('survey-settings').hidden=!this.draft;
+    el<HTMLButtonElement>('survey-rename').disabled=!this.draft||this.saving;
     el<HTMLButtonElement>('survey-edit').disabled=!this.model||this.saving;
     for(const id of ['survey-new','survey-cancel','survey-undo'])el<HTMLButtonElement>(id).disabled=this.saving;
     el<HTMLButtonElement>('survey-close').disabled=this.stage!=='floor'||(this.draft?.floor.length??0)<3||this.saving;

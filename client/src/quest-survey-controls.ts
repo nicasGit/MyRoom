@@ -2,7 +2,7 @@ import type { MenuButton } from './portal/wall-menu-view';
 
 export function useTouchOverlay(available:boolean,interactionMode:string|undefined){return available&&interactionMode!=='world-space';}
 
-const targets=[['quest-import','Importer le scan Quest'],['survey-new','Nouvelle pièce'],['survey-edit','Modifier la pièce'],['survey-close','Fermer le contour'],['survey-undo','Annuler la dernière modification'],['survey-obstacle','Ajouter un obstacle'],['survey-save','Enregistrer et activer'],['survey-cancel','Annuler le brouillon']] as const;
+const targets=[['survey-rename','Nommer la piece'],['quest-import','Importer le scan Quest'],['survey-new','Nouvelle pièce'],['survey-edit','Modifier la pièce'],['survey-close','Fermer le contour'],['survey-undo','Annuler la dernière modification'],['survey-obstacle','Ajouter un obstacle'],['survey-save','Enregistrer et activer'],['survey-cancel','Annuler le brouillon']] as const;
 export function surveyButtons(read:(id:string)=>{disabled:boolean},hasDraft:boolean):MenuButton[]{
   return [...targets.map(([id,title])=>({id,title,disabled:read(id).disabled})),
     {id:'return',title:hasDraft?'Annuler et revenir au jeu':'Revenir au jeu'},

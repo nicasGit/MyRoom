@@ -14,7 +14,7 @@ export class RoomStore {
   }
   snapshot() { return structuredClone(this.library); }
   active() { return this.snapshot().rooms.find(room=>room.id===this.library.activeId) ?? null; }
-  change(action: 'save'|'activate'|'delete', revision: unknown, input: unknown) {
+  change(action: 'save'|'activate'|'delete'|'rename', revision: unknown, input: unknown) {
     if(revision!==this.library.revision) throw new Error('Bibliothèque modifiée ailleurs. Actualiser avant de recommencer.');
     const next=this.snapshot();
     if(action==='save') {
@@ -23,6 +23,11 @@ export class RoomStore {
       if(index<0) { if(next.rooms.length>=20) throw new Error('Maximum 20 pièces enregistrées.'); next.rooms.push(room); }
       else next.rooms[index]=room;
       next.activeId=room.id;
+    } else if(action==='rename'){
+      if(!input||typeof input!=='object'||Object.keys(input).sort().join(',')!=='id,name')throw Error('Identifiant et nom attendus.');
+      const command=input as {id:unknown;name:unknown},index=next.rooms.findIndex(room=>room.id===command.id);
+      if(index<0)throw Error('Pièce introuvable.');
+      next.rooms[index]=parseRoom({...next.rooms[index],name:command.name});
     } else {
       if(typeof input!=='string'||!next.rooms.some(room=>room.id===input)) throw new Error('Pièce introuvable.');
       if(action==='activate') next.activeId=input;

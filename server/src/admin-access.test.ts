@@ -25,6 +25,9 @@ test('admin HTTP: debug access keeps origin and data validation; configured toke
         const room={id:'tokenless-room',name:'Room',floor:[{x:0,z:0},{x:4,z:0},{x:4,z:4},{x:0,z:4}],height:2.5,obstacles:[],openings:[]};
         const save=await fetch(base+'rooms/save',{method:'POST',headers,body:JSON.stringify({revision:0,room})});
         assert.equal(save.status,200);assert.equal((await save.json()).library.rooms[0].id,room.id);
+        const rename=await fetch(base+'rooms/rename',{method:'POST',headers,body:JSON.stringify({id:room.id,name:'Renamed',revision:1})});
+        assert.equal(rename.status,expected===200?200:503);
+        if(rename.ok)assert.equal((await rename.json()).library.rooms[0].name,'Renamed');
         assert.equal((await fetch(base+'rooms/save',{method:'POST',headers,body:'{}'})).status,400);
         assert.equal((await fetch(base+'rooms/save',{method:'POST',headers:{...headers,Origin:'https://elsewhere.test'},body:'{}'})).status,403);
         if(expected===503)assert.equal((await fetch(base+'reset',{method:'POST',headers,body:'{}'})).status,503);
@@ -55,6 +58,11 @@ test('admin HTTP: debug access keeps origin and data validation; configured toke
         const rawRevision=state.library.revision;
         assert.equal((await post('adventure/start',{})).status,200);state=await(await fetch(base+'state')).json();
         assert.equal(state.portal.active,true);assert.equal(state.portal.config.confirmed,true);assert.equal(state.library.revision,rawRevision+1);assert.ok(state.library.rooms.find((r:RoomModel)=>r.id==='raw-scan').puzzles);
+        const beforeRename=state;
+        assert.equal((await post('rooms/rename',{id:'raw-scan',name:'Mon salon',revision:state.library.revision})).status,200);
+        state=await(await fetch(base+'state')).json();assert.equal(state.portal.sessionId,beforeRename.portal.sessionId);assert.equal(state.portal.active,true);assert.deepEqual(state.adventure,beforeRename.adventure);
+        assert.equal((await post('rooms/rename',{id:'raw-scan',name:'Stale',revision:beforeRename.library.revision})).status,400);
+        assert.equal((await post('adventure/reset',{})).status,200);state=await(await fetch(base+'state')).json();assert.equal(state.portal.active,false);assert.equal(state.adventure.running,false);assert.equal(state.library.rooms.find((r:RoomModel)=>r.id==='raw-scan').name,'Mon salon');
       }
     }finally{child.kill();await once(child,'exit');rmSync(directory,{recursive:true,force:true});}
   }

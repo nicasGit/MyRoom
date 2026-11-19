@@ -52,7 +52,8 @@ export class WallLobby {
     const selected=l.adventures.find(item=>item.id===a.engine.adventureId&&item.version===a.engine.adventureVersion);
     const lines=[selected?.title??a.engine.adventureId,`${p.players.filter(x=>x.present).length}/${p.config.playerCount??4} présents · ${p.players.filter(x=>x.crossed).length} passages · ${p.phase}`,this.debug?'DEBUG : droits administrateur pour tous':this.token?'Organisateur connecté':'Lecture seule · déverrouiller pour modifier',this.notice||(!p.active?'Démarrez le rituel avant de prendre votre bâton.':'Approchez votre bâton : poignée, pince ou gâchette.')];
     const buttons:MenuButton[]=[{id:'home',title:'Accueil'},{id:'adventures',title:'Aventures'},{id:'settings',title:'Paramètres'},{id:'rooms',title:this.roomMode?'Mode pièces actif':'Mode création de pièces'}];
-    if(this.tab==='home')buttons.push({id:'start',title:'Commencer le rituel'},{id:'stop',title:'Arrêter la session'},{id:'unlock',title:this.token?'Verrouiller':'Déverrouiller organisateur'},{id:'confirm',title:'Valider mon passage accessible'});
+    if(this.tab==='home')buttons.push({id:'start',title:'Commencer le rituel'},{id:'stop',title:'Arrêter la session'},{id:'reset-adventure',title:'Réinitialiser l’aventure'},{id:'unlock',title:this.token?'Verrouiller':'Déverrouiller organisateur'},{id:'confirm',title:'Valider mon passage accessible'});
+    if(this.tab==='reset'){lines[0]='Effacer la progression et les récompenses ?';lines[1]='Pièce, repères et placements conservés.';buttons.splice(0,buttons.length,{id:'confirm-reset',title:'Oui, réinitialiser'},{id:'home',title:'Annuler'});}
     if(this.tab==='adventures'){
       l.adventures.slice(this.page*4,this.page*4+4).forEach((item,i)=>buttons.push({id:`adventure:${this.page*4+i}`,title:`${item.title} ${item.version}`}));
       buttons.push({id:'prev',title:'Page précédente'},{id:'next',title:'Page suivante'});
@@ -84,6 +85,7 @@ export class WallLobby {
       document.getElementById(target[id])?.click();return;
     }
     if(!this.token&&!this.debug){this.notice='Menu verrouillé : utilisez Déverrouiller organisateur avant AR.';this.draw(true);return;}
+    if(id==='reset-adventure'){this.tab='reset';this.draw(true);return;}
     if(id.startsWith('name:')){this.editing=Number(id.slice(5));this.name=this.lobby?.names[this.editing]??'';this.tab='keyboard';this.draw(true);return;}
     if(id.startsWith('letter:')||id==='space'||id==='erase'){this.name=id==='erase'?this.name.slice(0,-1):(this.name+(id==='space'?' ':id.slice(7))).slice(0,40);this.draw(true);return;}
     this.busy=true;this.notice='Commande en cours…';this.draw(true);
@@ -92,6 +94,7 @@ export class WallLobby {
       if(id==='start'){if(this.roomMode)throw Error('Quittez le mode pièces avant de démarrer.');await this.request('adventure/start',{});}
       else if(id==='fit-portal')await this.request('portal',{action:'auto-place',revision:state.portal.revision});
       else if(id==='stop')await this.request('adventure/stop',{});
+      else if(id==='confirm-reset'){await this.request('adventure/reset',{});this.tab='home';}
       else if(id==='less'||id==='more'||id==='verify-space'){
         const config=structuredClone(state.portal.config);if(id==='verify-space')config.confirmed=!config.confirmed;
         else config.playerCount=Math.max(1,Math.min(4,(config.playerCount??4)+(id==='more'?1:-1)));

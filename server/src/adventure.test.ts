@@ -55,7 +55,9 @@ test('proximité, révisions et simulation sont contrôlées par le serveur',()=
   assert.equal(g.act('discover_symbol','sun',{position:far}).changed,false);
   g.adventure.setTestMode(true);assert.equal(g.act('discover_symbol','sun',{simulation:true}).changed,true);
   const snapshot=g.adventure.snapshot();snapshot.symbols.found.length=0;assert.equal(g.adventure.snapshot().symbols.found.length,1);
-  g.adventure.configure({...g.room,name:'Autre pièce'});assert.equal(g.adventure.snapshot().symbols.found.length,0);
+  g.adventure.configure({...g.room,name:'Autre nom'});assert.equal(g.adventure.snapshot().symbols.found.length,1);
+  assert.equal(g.adventure.snapshot().revision,snapshot.revision);
+  g.adventure.configure({...g.room,id:'other-room'});assert.equal(g.adventure.snapshot().symbols.found.length,0);
   assert.ok(g.adventure.snapshot().revision>snapshot.revision);
   g.adventure.configure(null);assert.equal(g.adventure.snapshot().phase,'unconfigured');
 });

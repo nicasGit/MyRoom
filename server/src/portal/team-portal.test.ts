@@ -18,6 +18,13 @@ import { roomCenter } from './portal-placement.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
 
+test('renaming the room keeps adventure, portal session, calibration identity and object state',()=>{
+  const room=new Room();room.model=structuredClone(model);room.snapshot();room.portal.configure(config);room.startSession(true);
+  const before=room.snapshot();room.model={...room.model!,name:'Renamed room'};const after=room.snapshot();
+  assert.equal(after.model?.id,before.model?.id);assert.deepEqual(after.model?.puzzles,before.model?.puzzles);
+  assert.deepEqual(after.adventure,before.adventure);assert.equal(after.portal.sessionId,before.portal.sessionId);assert.equal(after.portal.revision,before.portal.revision);assert.equal(after.portal.active,true);
+});
+
 test('vortex center: geometric centroid, nearby free fallback and explicit reconfirmation',()=>{
   const triangle={...model,floor:[{x:0,z:0},{x:12,z:0},{x:0,z:12}]};
   assert.deepEqual(roomCenter(triangle),{x:4,z:4});

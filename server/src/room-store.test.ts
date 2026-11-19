@@ -46,6 +46,16 @@ function temporary(run:(directory:string)=>void){
     rmSync(directory,{recursive:true,force:true});
   }
 }
+
+test('room rename preserves geometry, identity and active selection, validates revision and persists',()=>temporary(directory=>{
+  const store=new RoomStore(directory);store.change('save',0,model('salon'));store.change('save',1,model('bureau'));
+  const before=store.snapshot().rooms[0];
+  const renamed=store.change('rename',2,{id:'salon',name:'Grand salon'});
+  assert.equal(renamed.activeId,'bureau');assert.deepEqual(renamed.rooms[0],{...before,name:'Grand salon'});
+  for(const input of [{id:'salon',name:''},{id:'salon',name:'x'.repeat(65)},{id:'absent',name:'Name'},{id:'salon',name:'New',extra:true}])assert.throws(()=>store.change('rename',3,input));
+  assert.throws(()=>store.change('rename',2,{id:'salon',name:'Old'}));
+  assert.equal(new RoomStore(directory).snapshot().rooms[0].name,'Grand salon');
+}));
 test('modèle 3D : contour, murs et obstacles sont validés',()=>{
   assert.equal(area(parseRoom(model()).floor),12);
   for(const invalid of [

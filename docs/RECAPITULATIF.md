@@ -1,5 +1,42 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — noms de pièces et reset d'aventure, 0.13.1
+
+Branche `feat/room-names-adventure-reset`. Chaque fiche de la bibliothèque admin
+dispose d'un champ et bouton **Renommer**. Route protégée `rooms/rename`, nom
+validé (1 à 64 caractères), révision obligatoire, écriture atomique. L'ID, la
+géométrie, les neuf placements et la sélection active restent inchangés. Le nom
+seul est exclu des clés d'invalidation de l'aventure, du portail et des objets :
+renommer une pièce active n'efface pas le rituel ou la progression, et ne demande
+pas de refaire A/B. Sécurité admin conservée ; pas d'élargissement du mode debug.
+
+Avant sauvegarde, le champ existant reçoit un bouton **Nommer / renommer la pièce**.
+Dans les outils Quest : clavier virtuel sur le panneau, lettres, chiffres et
+quelques accents, espace/effacement, validation, annulation et sortie XR. Saisie
+vide refusée, limite de 64 caractères, modification du brouillon seulement avant
+**Enregistrer et activer**. Téléphone/PC : édition du champ standard. Aucun prompt
+navigateur requis dans le casque.
+
+Bouton **Réinitialiser l’aventure** placé dans la section Aventure de l'admin,
+confirmation explicite de suppression de progression/récompenses. Même commande
+dans l'accueil mural, avec écran Oui/Annuler, réutilisant `adventure/reset`.
+Réinitialise l'aventure choisie et arrête le rituel ; catalogue, pièces et placements
+conservés. Le panneau d'entrée du vortex reste visible par tous après ouverture,
+pas uniquement par les porteurs de bâtons : aucune modification de cette règle.
+
+Vérifications réussies : `npm run typecheck`, `npm run build`, `npm test`
+(140/140) et `git diff --check`. Avertissement Vite habituel : Three.js 574 kB.
+Les premiers tests ont identifié un ancien test utilisant le changement de nom
+pour simuler une autre pièce : il vérifie désormais que le nom conserve la
+progression et qu'un autre ID la réinitialise. Le test HTTP a ensuite détecté
+le verrou global du rituel : renommage de métadonnées et reset explicite sont
+maintenant autorisés pendant le portail, après les contrôles admin existants.
+Publication et disponibilité ARM64 à confirmer après le workflow.
+Tests ajoutés : renommage persistant de pièce inactive sans activation, refus
+des noms/révisions invalides, conservation d'une session active et de ses objets,
+clavier borné et annulation ; HTTP protégé, refus sans droits admin et reset
+conservant la bibliothèque. Aucun essai matériel Quest effectué par l'agent.
+
 ### 19 novembre 2026 — vortex centré, panneau et fantômes, 0.13.0 publiée
 
 Branche `feat/centered-vortex-sign-ghosts`. Le placement automatique privilégie

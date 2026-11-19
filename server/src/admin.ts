@@ -53,7 +53,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -94,7 +94,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
         log('portal_admin',{action});broadcast();reply(res,200,{ok:true});
       }catch(error){reply(res,400,{error:error instanceof Error?error.message:'Commande refusee.'});}return;
     }
-    if(room.portal.active&&req.url!=='/api/admin/adventure/stop'&&req.url!=='/api/admin/kick'){reply(res,400,{error:'Arretez le portail avant de modifier la session.'});return;}
+    if(room.portal.active&&!['/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/rooms/rename','/api/admin/kick'].includes(req.url??'')){reply(res,400,{error:'Arretez le portail avant de modifier la session.'});return;}
     if(req.url==='/api/admin/players/names'){
       try{if(Object.keys(body).sort().join(',')!=='names,revision')throw new Error('Noms et révision attendus.');const command=body as Record<string,unknown>;room.setPlayerNames(command.names,command.revision);}
       catch(error){reply(res,400,{error:error instanceof Error?error.message:'Noms invalides.'});return;}
@@ -146,9 +146,10 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     }
     if(req.url?.startsWith('/api/admin/rooms/')) {
       const command=body as Record<string,unknown>;
-      const action=req.url.split('/').at(-1) as 'save'|'activate'|'delete';
+      const action=req.url.split('/').at(-1) as 'save'|'activate'|'delete'|'rename';
       try {
-        const library=store.change(action,command.revision,action==='save'?command.room:command.id);
+        if(action==='rename'&&Object.keys(command).sort().join(',')!=='id,name,revision')throw Error('Identifiant, nom et revision attendus.');
+        const library=store.change(action,command.revision,action==='save'?command.room:action==='rename'?{id:command.id,name:command.name}:command.id);
         room.model=store.active(); room.libraryRevision=library.revision;
         log('room_library_changed',{action,revision:library.revision,rooms:library.rooms.length,activeId:library.activeId});
         broadcast(); reply(res,200,{library});

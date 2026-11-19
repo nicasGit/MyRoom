@@ -20,10 +20,19 @@ import { waitingTunnel } from '../../client/src/portal/waiting-corridor.js';
 import { WaitingAudio,temporalEngineSample } from '../../client/src/portal/waiting-audio.js';
 import { PortalGhosts } from '../../client/src/portal/portal-ghosts.js';
 import { signPlacement } from '../../client/src/portal/vortex-sign.js';
+import { RoomNameEditor } from '../../client/src/room-name.js';
 import { DEFAULT_PORTAL,type PortalPublic } from './portal/portal-types.js';
 import { disposeGroup } from '../../client/src/model-view.js';
 import { applyObjectPoses } from '../../client/src/adventure-view.js';
 import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
+
+test('room name keyboard: bounded draft, empty refusal, controls remain visible, cancel does not save',()=>{
+  const editor=new RoomNameEditor('Salon');editor.press('room-name:clear');assert.equal(editor.press('room-name:save'),undefined);
+  editor.press('room-name:key:A');editor.press('room-name:space');editor.press('room-name:key:É');assert.equal(editor.value,'A É');
+  assert.equal(editor.press('room-name:save'),'save');assert.equal(editor.press('room-name:cancel'),'cancel');
+  for(let i=0;i<100;i++)editor.press('room-name:key:B');assert.equal(editor.value.length,64);
+  assert.ok(editor.buttons().length<=36);assert.ok(editor.buttons().some(b=>b.id==='room-name:exit'));
+});
 
 test('ghost view: other players only, stale data fades/hides, close amber, room coordinates and session reset',()=>{
   const state:PortalPublic={active:true,simulation:false,serverNow:0,sessionId:'one',revision:1,phase:'portal-open',config:DEFAULT_PORTAL,startedAt:0,players:[1,2,3].map(slot=>({slot,name:'P'+slot,present:true,ready:true,claimed:true,crossed:slot===1})),ghosts:[{slot:1,head:{x:1,y:1.6,z:1},ageMs:0},{slot:2,head:{x:1.4,y:1.7,z:1},ageMs:100},{slot:3,head:{x:3,y:1.5,z:1},ageMs:0}]};

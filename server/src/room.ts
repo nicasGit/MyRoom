@@ -13,7 +13,7 @@ import { suggestPortalPlacement } from './portal/portal-placement.js';
 export class Room {
   display=new DisplayModes();
   portal=new TeamPortal();seats=new SeatSessions();portalStore?:PortalPlacementStore;private portalKey='';
-  syncPortal(){const key=JSON.stringify(this.model);
+  syncPortal(){const key=JSON.stringify(this.model?{...this.model,name:undefined}:null);
     if(key!==this.portalKey){this.portal.cancel();this.portalKey=key;let config=this.portalStore?.get(this.placementKey())??this.portalStore?.legacyForRoom(this.model?.id??'no-room');if(!config){try{config=suggestPortalPlacement(this.model);}catch{config=structuredClone(DEFAULT_PORTAL);}}this.portal.configure(config);}
     this.portal.setRoom(this.model);this.portal.prepare(this.playerNames,[...this.players.values()]);}
   placementKey(){return (this.model?.id??'no-room')+'@team-portal@1';}

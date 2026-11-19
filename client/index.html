@@ -53,7 +53,7 @@
         <p><strong>Reconstruction manuelle 3D</strong></p><p id="survey-summary"></p>
         <div class="xr-actions"><button id="survey-new">Nouvelle pièce</button><button id="survey-edit">Modifier la pièce active</button></div>
         <div id="survey-settings" hidden>
-          <label>Nom de la pièce <input id="survey-name" maxlength="64" value="Nouvelle pièce"></label>
+          <label>Nom de la pièce <input id="survey-name" maxlength="64" value="Nouvelle pièce" required></label><button id="survey-rename" type="button">Nommer / renommer la pièce</button>
           <label>Hauteur mesurée des murs (m) <input id="survey-height" type="number" min="0.5" max="6" step="0.05" value="2.5"></label>
           <div class="xr-actions"><button id="survey-close">Fermer le contour</button><button id="survey-undo">Annuler le dernier élément</button></div>
           <label>Nom de l’obstacle <input id="obstacle-name" maxlength="64" placeholder="Table, canapé…"></label>

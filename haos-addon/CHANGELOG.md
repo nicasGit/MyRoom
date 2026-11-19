@@ -1,3 +1,11 @@
+## 0.13.1
+
+- Renommage des pièces depuis leur fiche d'administration, sans changer l'identifiant, les placements, la pièce active ou la progression.
+- Nom éditable avant l'enregistrement ; bouton dédié et clavier virtuel dans les outils de création Quest, avec validation, annulation et sortie.
+- Bouton « Réinitialiser l’aventure » dans l'administration et le menu mural, avec confirmation explicite. Les pièces et placements sont conservés.
+- Validation serveur des noms et révisions, persistance atomique et autorisation administrative existante.
+- Aucun essai matériel Quest annoncé.
+
 ## 0.13.0
 
 - Vortex proposé au centre géométrique de la pièce, ou dans la zone libre la plus proche ; bouton « Centrer le vortex » sur PC et menu mural, puis confirmation physique requise.

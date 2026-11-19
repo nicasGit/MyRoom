@@ -1,5 +1,15 @@
 # Architecture MyRoom
 
+## Noms de pièces et réinitialisation 0.13.1
+
+`rooms/rename` effectue une mutation de métadonnées versionnée et atomique dans
+RoomStore, sans activer une autre pièce. Le nom seul est exclu des clés de cache
+du portail, de l'aventure et des objets : renommer ne réinitialise pas la session.
+Géométrie, ID et placements conservent leurs règles d'invalidation.
+Le nom du brouillon passe par le champ existant ; un clavier de panneau permet
+la saisie Quest sans clavier système. La réinitialisation réutilise l'API protégée
+`adventure/reset`, avec confirmation navigateur ou écran de confirmation mural.
+
 ## Centrage, panneau et fantômes 0.13.0
 
 Le placement propose le centroïde du polygone de sol puis la zone valide la plus

@@ -40,7 +40,7 @@ export class Adventure {
   constructor(registry:PuzzleRegistry=createRegistry(),private catalog:AdventureCatalog=createCatalog(registry)){
     this.engine=new AdventureEngine(registry,catalog,'myroom-classic','1.0.0');
   }
-  configure(model:RoomModel|null){const key=JSON.stringify(model);if(key!==this.key){this.key=key;this.reset(!!model?.puzzles);}}
+  configure(model:RoomModel|null){const key=JSON.stringify(model?{...model,name:undefined}:null);if(key!==this.key){this.key=key;this.reset(!!model?.puzzles);}}
   reset(configured=this.configured){this.sceneEpoch++;this.beforeTest=undefined;this.configured=configured;this.engine.reset();this.revision++;this.message=configured?'Retrouvez les quatre balises, puis entrez les symboles au panneau mural.':'Configurer les énigmes dans l’administration.';}
   start(){if(!this.configured)throw new Error('Configurez les placements avant de commencer.');const previous=this.engine.snapshot().revision;this.engine.start();if(this.engine.snapshot().revision!==previous)this.revision++;}
   stop(){const previous=this.engine.snapshot().revision;this.engine.stop();if(this.engine.snapshot().revision!==previous)this.revision++;}

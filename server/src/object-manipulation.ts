@@ -24,7 +24,7 @@ export class ObjectManipulation {
   private poses:Partial<Record<ObjectId,ObjectPose>>={};
   private held=new Map<ObjectId,{owner:string;lease:string;expiresAt:number;seq:number;original:ObjectPose}>();
   private key='';
-  configure(model:RoomModel|null,epoch:number,extra:Partial<Record<ObjectId,ObjectPose>>={}){const key=JSON.stringify([model,epoch,extra]);if(key===this.key)return;this.key=key;this.held.clear();this.poses=structuredClone(extra);this.revision++;
+  configure(model:RoomModel|null,epoch:number,extra:Partial<Record<ObjectId,ObjectPose>>={}){const key=JSON.stringify([model?{...model,name:undefined}:null,epoch,extra]);if(key===this.key)return;this.key=key;this.held.clear();this.poses=structuredClone(extra);this.revision++;
     if(!model?.puzzles)return;for(const id of PUZZLE_ITEMS)this.poses[id]={...model.puzzles.points[id],y:model.puzzles.poses?.[id]?.y??0,yaw:model.puzzles.poses?.[id]?.yaw??0};
     const panel=puzzlePanel(model);if(panel)this.poses.panel={...panel.position,y:panel.height,yaw:panel.yaw};
   }

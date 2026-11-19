@@ -28,7 +28,7 @@ startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent=
 const catalogPanel=document.createElement('section');catalogPanel.className='panel';
 catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Utiliser les noms suggérés</button></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
 el('dashboard').prepend(catalogPanel);
-const puzzleAdmin=document.createElement('div');puzzleAdmin.innerHTML='<p id="adventure-captain"></p><button id="adventure-hint">Partager l’indice suivant</button><button id="adventure-reset-puzzle" class="secondary">Réinitialiser l’énigme active</button><p id="adventure-hints"></p>';catalogPanel.append(puzzleAdmin);
+const puzzleAdmin=document.createElement('div');puzzleAdmin.innerHTML='<p id="adventure-captain"></p><button id="adventure-hint">Partager l’indice suivant</button><button id="adventure-reset-puzzle" class="secondary">Réinitialiser l’énigme active</button><p id="adventure-hints"></p>';catalogPanel.append(puzzleAdmin,el('adventure-reset'));el('adventure-reset').textContent='Réinitialiser l’aventure';
 const saveObjects=document.createElement('button');saveObjects.textContent='Enregistrer les objets déplacés dans la pièce';puzzleAdmin.append(saveObjects);let objectRevision=0;
 saveObjects.onclick=()=>{void action('adventure/save-objects',{revision:libraryRevision,objectRevision});};
 el('adventure-hint').onclick=()=>{void action('adventure/hint',{revision:latestAdventureRevision});};
@@ -130,7 +130,11 @@ function render(state: State) {
       activate.onclick=()=>{if(confirm(`Activer ${room.name} ? Les joueurs devront refaire le calibrage A/B.`))void action('rooms/activate',{id:room.id,revision:library!.revision});};
       const remove=node('button','Supprimer','danger');
       remove.onclick=()=>{if(confirm(`Supprimer définitivement la pièce ${room.name} du serveur ?`))void action('rooms/delete',{id:room.id,revision:library!.revision});};
-      card.append(activate,remove);return card;
+      const rename=document.createElement('form'),name=document.createElement('input'),label=document.createElement('label'),submit=node('button','Renommer','secondary') as HTMLButtonElement;
+      name.value=room.name;name.maxLength=64;name.required=true;label.textContent='Nom de la pièce ';label.append(name);submit.type='submit';rename.append(label,submit);
+      const expectedRevision=library!.revision;
+      rename.onsubmit=event=>{event.preventDefault();void action('rooms/rename',{id:room.id,name:name.value.trim(),revision:expectedRevision});};
+      card.append(rename,activate,remove);return card;
     }));
     preview(active);
   }
@@ -191,7 +195,7 @@ el('login').onsubmit = event => {
 el('reset').onclick = () => { if (confirm('Réinitialiser l’énigme pour tous les joueurs ?')) void action('reset', {}); };
 el('refresh').onclick = () => { void refresh(); };
 el('logout').onclick = () => { logout(); notice.textContent = ''; };
-el('adventure-reset').onclick=()=>{if(confirm('Recommencer le coffre et le blackjack pour toute l’équipe ?'))void action('adventure/reset',{});};
+el('adventure-reset').onclick=()=>{if(confirm('Réinitialiser toute la progression et les récompenses de l’aventure pour toute l’équipe ? Les pièces et placements seront conservés.'))void action('adventure/reset',{});};
 el<HTMLInputElement>('adventure-test').onchange=()=>{void action('adventure/test-mode',{enabled:el<HTMLInputElement>('adventure-test').checked});};
 el('rooms-export').onclick=()=>{
   if(!library)return;

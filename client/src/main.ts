@@ -29,6 +29,7 @@ import { PhoneControls } from './phone-controls';
 import { PortalWaiting } from './portal/portal-waiting';
 import { waitingCorridor } from './portal/waiting-corridor';
 import { WaitingAudio } from './portal/waiting-audio';
+import { RoomNameEditor } from './room-name';
 
 const waitingSound=new WaitingAudio();
 document.addEventListener('pointerdown',()=>{void waitingSound.unlock();});
@@ -43,7 +44,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.13.0');
+diagnostic('Version client', '0.13.1');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -142,6 +143,15 @@ enter.onclick = async () => {
     currentXRSession=session;
     session.addEventListener('visibilitychange',()=>{if(session?.visibilityState!=='visible')waitingSound.setActive(false);});
     const touchOverlay = useTouchOverlay(!!session.domOverlayState,session.interactionMode);
+    let roomNameEditor:RoomNameEditor|undefined;
+    const editRoomName=(event:Event)=>{if(!touchOverlay&&survey.hasDraft()){event.preventDefault();roomNameEditor=new RoomNameEditor(element<HTMLInputElement>('survey-name').value);}};
+    document.addEventListener('myroom-room-name',editRoomName);
+    const nameCommand=(id:string)=>{
+      const result=roomNameEditor?.press(id);
+      if(result==='save'){const input=element<HTMLInputElement>('survey-name');input.value=roomNameEditor!.value.trim();input.dispatchEvent(new Event('change'));roomNameEditor=undefined;}
+      else if(result==='cancel')roomNameEditor=undefined;
+      else if(result==='exit'){roomNameEditor=undefined;void session?.end();}
+    };
     adventure.setXRActive(true);
     xrEvent('session_started', { overlay: touchOverlay });
     diagnostic('Commandes tactiles DOM dans cette session', touchOverlay ? 'disponibles' : 'indisponibles ; sélection XR native si proposée par le navigateur');
@@ -221,11 +231,12 @@ enter.onclick = async () => {
       surveyMenu.group.visible=!touchOverlay&&!!calibration&&wallLobby.roomMode;
       if(surveyMenu.group.visible&&pose){
         surveyAnchor.place(surveyMenu.group,new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation));
-        const buttons=surveyButtons(id=>element(id) as HTMLButtonElement,survey.hasDraft()),lines=[survey.instruction,(element('survey-save-status').textContent??'').slice(0,72),(feedback.textContent??scanStatus.textContent??'').slice(0,150),'Viser un bouton puis utiliser la gâchette.'];
+        if(!survey.hasDraft())roomNameEditor=undefined;
+        const buttons=roomNameEditor?.buttons()??surveyButtons(id=>element(id) as HTMLButtonElement,survey.hasDraft()),lines=[roomNameEditor?('Nom de la piece : '+roomNameEditor.value):survey.instruction,(element('survey-save-status').textContent??'').slice(0,72),(feedback.textContent??scanStatus.textContent??'').slice(0,150),'Viser un bouton puis utiliser la gâchette.'];
         const key=JSON.stringify([buttons,lines]);if(key!==surveyMenuKey){surveyMenuKey=key;surveyMenu.draw('Création de pièces',lines,buttons);}
       }
       if(!wallLobby.roomMode&&calibration){hud.visible=false;return;}
-      for(const action of questButtons.poll(session!.inputSources)){
+      if(!roomNameEditor)for(const action of questButtons.poll(session!.inputSources)){
         if(action==='import')requestImport();
         else if(action==='save')survey.saveDraft();
         else survey.cancel();
@@ -289,8 +300,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { waitingSound.setActive(false);waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { waitingSound.setActive(false);waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { roomNameEditor=undefined;waitingSound.setActive(false);waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { document.removeEventListener('myroom-room-name',editRoomName);waitingSound.setActive(false);waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -336,7 +347,7 @@ enter.onclick = async () => {
     });
     session.addEventListener('select', event => {
       if(menuMover.blocksSelect()||obstacleEditor.holding)return;
-      if(surveyMenu.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(surveyMenu.intersects(origin,direction)){const id=surveyMenu.pick(origin,direction);if(id)runSurveyCommand(id,key=>element(key) as HTMLButtonElement,()=>wallLobby.setRoomMode(false),()=>{void session?.end();});return;}}}
+      if(surveyMenu.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(surveyMenu.intersects(origin,direction)){const id=surveyMenu.pick(origin,direction);if(id?.startsWith('room-name:'))nameCommand(id);else if(id)runSurveyCommand(id,key=>element(key) as HTMLButtonElement,()=>wallLobby.setRoomMode(false),()=>{void session?.end();});return;}}}
       if(calibration&&wallLobby.view.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);
         if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(wallLobby.view.intersects(origin,direction)){wallLobby.pick(origin,direction);return;}}
       }
