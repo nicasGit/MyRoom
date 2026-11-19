@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — noms de pièces et reset d'aventure, 0.13.1
+### 19 novembre 2026 — noms de pièces et reset d'aventure, 0.13.1 publiée
 
 Branche `feat/room-names-adventure-reset`. Chaque fiche de la bibliothèque admin
 dispose d'un champ et bouton **Renommer**. Route protégée `rooms/rename`, nom
@@ -31,7 +31,11 @@ pour simuler une autre pièce : il vérifie désormais que le nom conserve la
 progression et qu'un autre ID la réinitialise. Le test HTTP a ensuite détecté
 le verrou global du rituel : renommage de métadonnées et reset explicite sont
 maintenant autorisés pendant le portail, après les contrôles admin existants.
-Publication et disponibilité ARM64 à confirmer après le workflow.
+Publication confirmée : commit `b8fcc7a` intégré sur main ; workflow
+[44595642428](https://github.com/nicasGit/MyRoom/actions/runs/44595642428) réussi.
+Image `ghcr.io/nicasgit/myroom:0.13.1` vérifiée dans le registre : Linux ARM64,
+label version 0.13.1, digest
+`sha256:144a9fbd6c7bf176469ae66a4cf09c937bcac486db7c68e755e7e406fe934bb4`.
 Tests ajoutés : renommage persistant de pièce inactive sans activation, refus
 des noms/révisions invalides, conservation d'une session active et de ses objets,
 clavier borné et annulation ; HTTP protégé, refus sans droits admin et reset
