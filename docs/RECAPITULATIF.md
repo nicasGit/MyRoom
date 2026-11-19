@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — bâtons libres et vortex, préparation 0.11.0
+### 19 novembre 2026 — bâtons libres et vortex, 0.11.0 publiée
 
 Branche `feat/free-staff-rotation-vortex`. Les bâtons peuvent suivre l'orientation
 complète d'une main ou manette : quaternion calculé dans le repère A/B, rotation
@@ -32,7 +32,11 @@ Tests : pivot de prise et rotation complète, retour yaw historique, rejet des
 quaternions invalides et des rotations complètes des gros objets, mouvement et
 pose de quatre bâtons diffusés aux autres clients, transitions et départ unique.
 Avertissement Vite habituel : chunk Three.js 574 kB. Aucun essai matériel Quest
-par l'agent. Publication en cours.
+par l'agent. Publication confirmée : commit `fb3a03a` intégré sur main, workflow
+[44561759931](https://github.com/nicasGit/MyRoom/actions/runs/44561759931) réussi.
+Image `ghcr.io/nicasgit/myroom:0.11.0` vérifiée dans le registre : Linux ARM64,
+label version 0.11.0, digest
+`sha256:dc290b1a90e72a925a686cd71f61aaaf999787c84d972f364ee79361aee577d3`.
 
 ### 19 novembre 2026 — préparation du portail et mains aux manettes, 0.10.3 publiée
 
