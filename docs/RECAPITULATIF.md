@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — préparation du portail et mains aux manettes, préparation 0.10.3
+### 19 novembre 2026 — préparation du portail et mains aux manettes, 0.10.3 publiée
 
 Branche `fix/portal-preparation-controller-hands`. Le changement du nombre de joueurs
 était refusé par la validation intégrale d'un couloir inchangé. La configuration
@@ -37,7 +37,12 @@ points existants, recalcul explicite du portail, entrées analogiques et animati
 indépendante des doigts sur les deux vrais modèles GLB. Un passage intermédiaire
 a rencontré EPERM dans RoomStore et un retour 400 de sauvegarde dans le test réseau ;
 relance complète sans changement de code réussie. Avertissement Vite connu : 574 kB.
-Aucun test matériel Quest réalisé par l'agent. Publication en cours.
+Aucun test matériel Quest réalisé par l'agent. Publication confirmée : commit
+`1adc8a2` intégré sur main, workflow
+[44552273782](https://github.com/nicasGit/MyRoom/actions/runs/44552273782) réussi.
+Image `ghcr.io/nicasgit/myroom:0.10.3` contrôlée dans le registre : Linux ARM64,
+label version 0.10.3, digest
+`sha256:cf307ef16bb5fe3c039ab68c1ede05d425a2cecdf1ae200f2366f6093d0d5847`.
 
 ### 19 novembre 2026 — refus du rituel et accueil WebXR, 0.10.2 publiée
 
