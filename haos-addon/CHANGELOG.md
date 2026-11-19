@@ -1,3 +1,8 @@
+## 0.9.3
+
+- Option debug_without_admin_token facultative : les configurations existantes sans cette clé restent valides.
+- Absence de clé interprétée comme false au démarrage, sans activer les droits debug.
+
 ## 0.9.2
 
 - Mode debug sans jeton sur activation explicite de debug_without_admin_token.

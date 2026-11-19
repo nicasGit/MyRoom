@@ -50,6 +50,11 @@ Quatre connexions et une seule salle active ; les connexions et l'état d'énigm
 Les validations sur Quest, Nginx déployé et HAOS/Raspberry Pi 5 restent à effectuer.
 ## Debug sans jeton (0.9.2)
 
+Depuis 0.9.3, la clé est facultative : si elle est absente, le debug reste désactivé.
+Les anciennes configurations contenant seulement public_origin et admin_token restent
+valides. Pour l'ajouter si elle n'apparaît pas dans le formulaire, éditer la configuration
+en YAML et ajouter `debug_without_admin_token: true` ou `false`.
+
 Dans la configuration de l'add-on : mettre `admin_token` à vide et activer
 `debug_without_admin_token`, puis redémarrer. Cette option est désactivée par défaut.
 Elle donne les droits administrateur à tous les clients qui accèdent à MyRoom,

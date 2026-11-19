@@ -1,5 +1,5 @@
 name: MyRoom
-version: "0.9.2"
+version: "0.9.3"
 slug: myroom
 url: https://github.com/nicasgit/myroom
 image: ghcr.io/nicasgit/myroom
@@ -17,8 +17,7 @@ ports_description:
 options:
   public_origin: "https://myroom.example.com"
   admin_token: ""
-  debug_without_admin_token: false
 schema:
   public_origin: url
   admin_token: password
-  debug_without_admin_token: bool
+  debug_without_admin_token: bool?
