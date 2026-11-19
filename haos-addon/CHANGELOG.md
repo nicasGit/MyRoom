@@ -1,3 +1,11 @@
+## 0.13.0
+
+- Vortex proposé au centre géométrique de la pièce, ou dans la zone libre la plus proche ; bouton « Centrer le vortex » sur PC et menu mural, puis confirmation physique requise.
+- Grand panneau en bois biscornu « Entrez entièrement dans le vortex », visible au fond du portail ouvert et dans le couloir, avec compteur des arrivées.
+- Fantômes des autres joueurs WebXR dans le couloir, y compris ceux encore dehors ; positions de tête récentes, corps approximatifs et couleur orangée à proximité.
+- Positions expirées ou perdues masquées ; indication de suivi incomplet. Aucun suivi corporel complet ni garantie anticollision.
+- Partage temporaire des poses pendant le rituel, sans journalisation ni persistance. Aucun essai matériel Quest annoncé.
+
 ## 0.12.1
 
 - Ambiance originale de moteur temporel dans le couloir après validation du passage, inspirée du TARDIS, sans extrait de la série.

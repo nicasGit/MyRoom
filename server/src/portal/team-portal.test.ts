@@ -14,8 +14,18 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 import { suggestPortalPlacement,configurePortalPlacement } from './portal-placement.js';
 import { PortalWaiting } from '../../../client/src/portal/portal-waiting.js';
+import { roomCenter } from './portal-placement.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
+
+test('vortex center: geometric centroid, nearby free fallback and explicit reconfirmation',()=>{
+  const triangle={...model,floor:[{x:0,z:0},{x:12,z:0},{x:0,z:12}]};
+  assert.deepEqual(roomCenter(triangle),{x:4,z:4});
+  const centered=suggestPortalPlacement(triangle,config);assert.equal(centered.portal.x,4);assert.equal(centered.portal.z,4);assert.equal(centered.confirmed,false);validatePlacement(centered,triangle);
+  const blocked={...model,obstacles:[{name:'Table',x:4,z:4,width:1,depth:1,height:1}]};
+  const free=suggestPortalPlacement(blocked,config);assert.ok(Math.hypot(free.portal.x-4,free.portal.z-4)>0);validatePlacement(free,blocked);
+  assert.equal(config.confirmed,true);assert.equal(config.portal.z,3);
+});
 
 test('portal preparation: count changes do not require a valid old corridor; confirmation still does',()=>{
   const old=structuredClone(DEFAULT_PORTAL),shifted={...model,floor:model.floor.map(p=>({x:p.x+10,z:p.z+10}))};
@@ -87,6 +97,20 @@ test('accueil global : visible par défaut, placement et rituel indépendants du
 function fixture(){const portal=new TeamPortal();portal.configure(config);portal.begin('session',['Un','Deux','Trois','Quatre'],model,1000);portal.presence([1,2,3,4],1000);return portal;}
 function pose(portal:TeamPortal,slot:number,seq:number,at:number,d=0.6){const s=portal.snapshot();portal.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,at);}
 function open(){const portal=fixture();for(let i=1;i<=4;i++)pose(portal,i,1,1100);portal.tick(1100,()=>{});for(let i=1;i<=4;i++)portal.claim(i,STAFF_IDS[i-1]);portal.tick(1200,()=>{});portal.tick(6200,()=>{});return portal;}
+
+test('ghost positions: only fresh validated XR poses, copies, expiry, loss, camera/virtual exclusion and cancellation',()=>{
+  const p=fixture();
+  for(let slot=1;slot<=3;slot++){
+    const s=p.snapshot();p.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq:1,action:'pose',position:{x:slot+1,y:1.6,z:3}},slot,model,1100,slot===1?'quest-webxr':slot===2?'camera-ar':'virtual-3d');
+  }
+  let ghosts=p.snapshot(1200).ghosts!;assert.equal(ghosts.length,1);assert.equal(ghosts[0].slot,1);assert.equal(ghosts[0].ageMs,100);
+  ghosts[0].head.x=25;assert.equal(p.snapshot(1200).ghosts![0].head.x,2);
+  assert.deepEqual(p.snapshot(2100).ghosts,[]);
+  p.clearTracking(1);assert.deepEqual(p.snapshot(1200).ghosts,[]);
+  pose(p,1,2,1400);assert.equal(p.snapshot(1500).ghosts!.length,1);
+  p.presence([2,3,4],1500);assert.deepEqual(p.snapshot(1500).ghosts,[]);
+  p.cancel();assert.deepEqual(p.snapshot(1500).ghosts,[]);
+});
 
 test('head passage: physical XR validates at four centimetres; other players and adventure still wait',()=>{
   const p=open();

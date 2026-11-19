@@ -5,12 +5,19 @@ import { staffLayout } from './staff-layout.js';
 import type { DisplayMode } from '../display-modes.js';
 export class TeamPortal {
   private state:PortalPublic={serverNow:0,sessionId:'inactive',revision:0,active:false,phase:'waiting',config:structuredClone(DEFAULT_PORTAL),simulation:false,startedAt:0,players:[]};
-  private pose=new Map<number,{p:Vec3;at:number;seq:number}>();
+  private pose=new Map<number,{p:Vec3;at:number;seq:number;mode:DisplayMode}>();
   private detectors=Array.from({length:4},()=>new CrossingDetector());
   private seen=new Set<string>();private launched=false;
   private room:RoomModel|null=null;private layoutKey='';private positions:ReturnType<typeof staffLayout>={};
   setRoom(room:RoomModel|null){this.room=room;const key=JSON.stringify([room,this.state.config]);if(key!==this.layoutKey){this.layoutKey=key;this.positions=staffLayout(this.state.config,room);}}
-  snapshot(){this.setRoom(this.room);return {...structuredClone(this.state),staffPositions:structuredClone(this.positions),serverNow:Date.now()};}
+  snapshot(now=Date.now()){
+    this.setRoom(this.room);
+    const ghosts=this.active&&!this.state.simulation?[...this.pose].flatMap(([slot,pose])=>{
+      const player=this.state.players[slot-1],ageMs=now-pose.at;
+      return pose.mode==='quest-webxr'&&player?.present&&player.ready&&ageMs>=0&&ageMs<1000?[{slot,head:{...pose.p},ageMs}]:[];
+    }):[];
+    return {...structuredClone(this.state),ghosts,staffPositions:structuredClone(this.positions),serverNow:now};
+  }
   get active(){return this.state.active;}
   prepare(names:string[],slots:number[]){
     if(this.active||this.state.phase!=='waiting')return;
@@ -50,7 +57,7 @@ export class TeamPortal {
       // Coherence is checked on server arrival times, never trusting client timestamps.
       if(previous&&(now<=previous.at||now-previous.at<100||Math.hypot(v.x-previous.p.x,v.y-previous.p.y,v.z-previous.p.z)>Math.min(0.8,(now-previous.at)/1000*3+0.1)))throw Error('Déplacement incohérent ou trop fréquent.');
       if(!insideRoom(v,room.floor))throw Error('Pose hors de la pièce.');
-      this.pose.set(slot,{p:v,at:now,seq:c.seq});if(!p.ready){p.ready=true;this.state.revision++;}
+      this.pose.set(slot,{p:v,at:now,seq:c.seq,mode});if(!p.ready){p.ready=true;this.state.revision++;}
       if(mode!=='camera-ar'&&this.state.phase==='portal-open'&&this.allReady()&&!p.crossed&&this.detectors[slot-1].sample(v,now,this.state.config.portal,mode==='quest-webxr'?.04:.3))this.cross(slot,mode==='virtual-3d'?'virtual-crossing':'physical-xr');
     }else if(c.action==='unready'){this.pose.delete(slot);p.ready=false;this.detectors[slot-1].reset();this.state.revision++;}
     else {if(!p.ready)throw Error('Signalez votre présence avant la confirmation accessible.');this.cross(slot,mode==='camera-ar'?'camera-confirmation':'accessible-confirmation');}

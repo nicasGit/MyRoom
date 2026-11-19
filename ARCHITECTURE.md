@@ -1,5 +1,22 @@
 # Architecture MyRoom
 
+## Centrage, panneau et fantômes 0.13.0
+
+Le placement propose le centroïde du polygone de sol puis la zone valide la plus
+proche, avec validation du couloir et de la place des bâtons. Les placements
+enregistrés restent inchangés jusqu'à « Centrer le vortex », hors session, puis
+nouvelle confirmation physique. Aucun changement de schéma persistant.
+
+`PortalPublic.ghosts` ajoute facultativement des positions de tête WebXR validées,
+place et âge calculé à la réception serveur, uniquement pendant le rituel actif.
+Les modes caméra/simulateur, poses expirées, places absentes et simulations sont
+exclus. Le client tient compte de l'âge reçu et du temps local écoulé ; les poses
+ne sont ni extrapolées ni persistées. `PortalGhosts` rend un corps approximatif
+à partir de la tête, sans prétendre mesurer les membres. Pas de règle de collision.
+`vortexSign` produit la géométrie et une texture Canvas originale du panneau en
+bois, partagée par le portail et le couloir ; les fantômes restent visibles devant
+le décor opaque. Voir [Team Portal](docs/team-portal.md#centrage-panneau-et-fantômes-0130).
+
 ## Ambiance du couloir 0.12.1
 
 `WaitingAudio` synthétise une boucle locale de huit secondes via Web Audio,

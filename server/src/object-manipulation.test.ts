@@ -18,9 +18,31 @@ import { MenuMover,MenuPointers } from '../../client/src/xr-menu-interactions.js
 import { vortexView } from '../../client/src/portal/vortex-view.js';
 import { waitingTunnel } from '../../client/src/portal/waiting-corridor.js';
 import { WaitingAudio,temporalEngineSample } from '../../client/src/portal/waiting-audio.js';
+import { PortalGhosts } from '../../client/src/portal/portal-ghosts.js';
+import { signPlacement } from '../../client/src/portal/vortex-sign.js';
+import { DEFAULT_PORTAL,type PortalPublic } from './portal/portal-types.js';
 import { disposeGroup } from '../../client/src/model-view.js';
 import { applyObjectPoses } from '../../client/src/adventure-view.js';
 import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
+
+test('ghost view: other players only, stale data fades/hides, close amber, room coordinates and session reset',()=>{
+  const state:PortalPublic={active:true,simulation:false,serverNow:0,sessionId:'one',revision:1,phase:'portal-open',config:DEFAULT_PORTAL,startedAt:0,players:[1,2,3].map(slot=>({slot,name:'P'+slot,present:true,ready:true,claimed:true,crossed:slot===1})),ghosts:[{slot:1,head:{x:1,y:1.6,z:1},ageMs:0},{slot:2,head:{x:1.4,y:1.7,z:1},ageMs:100},{slot:3,head:{x:3,y:1.5,z:1},ageMs:0}]};
+  const view=new PortalGhosts(()=>new THREE.Group()),head={x:1,y:1.6,z:1};view.update(state,1,head,100);
+  assert.equal(view.group.children.length,2);assert.equal(view.group.children[0].position.x,1.4);
+  const mesh=view.group.children[0].children[0] as THREE.Mesh<THREE.SphereGeometry,THREE.MeshBasicMaterial>;
+  assert.equal(mesh.material.color.getHex(),0xffb86b);assert.equal(mesh.material.depthTest,false);
+  view.update(state,1,head,850);assert.ok(mesh.material.opacity<.55);
+  view.update(state,1,head,1200);assert.equal(view.group.children.some(n=>n.visible),false);
+  view.update({...state,sessionId:'two',ghosts:[]},1,head,1300);assert.equal(view.group.children.length,0);
+  view.update({...state,simulation:true},1,head,1400);assert.equal(view.group.children.length,0);disposeGroup(view.group);
+});
+
+test('wood sign: behind the portal in both directions and rotated room coordinates',()=>{
+  const p=DEFAULT_PORTAL.portal;
+  assert.equal(signPlacement(p,.6).z,p.z-.6);
+  const reversed=signPlacement({...p,yaw:Math.PI/2,direction:-1},.6);
+  assert.ok(Math.abs(reversed.x-(p.x+.6))<1e-8);assert.equal(reversed.yaw,Math.PI*1.5);
+});
 
 test('waiting audio: periodic original engine is finite, bounded and not silent',()=>{
   let energy=0;

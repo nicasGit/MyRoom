@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { label } from '../adventure-view';
+import { vortexSign } from './vortex-sign';
+import { PortalGhosts } from './portal-ghosts';
 import type { PortalPublic,Vec3 } from '../../../server/src/portal/portal-types.js';
 
 /** Opaque enclosure: no camera movement, no dependency on native scene APIs. */
@@ -30,27 +31,21 @@ export function waitingTunnel(){
 }
 
 export function waitingCorridor(){
-  const view=waitingTunnel(),group=new THREE.Group(),board=new THREE.Group();
-  group.add(view.group,board);group.visible=false;
-  let key='';
+  const view=waitingTunnel(),group=new THREE.Group(),board=vortexSign(),ghosts=new PortalGhosts();
+  group.add(view.group,board.group,ghosts.group);group.visible=false;
   return {group,update(state:PortalPublic,slot:number,head:Vec3,seconds:number){
     const p=state.config.portal;
     view.group.position.set(p.x,0,p.z);view.group.rotation.y=p.yaw+(p.direction===-1?Math.PI:0);
     if(!group.visible){
       // Position once on entry in the calibrated room, never follow the head.
-      board.position.set(head.x-Math.sin(p.yaw)*p.direction*1.2,head.y-.1,head.z-Math.cos(p.yaw)*p.direction*1.2);
+      board.group.position.set(head.x-Math.sin(p.yaw)*p.direction*2.2,head.y-.1,head.z-Math.cos(p.yaw)*p.direction*2.2);
+      board.group.rotation.y=p.yaw+(p.direction===-1?Math.PI:0);
     }
     const arrived=state.players.filter(p=>p.crossed).length,total=state.players.length;
     const confirmed=!!state.players.find(p=>p.slot===slot)?.crossed;
-    const lines=['Entre les univers',`${arrived}/${total} passages validés`,confirmed?'Restez ici, attendez le groupe':'Avancez la tête doucement pour valider',state.phase==='transitioning'?'Le groupe est prêt…':'Restez dans votre espace réel dégagé'];
-    const next=JSON.stringify(lines);
-    if(key!==next){
-      for(const child of [...board.children]){
-        const sprite=child as THREE.Sprite;sprite.material.map?.dispose();sprite.material.dispose();board.remove(child);
-      }
-      lines.forEach((text,i)=>{const sprite=label(text,i===0?'#a5f3fc':'#ffffff');sprite.scale.set(1.25,.24,1);sprite.position.y=.38-i*.25;board.add(sprite);});
-      key=next;
-    }
+    ghosts.update(state,slot,head,seconds*1000);
+    const visibleGhosts=ghosts.group.children.filter(ghost=>ghost.visible).length;
+    board.draw(`${arrived}/${total} arrivés · ${confirmed?'Puis attendez ici':'Passage en attente'}`,visibleGhosts<total-1?'Suivi incomplet · Vérifiez l’espace réel':'Fantômes approximatifs · Gardez vos distances');
     group.visible=true;view.animate(seconds);
   }};
 }

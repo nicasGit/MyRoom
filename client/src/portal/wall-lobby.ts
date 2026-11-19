@@ -61,7 +61,7 @@ export class WallLobby {
       lines[0]=`Groupe : ${p.config.playerCount??4} joueur(s)`;
       buttons.push({id:'less',title:'Moins de joueurs'},{id:'more',title:'Plus de joueurs'});
       l.names.forEach((name,i)=>buttons.push({id:`name:${i}`,title:`${i+1}. ${name}`}));
-      buttons.push({id:'fit-portal',title:'Adapter le portail à la pièce'},{id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
+      buttons.push({id:'fit-portal',title:'Centrer le vortex'},{id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
     }
     if(this.tab==='rooms')buttons.push({id:'edit-mode',title:this.roomMode?'Revenir au jeu':'Ouvrir les outils de pièce'},{id:'new-room',title:'Nouvelle pièce'},{id:'edit-room',title:'Modifier la pièce active'},{id:'save-room',title:'Enregistrer la pièce'},{id:'cancel-room',title:'Annuler le brouillon'},{id:'import-room',title:'Importer les plans Quest'});
     if(this.tab==='keyboard'){

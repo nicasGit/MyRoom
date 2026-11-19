@@ -58,11 +58,50 @@ La connexion reçoit un secret aléatoire de reprise de place, conservé dans `s
 
 Après redémarrage serveur ou perte du secret, le bouton **Rejoindre avec une nouvelle place** efface le justificatif local. Il ne contourne pas une réservation active : l’organisateur doit la libérer. Ne pas partager le justificatif ni cloner un onglet pour rejoindre deux places.
 
-Les poses de tête sont envoyées environ trois fois par seconde uniquement pendant le rituel. Elles sont bornées et contrôlées côté serveur avec séquences, historique limité à la dernière pose et détecteur transitoire. Elles ne sont ni publiées dans les instantanés, ni écrites en journal ou sur disque. Les coordonnées déclarées par le casque ne sont pas une mesure physique indépendante.
+Les poses de tête sont envoyées environ trois fois par seconde uniquement pendant le rituel. Elles sont bornées et contrôlées côté serveur avec séquences, historique limité à la dernière pose et détecteur transitoire. Depuis 0.13.0, les positions WebXR récentes sont partagées avec les participants dans `portal.ghosts` pour afficher les silhouettes, avec place et âge serveur ; elles ne sont ni écrites en journal ni sur disque. Les modes caméra et simulateur ne fournissent pas de fantômes physiques. Les coordonnées déclarées par le casque ne sont pas une mesure physique indépendante.
 
 ## Traversée et concurrence
 
 Le détecteur exige un départ à au moins 30 cm devant le plan et une intersection du rectangle utile. Depuis 0.12.0, l'arrivée WebXR est validée à 4 cm derrière le plan de tête ; le simulateur virtuel conserve une arrivée à 30 cm. Les bords ont une marge de 8 cm. Les sauts excessifs et trous de suivi annulent l’historique ; des oscillations autour du plan ne suffisent pas. Le sens, la hauteur et la largeur sont contrôlés. Une place ne peut valider qu’un passage par session.
+
+## Centrage, panneau et fantômes 0.13.0
+
+Pour une nouvelle pièce sans placement, le vortex est proposé au centre géométrique
+du sol. Si le couloir est bloqué, la proposition cherche la zone libre la plus
+proche, éventuellement avec une ouverture plus compacte. Un centre situé dans
+un meuble ou hors d'une pièce concave n'est pas retenu aveuglément. Pour une pièce
+existante, arrêter la session puis **Centrer le vortex** dans les paramètres du
+menu mural ou dans Team Portal sur l'administration PC. Cette action sauvegarde
+la proposition ; vérifier et confirmer à nouveau l'espace physique avant de
+démarrer. Les anciens placements ne sont pas déplacés en cours de jeu.
+
+Un grand panneau en bois irrégulier, avec grain, clous et liseré noir/crème, affiche
+**« Entrez entièrement dans le vortex »**. Il apparaît au fond du portail ouvert,
+puis plus grand dans le couloir personnel avec le compteur des arrivées. Il s'agit
+d'un décor original d'ambiance fantastique et macabre, sans ressource du film
+Beetlejuice. Le panneau n'est pas un objectif à rejoindre : franchir dans le couloir
+physique dégagé confirmé, puis attendre sur place, sans parcourir la profondeur
+virtuelle du tunnel. Le franchissement de tête, les seuils et les règles de départ
+collectif ne changent pas.
+
+Dans le couloir, les autres participants WebXR suivis apparaissent en silhouettes
+translucides avec leur nom, même s'ils n'ont pas encore passé le vortex. La tête
+et la projection au sol utilisent leur position A/B ; le torse et l'encombrement
+corporel sont estimés, sans suivi des mains ou du corps partagé. Les silhouettes
+restent visibles devant le panneau/décor, deviennent orangées à moins de 90 cm
+horizontalement et s'effacent entre 600 et 1 000 ms d'âge. Une pose perdue,
+déconnexion, changement de mode ou fin du rituel retire le fantôme. Le panneau
+signale **Suivi incomplet** quand des participants n'ont pas de silhouette récente.
+
+Ces positions sont partagées uniquement entre clients connectés durant le rituel,
+pas enregistrées dans les pièces, les journaux ou les sauvegardes. Le mode caméra
+et le simulateur ne sont pas présentés comme des personnes physiquement suivies.
+Le partage dépend du calibrage manuel, de la dérive XR, du réseau et des poses
+déclarées. Il ne détecte ni les personnes sans casque, ni les meubles réels non
+relevés, et ne garantit pas l'absence de collision. Conserver Guardian/Boundary
+et les distances physiques. Pas d'interpolation prédictive susceptible de faire
+croire à une position mesurée ; le rafraîchissement suit les poses du rituel
+(environ trois par seconde). Alignement et confort restent à vérifier sur Quest.
 
 ## Couloir personnel 0.12.0
 

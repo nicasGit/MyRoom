@@ -1,5 +1,53 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — vortex centré, panneau et fantômes, 0.13.0
+
+Branche `feat/centered-vortex-sign-ghosts`. Le placement automatique privilégie
+le centroïde du sol, puis une position libre proche parmi les candidats validés,
+en conservant les contrôles du couloir et de place des bâtons. Bouton **Centrer
+le vortex** ajouté dans l'administration PC et nommé ainsi dans le menu mural.
+Pour une pièce existante : arrêter la session, centrer puis vérifier/confirmer
+à nouveau l'espace physique. Aucun déplacement silencieux d'un placement déjà
+enregistré ou d'un portail actif ; aucune migration du format des pièces.
+
+Panneau original en bois, grain procédural, clous, planche irrégulière et liseré
+noir/crème, inspiré d'une ambiance fantastique macabre. Texte **« Entrez entièrement
+dans le vortex »**, affiché au fond du portail ouvert et en grand dans le couloir,
+avec compteur d'arrivées. Texture Canvas locale ; pas de ressource Beetlejuice.
+Confirmation accessible déplacée sur le côté pour dégager le panneau principal.
+Le message demande de finir le passage dans l'espace physique validé, puis
+d'attendre ; la profondeur du décor ne doit pas être parcourue réellement.
+
+`PortalPublic.ghosts` facultatif : place, position de tête WebXR validée et âge
+calculé côté serveur, partagé seulement durant le rituel actif. Pas d'écriture
+en journal ou sur disque ; modes caméra et simulateur exclus des fantômes
+physiques, simulation du rituel exclue. Les joueurs encore dehors sont aussi
+visibles depuis le couloir. Corps translucide estimé sous la tête, nom et repère
+au sol, couleur orangée sous 90 cm, rendu devant le décor opaque. Position A/B
+directe sans extrapolation ; pose effacée à 1 000 ms, suivis absents/déconnexions
+exclus. Le client ajoute le temps écoulé depuis réception pour ne pas maintenir
+une silhouette figée après silence réseau. Changement de session et nettoyage
+réutilisent les mécanismes existants. Indication **Suivi incomplet** si nécessaire.
+
+Les silhouettes ne constituent pas un suivi corporel complet ou un anticollision :
+latence, dérive, calibrages différents et personnes sans casque restent des limites.
+Guardian/Boundary, règles du rituel, seuils de tête, puzzles et son inchangés.
+Voir [Team Portal](team-portal.md#centrage-panneau-et-fantômes-0130).
+
+Vérifications initiales réussies : `npm run typecheck`, `npm run build`, `npm test`
+(137 tests). Nouveaux tests : centroïde et obstacle central, absence de confirmation
+automatique, poses fraîches/expirées, exclusion des autres modes, copies publiques,
+perte de suivi/déconnexion et reprise ; rendu des seuls autres joueurs, couleur de
+proximité, expiration locale, nouvelle session et position du panneau selon le sens.
+Test réseau à quatre clients : silhouettes transmises, retrait à la déconnexion,
+retour à la reprise et suppression en fin de rituel, avec départ collectif unique.
+Aperçu Chrome inspecté : bois et texte lisibles, fantôme visible devant le tunnel,
+cinq programmes compilés, 16 appels de dessin et 1 366 triangles pour ce montage
+avec un autre joueur. Aucune mesure de performance ni validation matérielle Quest.
+Contrôles finaux également réussis : `npm run typecheck`, `npm run build`,
+`npm test` (137/137) et `git diff --check`. Avertissement Vite habituel : chunk
+Three.js de 574 kB. Publication ARM64 à confirmer après le workflow.
+
 ### 19 novembre 2026 — ambiance du couloir, 0.12.1 publiée
 
 Branche `feat/vortex-waiting-audio`. Boucle originale de moteur temporel inspirée

@@ -24,6 +24,9 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
     const seq=[0,0,0,0],depth=[.6,.6,.6,.6];
     pulse=setInterval(()=>{for(let i=0;i<4;i++)if(clients[i]?.readyState===WebSocket.OPEN&&latest.portal?.active)clients[i].send(JSON.stringify({type:'portal_action',sessionId:latest.portal.sessionId,revision:latest.portal.revision,commandId:randomUUID(),seq:++seq[i],action:'pose',position:{x:4,y:1.6,z:3+depth[i]}}));},350);
     await until(s=>s.portal.players.every((p:any)=>p.ready));
+    await until(s=>s.portal.ghosts?.length===4);
+    const ghostBroadcast=await wait(clients[1],'state');
+    assert.equal(ghostBroadcast.portal.ghosts.length,4);assert.equal(ghostBroadcast.portal.ghosts[0].head.y,1.6);
     async function grab(index:number,target:string){const s=await state(),pose=s.adventure.objects.poses[target];return send(index,{type:'object_action',action:'grab',target,revision:s.adventure.objects.revision,lease:'request',seq:1,hands:[{x:pose.x,y:pose.y+.2,z:pose.z}],pose},'object_result');}
     assert.equal((await grab(0,'staff2')).changed,false);
     for(let i=0;i<4;i++){
@@ -38,7 +41,7 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
       await until(state=>state.adventure.objects.poses[STAFF_IDS[i]]?.quaternion?.x===Math.SQRT1_2);
       await new Promise(resolve=>setTimeout(resolve,30));assert.equal(observed,true);clients[(i+1)%4].off('message',observe);
     }
-    clients[3].close();await once(clients[3],'close');await until(s=>!s.portal.players[3].present);await connect(3,tokens[3]);clients[3].on('message',raw=>{const data=JSON.parse(String(raw));if(data.type==='state')latest=data;});await until(s=>s.portal.players[3].ready);assert.equal((await state()).portal.players[3].claimed,true);
+    clients[3].close();await once(clients[3],'close');const disconnected=await until(s=>!s.portal.players[3].present);assert.equal(disconnected.portal.ghosts.some((g:any)=>g.slot===4),false);await connect(3,tokens[3]);clients[3].on('message',raw=>{const data=JSON.parse(String(raw));if(data.type==='state')latest=data;});await until(s=>s.portal.players[3].ready&&s.portal.ghosts.some((g:any)=>g.slot===4));assert.equal((await state()).portal.players[3].claimed,true);
     await until(s=>s.portal.phase==='portal-open');
     for(let i=0;i<4;i++){
       for(const d of [.2,-.05]){depth[i]=d;await new Promise(resolve=>setTimeout(resolve,450));}
@@ -47,6 +50,7 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
       if(i<3){assert.equal(crossed.adventure.running,false);assert.equal(crossed.portal.players.filter((p:any)=>p.crossed).length,i+1);}
     }
     s=await until(s=>s.adventure.running);assert.equal(s.portal.phase,'completed');assert.equal(s.adventure.engine.stepId,'symbols');assert.deepEqual(s.library.rooms[0],room);
+    assert.deepEqual(s.portal.ghosts,[]);
     const revision=s.adventure.revision;await new Promise(resolve=>setTimeout(resolve,1100));assert.equal((await state()).adventure.revision,revision);
     assert.equal((await post('adventure/stop',{})).status,200);s=await state();assert.equal((await post('portal',{action:'simulate-start',revision:s.portal.revision})).status,400);
     assert.equal((await post('adventure/test-mode',{enabled:true})).status,200);s=await state();assert.equal((await post('portal',{action:'simulate-start',revision:s.portal.revision})).status,200);s=await state();assert.equal(s.portal.simulation,true);assert.equal((await post('portal',{action:'skip',revision:s.portal.revision})).status,200);
