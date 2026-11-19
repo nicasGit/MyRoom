@@ -10,6 +10,7 @@ import { SYMBOL_NAMES,CARD_NAMES,CARD_CLUES,pickAdventureAction } from './advent
 type Panel={root:HTMLElement;status:HTMLElement;body:HTMLElement};
 type InteractionTarget=PuzzleItem|'panel';
 export class AdventureClient {
+  private debug=false;setDebug(value:boolean){this.debug=value;}
   handAction(action:HybridAction){this.performHybrid(action);}
   private actorId:string|undefined;
   private hybridButtons:{button:HTMLButtonElement;ready:boolean}[]=[];
@@ -62,7 +63,7 @@ export class AdventureClient {
     if(!this.model?.puzzles||this.state?.running||!this.xrActive||!this.calibration()||this.moving)return;
     if(!this.aim||performance.now()-this.aimAt>250){this.result('Visez le sol avec un suivi valide, puis réessayez.');return;}
     this.placementToken=input.value.trim()||this.placementToken;input.value='';
-    if(!this.placementToken){this.result('Saisissez le jeton administrateur pour déplacer un élément.');return;}
+    if(!this.debug&&!this.placementToken){this.result('Saisissez le jeton administrateur pour déplacer un élément.');return;}
     this.moving=true;
     try{
       const model=structuredClone(this.model);

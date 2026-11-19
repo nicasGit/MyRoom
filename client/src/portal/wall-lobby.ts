@@ -8,6 +8,9 @@ type AdminState={portal:PortalPublic;adventure:AdventureState;playerNames:string
 export class WallLobby {
   readonly view=new WallMenuView();roomMode=false;
   placed=false;
+  private debug=false;
+  setDebug(value:boolean){if(value===this.debug)return;this.debug=value;if(value){this.auth.hidden=true;this.input.value='';}this.draw(true);}
+  interactionNotice(text:string){if(this.notice===text)return;this.notice=text;this.draw(true);}
   private portal?:PortalPublic;private adventure?:AdventureState;private lobby?:Lobby;
   private tab='home';private notice='';private token='';private busy=false;private polling=false;private page=0;
   private editing=0;private name='';private key='';private nextPoll=0;
@@ -25,7 +28,7 @@ export class WallLobby {
     const preview=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Aperçu du menu mural (PC / tactile)';preview.append(summary,this.view.canvas);document.querySelector('main')!.append(preview);
     this.view.canvas.setAttribute('aria-label','Menu mural MyRoom');this.view.canvas.onclick=event=>{const box=this.view.canvas.getBoundingClientRect();const id=this.view.atUV((event.clientX-box.left)/box.width,1-(event.clientY-box.top)/box.height);if(id)void this.act(id);};
   }
-  private openAuth(){if(document.getElementById('xr-overlay')!.hidden)document.getElementById('enter')!.before(this.auth);else document.getElementById('xr-feedback')!.before(this.auth);this.auth.hidden=false;this.input.focus();}
+  private openAuth(){if(this.debug){this.interactionNotice('Debug actif : aucun jeton requis.');return;}if(document.getElementById('xr-overlay')!.hidden)document.getElementById('enter')!.before(this.auth);else document.getElementById('xr-feedback')!.before(this.auth);this.auth.hidden=false;this.input.focus();}
   private async request(path:string,body?:unknown){
     const response=await fetch('/api/admin/'+path,{method:body===undefined?'GET':'POST',headers:{Authorization:`Bearer ${this.token}`,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(8000)});
     const data=await response.json();if(!response.ok){if(response.status===401){this.token='';this.authorized('');this.notice='Autorisation expirée : déverrouillez le menu.';}throw Error(data.error??`HTTP ${response.status}`);}return data;
@@ -39,15 +42,15 @@ export class WallLobby {
     if(!value&&document.getElementById('survey-settings')&&!document.getElementById('survey-settings')!.hidden){this.notice='Enregistrez ou annulez le brouillon avant de revenir au jeu.';this.draw(true);return;}
     this.roomMode=value;this.mode(value);this.draw(true);
   }
-  tick(now:number){if(!this.token||this.polling||now<this.nextPoll)return;this.nextPoll=now+2000;this.polling=true;
+  tick(now:number){if((!this.token&&!this.debug)||this.polling||now<this.nextPoll)return;this.nextPoll=now+2000;this.polling=true;
     void this.request('state').then((state:AdminState)=>{this.portal=state.portal;this.adventure=state.adventure;if(this.lobby){this.lobby.names=state.playerNames;this.lobby.namesRevision=state.playerNamesRevision;}this.draw();}).catch(error=>{this.notice=String(error);this.draw();}).finally(()=>{this.polling=false;});
   }
   pick(origin:THREE.Vector3,direction:THREE.Vector3){if(!this.view.group.visible)return false;const id=this.view.pick(origin,direction);if(!id)return false;void this.act(id);return true;}
   private draw(force=false){
     const p=this.portal,a=this.adventure,l=this.lobby;if(!p||!a||!l)return;
-    const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode]);if(!force&&key===this.key)return;this.key=key;
+    const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode,this.debug]);if(!force&&key===this.key)return;this.key=key;
     const selected=l.adventures.find(item=>item.id===a.engine.adventureId&&item.version===a.engine.adventureVersion);
-    const lines=[selected?.title??a.engine.adventureId,`${p.players.filter(x=>x.present).length}/${p.config.playerCount??4} présents · ${p.players.filter(x=>x.crossed).length} passages · ${p.phase}`,this.token?'Organisateur connecté':'Lecture seule · déverrouiller pour modifier',this.notice];
+    const lines=[selected?.title??a.engine.adventureId,`${p.players.filter(x=>x.present).length}/${p.config.playerCount??4} présents · ${p.players.filter(x=>x.crossed).length} passages · ${p.phase}`,this.debug?'DEBUG : droits administrateur pour tous':this.token?'Organisateur connecté':'Lecture seule · déverrouiller pour modifier',this.notice||(!p.active?'Démarrez le rituel avant de prendre votre bâton.':'Approchez votre bâton : poignée, pince ou gâchette.')];
     const buttons:MenuButton[]=[{id:'home',title:'Accueil'},{id:'adventures',title:'Aventures'},{id:'settings',title:'Paramètres'},{id:'rooms',title:this.roomMode?'Mode pièces actif':'Mode création de pièces'}];
     if(this.tab==='home')buttons.push({id:'start',title:'Commencer le rituel'},{id:'stop',title:'Arrêter la session'},{id:'unlock',title:this.token?'Verrouiller':'Déverrouiller organisateur'},{id:'confirm',title:'Valider mon passage accessible'});
     if(this.tab==='adventures'){
@@ -71,7 +74,7 @@ export class WallLobby {
   private async act(id:string){
     if(this.busy)return;
     if(['home','adventures','settings','rooms'].includes(id)){this.tab=id;this.draw(true);return;}
-    if(id==='unlock'){if(this.token){this.token='';this.authorized('');this.notice='Menu verrouillé.';}else{this.notice='Jeton requis ; autorisation avant AR si clavier indisponible.';this.openAuth();}this.draw(true);return;}
+    if(id==='unlock'){if(this.debug){this.notice='Debug actif : accès ouvert sans jeton.';}else if(this.token){this.token='';this.authorized('');this.notice='Menu verrouillé.';}else{this.notice='Jeton requis ; autorisation avant AR si clavier indisponible.';this.openAuth();}this.draw(true);return;}
     if(id==='prev'||id==='next'){this.page=Math.max(0,Math.min(Math.ceil((this.lobby?.adventures.length??0)/4)-1,this.page+(id==='next'?1:-1)));this.draw(true);return;}
     if(id==='confirm'){document.dispatchEvent(new Event('myroom-portal-confirm'));return;}
     if(id==='edit-mode'){this.setRoomMode(!this.roomMode);return;}
@@ -80,7 +83,7 @@ export class WallLobby {
       this.setRoomMode(true);const target:Record<string,string>={'new-room':'survey-new','edit-room':'survey-edit','save-room':'survey-save','cancel-room':'survey-cancel','import-room':'quest-import'};
       document.getElementById(target[id])?.click();return;
     }
-    if(!this.token){this.notice='Déverrouillez avec le jeton organisateur.';this.openAuth();this.draw(true);return;}
+    if(!this.token&&!this.debug){this.notice='Menu verrouillé : utilisez Déverrouiller organisateur avant AR.';this.draw(true);return;}
     if(id.startsWith('name:')){this.editing=Number(id.slice(5));this.name=this.lobby?.names[this.editing]??'';this.tab='keyboard';this.draw(true);return;}
     if(id.startsWith('letter:')||id==='space'||id==='erase'){this.name=id==='erase'?this.name.slice(0,-1):(this.name+(id==='space'?' ':id.slice(7))).slice(0,40);this.draw(true);return;}
     this.busy=true;this.notice='Commande en cours…';this.draw(true);

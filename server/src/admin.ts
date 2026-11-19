@@ -8,6 +8,7 @@ import { parsePortalConfig,validatePlacement } from './portal/portal-types.js';
 import { record,integer } from './engine/validation.js';
 import { puzzlePanel } from './scene-schema.js';
 import { PUZZLE_ITEMS,findPuzzlePanel } from './scene-schema.js';
+import { adminAccess } from './admin-access.js';
 
 export type Connection = { socket: WebSocket; address?: string; userAgent?: string; connectedAt: string };
 const started = Date.now();
@@ -17,10 +18,12 @@ function reply(res: ServerResponse, status: number, body: unknown) {
 }
 export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore) {
   const token = process.env.ADMIN_TOKEN ?? '';
-  if (token.length < 16) { reply(res, 503, { error: 'Configurer admin_token avec au moins 16 caractères puis redémarrer.' }); return; }
+  const access=adminAccess(token);
+  if(req.method==='GET'&&req.url==='/api/admin/auth'){reply(res,200,access);return;}
+  if (!access.debug&&token.length < 16) { reply(res, 503, { error: 'Configurer admin_token avec au moins 16 caractères puis redémarrer.' }); return; }
   const supplied = req.headers.authorization ?? '';
   const hash = (text: string) => createHash('sha256').update(text).digest();
-  if (!timingSafeEqual(hash(supplied), hash(`Bearer ${token}`))) {
+  if (!access.debug&&!timingSafeEqual(hash(supplied), hash(`Bearer ${token}`))) {
     reply(res, 401, { error: 'Jeton administrateur incorrect.' }); return;
   }
   if (req.method === 'GET' && req.url === '/api/admin/state') {

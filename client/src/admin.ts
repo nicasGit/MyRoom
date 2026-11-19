@@ -11,7 +11,7 @@ import type { AdventureManifest } from '../../server/src/engine/puzzle-types.js'
 type Player = { id: string; slot: number; name:string;address?: string; userAgent?: string; connectedAt: string };
 type State = { displayPolicy?:ModePolicy;displayClients?:DisplayClient[]; portal:PortalPublic;players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-let token = '';
+let token = '';let debug=false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let busy = false;
 let loading = false;
@@ -49,7 +49,7 @@ el('adventure-select').onclick=()=>{if(adventureEditor.hasChanges()){notice.text
 el('adventure-stop').onclick=()=>{void action('adventure/stop',{});};
 function logout() {
   namesDirty=false;namesRevision=0;catalogKey='';catalog=[];nameFields.forEach(input=>{input.value='';});
-  session++; token = ''; clearTimeout(timer); el<HTMLInputElement>('token').value = '';
+  session++; token = ''; debug=false; clearTimeout(timer); el<HTMLInputElement>('token').value = '';
   previousPlayers = '';
   library=undefined;libraryRevision=-1;el('rooms').replaceChildren();preview(null);
   adventureEditor.receive(null,0);
@@ -160,7 +160,7 @@ function render(state: State) {
 }
 async function refresh() {
   clearTimeout(timer);
-  if (!token || loading) return;
+  if ((!token&&!debug) || loading) return;
   loading = true;
   const current = session;
   try {
@@ -174,7 +174,7 @@ async function refresh() {
     el('connection').textContent = 'Connexion indisponible'; el('connection').className = 'badge';
   } finally {
     loading = false;
-    if (token && current === session) timer = setTimeout(() => { void refresh(); }, 2000);
+    if ((token||debug) && current === session) timer = setTimeout(() => { void refresh(); }, 2000);
   }
 }
 async function action(path: string, body: unknown) {
@@ -198,3 +198,5 @@ el('rooms-export').onclick=()=>{
   const url=URL.createObjectURL(new Blob([JSON.stringify(library,null,2)],{type:'application/json'}));
   const link=document.createElement('a');link.href=url;link.download='myroom-rooms.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+
+void fetch('/api/admin/auth').then(response=>response.json()).then(access=>{if(access.debug){debug=true;el('logout').textContent='Mode debug sans jeton';void refresh();}}).catch(()=>{});

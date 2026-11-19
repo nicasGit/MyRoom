@@ -13,6 +13,8 @@ import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view
 import { makeCalibration } from '../../client/src/calibration.js';
 import { RealisticHand,controllerHandOrientation } from '../../client/src/realistic-hand.js';
 import { surveyButtons,runSurveyCommand,useTouchOverlay } from '../../client/src/quest-survey-controls.js';
+import { MenuMover,MenuPointers } from '../../client/src/xr-menu-interactions.js';
+import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
 
 test('Quest survey: close respects validation, cancel then return, exit available while saving',()=>{
   assert.equal(useTouchOverlay(true,'world-space'),false);assert.equal(useTouchOverlay(true,'screen-space'),true);assert.equal(useTouchOverlay(false,undefined),false);
@@ -29,8 +31,34 @@ test('controller hands: mirrored local tilt retains controller orientation witho
   const orientation=new THREE.Quaternion().setFromEuler(new THREE.Euler(.2,.4,-.1)),before=orientation.clone();
   const left=orientation.clone().invert().multiply(controllerHandOrientation(orientation,'left'));
   const right=orientation.clone().invert().multiply(controllerHandOrientation(orientation,'right'));
-  assert.ok(left.z<0&&right.z>0);assert.ok(Math.abs(left.z+right.z)<1e-10);assert.deepEqual(orientation,before);
+  assert.ok(left.z>0&&right.z<0);assert.ok(Math.abs(left.z+right.z)<1e-10);assert.deepEqual(orientation,before);
   assert.ok(controllerHandOrientation(orientation,'right').angleTo(orientation)>.5);
+});
+test('menu grip: world-space drag under a rotated parent, release and tracking loss preserve local placement',()=>{
+  const group=new THREE.Group(),placement=new THREE.Group();group.position.set(3,0,2);group.rotation.y=.8;group.add(placement);placement.position.set(0,1,-1);group.updateMatrixWorld(true);
+  let marked=false;const panel={group,placement,distanceTo:(point:THREE.Vector3)=>point.distanceTo(placement.getWorldPosition(new THREE.Vector3())),markMoved:()=>{marked=true;}};
+  const mover=new MenuMover(),position=placement.getWorldPosition(new THREE.Vector3()),orientation=new THREE.Quaternion();
+  mover.update([panel],[{side:'right',pressed:true,position,orientation}]);assert.equal(mover.holding,true);assert.equal(marked,true);
+  const destination=position.clone().add(new THREE.Vector3(.4,.1,0)),rotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(.1,.3,0));
+  mover.update([panel],[{side:'right',pressed:true,position:destination,orientation:rotation}]);
+  assert.ok(placement.getWorldPosition(new THREE.Vector3()).distanceTo(destination)<1e-8);const posed=placement.position.clone();
+  mover.update([panel],[{side:'right',pressed:false,position:destination,orientation:rotation}]);assert.equal(mover.holding,false);assert.deepEqual(placement.position,posed);
+  mover.update([panel],[{side:'left',pressed:true,position:destination,orientation:rotation}]);mover.update([panel],[]);assert.equal(mover.holding,false);
+});
+test('menu cursor: nearest panel surface is visible above UI, and lost rays hide the cursor',()=>{
+  const pointers=new MenuPointers(),panel={group:new THREE.Group(),intersection:()=>({point:new THREE.Vector3(0,1,-2),distance:2})} as unknown as WallMenuView;
+  pointers.update([panel],[{origin:new THREE.Vector3(0,1,0),direction:new THREE.Vector3(0,0,-1)}]);
+  assert.equal(pointers.aiming,true);const dot=pointers.group.children[0] as THREE.Mesh<THREE.SphereGeometry,THREE.MeshBasicMaterial>;
+  assert.equal(dot.visible,true);assert.equal(dot.material.depthTest,false);assert.ok(dot.renderOrder>1000);assert.ok(dot.position.z>-2);
+  pointers.update([panel],[]);assert.equal(pointers.aiming,false);assert.equal(dot.visible,false);pointers.dispose();
+});
+test('staff trigger grip is restricted to the introduction and retains physical controller poses',()=>{
+  const input=new GrabInputs(),calibration=makeCalibration(new THREE.Vector3(),new THREE.Vector3(1,0,0));
+  const source={handedness:'right',targetRayMode:'tracked-pointer',gripSpace:{},gamepad:{buttons:[{pressed:true},{pressed:false}]}};
+  const frame={getPose:()=>({transform:{position:new THREE.Vector3(1,1,1),orientation:new THREE.Quaternion()}})} as unknown as XRFrame;
+  assert.equal(input.read(frame,{} as XRReferenceSpace,[source] as unknown as XRInputSourceArray,calibration)[0].pressed,false);
+  const hand=input.read(frame,{} as XRReferenceSpace,[source] as unknown as XRInputSourceArray,calibration,true)[0];
+  assert.equal(hand.pressed,true);assert.equal(hand.position.y,1);
 });
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { readFileSync } from 'node:fs';

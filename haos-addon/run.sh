@@ -5,6 +5,8 @@ if [ -f /data/options.json ]; then
   export PUBLIC_ORIGIN
   ADMIN_TOKEN="$(jq -r '.admin_token // ""' /data/options.json)"
   export ADMIN_TOKEN
+  DEBUG_WITHOUT_ADMIN_TOKEN="$(jq -r '.debug_without_admin_token // false' /data/options.json)"
+  export DEBUG_WITHOUT_ADMIN_TOKEN
 fi
 : "${PUBLIC_ORIGIN:?Configure public_origin / PUBLIC_ORIGIN}"
 export DATA_DIR=/data/myroom

@@ -48,3 +48,16 @@ Depuis 0.1.2, l'onglet **Journal** affiche les connexions et déconnexions (iden
 Quatre connexions et une seule salle active ; les connexions et l'état d'énigme ne sont pas persistés. La bibliothèque de pièces 3D est enregistrée sur disque. Les joueurs n'ont pas de comptes ou d'authentification ; l'administration et les écritures de modèles demandent le jeton. Réserver l'accès au réseau de confiance. Les poses ne sont pas diffusées. Calibrage manuel horizontal à deux repères physiques, sans ancre spatiale partagée. Recalibrer après recentrage ou changement de pièce.
 
 Les validations sur Quest, Nginx déployé et HAOS/Raspberry Pi 5 restent à effectuer.
+## Debug sans jeton (0.9.2)
+
+Dans la configuration de l'add-on : mettre `admin_token` à vide et activer
+`debug_without_admin_token`, puis redémarrer. Cette option est désactivée par défaut.
+Elle donne les droits administrateur à tous les clients qui accèdent à MyRoom,
+y compris sur le réseau ; l'interface affiche le mode DEBUG. Aucun clavier de jeton
+n'est alors requis. Pour rétablir l'authentification, configurer un jeton d'au moins
+16 caractères ou désactiver l'option puis redémarrer. Un jeton configuré reste prioritaire.
+En développement Node, l'activation explicite utilise `DEBUG_WITHOUT_ADMIN_TOKEN=true`.
+
+Pour prendre un bâton, arrêter le mode pièces, confirmer l'espace et démarrer le rituel
+dans Accueil. Approcher la main du bâton portant votre nom, puis maintenir la poignée,
+la pince ou la gâchette. Les refus sont affichés sur le panneau mural.

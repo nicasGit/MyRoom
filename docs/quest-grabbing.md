@@ -46,3 +46,14 @@ Les mains représentées aux contrôleurs sont inclinées en miroir autour de la
 de poignée ; cette correction est visuelle. Les véritables articulations suivies et
 les coordonnées de prise ne sont pas modifiées. Inclinaison et lisibilité restent à
 confirmer sur casque réel ; tests logiciels uniquement pour cette correction.
+## Fenêtres déplaçables et visée — 0.9.2
+
+Approcher la main à moins d'environ 18 cm du menu administratif ou du panneau de relevé,
+maintenir la poignée latérale du contrôleur ou la pince de la vraie main, puis déplacer
+et orienter la fenêtre. Relâcher la pose. La gâchette reste réservée aux boutons du menu.
+Un point lumineux apparaît sur la surface visée, devant le panneau ; la cible de sol est
+masquée pendant cette visée. Les boutons ne s'activent pas pendant le déplacement.
+Le réglage reste local au client : il ne déplace aucun objet de jeu ni mur de la pièce.
+Les mises à jour réseau conservent ce réglage ; un nouveau calibrage ou un changement
+de pièce rétablit la position prévue. La perte du suivi libère la fenêtre sans modifier
+les énigmes. Tests logiciels uniquement, ergonomie et angle des mains à confirmer sur Quest.

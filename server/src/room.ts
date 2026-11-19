@@ -1,4 +1,5 @@
 import { DisplayModes } from './display-modes.js';
+import { adminAccess } from './admin-access.js';
 import type { RoomModel } from './scene-schema.js';
 import { Adventure } from './adventure.js';
 import { text,integer,list } from './engine/validation.js';
@@ -46,7 +47,7 @@ export class Room {
   snapshot() {
     this.adventure.configure(this.model);
     this.maintain();
-    return { type: 'state',display:{policy:this.display.snapshot(),clients:this.display.clients().map(({id,mode})=>({id,mode}))},lobby:{adventures:this.adventure.listAdventures().map(({id,version,title})=>({id,version,title})),names:[...this.playerNames],namesRevision:this.playerNamesRevision},portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
+    return { type: 'state',adminAccess:adminAccess(),display:{policy:this.display.snapshot(),clients:this.display.clients().map(({id,mode})=>({id,mode}))},lobby:{adventures:this.adventure.listAdventures().map(({id,version,title})=>({id,version,title})),names:[...this.playerNames],namesRevision:this.playerNamesRevision},portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
   }
   reset() { this.solved = false; this.revision++; }
 }

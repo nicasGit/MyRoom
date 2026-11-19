@@ -1,5 +1,44 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — bâtons et debug administrateur, 0.9.2 en validation
+
+Branche `fix/debug-admin-staff-grab`. Le menu verrouillé ouvrait automatiquement
+le formulaire du jeton après une action protégée, ce qui faisait apparaître le clavier
+sur Moins de joueurs. Les actions refusées restent désormais dans le panneau avec
+une explication ; seule la commande explicite de déverrouillage propose le jeton.
+Messages de prise et refus serveur visibles sur le mur. Rappel du démarrage du rituel
+avant la prise ; gâchette autorisée en plus de la poignée/pince pendant l'introduction,
+sans téléportation de la main ni modification des contrôles de proximité et de place.
+
+Option HAOS `debug_without_admin_token`, désactivée par défaut. Avec activation explicite
+et jeton vide, tous les clients obtiennent les droits administrateur, y compris menu
+mural, administration web, placement et sauvegarde des pièces. Avec un jeton configuré,
+authentification inchangée ; un jeton trop court non vide ne donne jamais le debug.
+Le contrôle automatique avait refusé l'activation implicite par défaut sur le service
+partagé ; l'option explicite évite cette ouverture involontaire. La validation des données,
+des révisions et de l'origine des écritures reste active. Aucun secret diffusé ; le mode
+debug est signalé aux clients. Tests et publication en cours, aucun essai matériel Quest.
+
+Retour utilisateur complémentaire : inclinaison des mains inversée, visée cachée par
+le panneau et besoin de déplacer la fenêtre. Inclinaison gauche/droite inversée.
+Curseurs 3D sur la surface des deux menus avec priorité d'affichage sur les panneaux ;
+rayons visibles, cible au sol masquée lorsqu'un menu est visé. Menu administratif et
+outils de relevé saisissables à une main proche par poignée/pince, translation et rotation
+complètes puis pose au relâchement. Les coordonnées de menu restent locales au client,
+séparées des objets de jeu et des placements persistants. Les mises à jour serveur ne
+replacent pas une fenêtre déplacée ; nouveau calibrage ou changement de pièce rétablit
+sa position initiale. Perte du suivi et fin de session libèrent la saisie. Une saisie de
+menu ne lance ni clic ni manipulation d'énigme simultanée.
+
+Contrôles finaux : typecheck, build et 111 tests réussis, git diff --check réussi.
+Un contrôle intermédiaire a rencontré le refus Windows EPERM connu sur renommage
+atomique de RoomStore ; les passages complets après ajout des menus ont réussi.
+Contrôles Chrome avec poses simulées et appels administrateur simulés : Moins ne
+déplace pas le focus en mode verrouillé, route portal appelée en debug sans clavier ;
+saisie/déplacement local, maintien de la position après réception du même modèle,
+réinitialisation et curseur sur la surface confirmés. Aucun essai physique Quest,
+aucun test de prise réelle sur casque revendiqué. Avertissement Vite habituel 574 kB.
+
 ### 19 novembre 2026 — correction Quest, version 0.9.1 publiée
 
 Retour utilisateur sur casque : superposition des panneaux, contour impossible à fermer,

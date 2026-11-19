@@ -13,10 +13,11 @@ export function gripTransform(start:GrabHand[],current:GrabHand[],original:Objec
   return {x:offset.x,y:Math.max(0,offset.y),z:offset.z,yaw:angle(original.yaw-turn)};
 }
 export class GrabInputs {
+  isGripping(source:XRInputSource){return this.squeezed.has(source)||!!this.pinched.get(source)||!!source.gamepad?.buttons[1]?.pressed;}
   private squeezed=new Set<XRInputSource>();
   private pinched=new Map<XRInputSource,boolean>();
   squeeze(source:XRInputSource,pressed:boolean){if(pressed)this.squeezed.add(source);else this.squeezed.delete(source);}
-  read(frame:XRFrame,reference:XRReferenceSpace,sources:XRInputSourceArray,calibration:ReturnType<typeof makeCalibration>):GrabHand[]{
+  read(frame:XRFrame,reference:XRReferenceSpace,sources:XRInputSourceArray,calibration:ReturnType<typeof makeCalibration>,staffTrigger=false):GrabHand[]{
     const result:GrabHand[]=[];
     for(const source of Array.from(sources).sort((a,b)=>Number(!!b.hand)-Number(!!a.hand))){if(source.targetRayMode==='screen')continue;if(source.handedness!=='left'&&source.handedness!=='right'||result.some(h=>h.side===source.handedness))continue;
       let position:THREE.Vector3|undefined,orientation:DOMPointReadOnly|undefined,pressed=false;
@@ -25,7 +26,7 @@ export class GrabInputs {
         const a=frame.getJointPose?.(thumb,reference),b=frame.getJointPose?.(index,reference);if(!a||!b){this.pinched.delete(source);continue;}
         const p=new THREE.Vector3().copy(a.transform.position),q=new THREE.Vector3().copy(b.transform.position),distance=p.distanceTo(q);
         pressed=distance<(this.pinched.get(source)?0.045:0.025);this.pinched.set(source,pressed);position=p.add(q).multiplyScalar(0.5);orientation=b.transform.orientation;
-      }else if(source.gripSpace){const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;position=new THREE.Vector3().copy(pose.transform.position);orientation=pose.transform.orientation;pressed=this.squeezed.has(source)||!!source.gamepad?.buttons[1]?.pressed;}
+      }else if(source.gripSpace){const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;position=new THREE.Vector3().copy(pose.transform.position);orientation=pose.transform.orientation;pressed=this.squeezed.has(source)||!!source.gamepad?.buttons[1]?.pressed||staffTrigger&&!!source.gamepad?.buttons[0]?.pressed;}
       if(position&&orientation){const forward=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(orientation)).applyAxisAngle(up,calibration.yaw);result.push({side:source.handedness,position:toRoom(position,calibration),pressed,yaw:Math.atan2(forward.x,-forward.z)});}
     }
     for(const source of this.pinched.keys())if(!Array.from(sources).includes(source))this.pinched.delete(source);

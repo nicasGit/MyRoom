@@ -8,7 +8,7 @@ const chains:XRHandJoint[][]=[
 const jointNames=[...new Set(chains.flat())];
 type Rest={position:THREE.Vector3;quaternion:THREE.Quaternion};
 export function controllerHandOrientation(orientation:THREE.Quaternion,side:'left'|'right',phone=false){
-  return orientation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(phone?.65:.25,0,side==='left'?-.65:.65)));
+  return orientation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(phone?.65:.25,0,side==='left'?.65:-.65)));
 }
 export class RealisticHand {
   readonly group=new THREE.Group();ready=false;

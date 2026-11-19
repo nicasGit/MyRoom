@@ -12,6 +12,10 @@ export function positionWallMenu(group:THREE.Object3D,room:RoomModel){
 export class WallMenuView {
   readonly group=new THREE.Group();
   private anchor=new THREE.Group();
+  private moved=false;private roomId='';private defaultPosition=new THREE.Vector3();private defaultRotation=new THREE.Quaternion();
+  get placement(){return this.anchor;}
+  markMoved(){this.moved=true;}
+  resetPlacement(){this.moved=false;this.anchor.position.copy(this.defaultPosition);this.anchor.quaternion.copy(this.defaultRotation);this.anchor.scale.setScalar(1);}
   readonly canvas=document.createElement('canvas');private context:CanvasRenderingContext2D;
   private texture:THREE.CanvasTexture;private mesh:THREE.Mesh<THREE.PlaneGeometry,THREE.MeshBasicMaterial>;private hits:MenuHit[]=[];
   constructor(overlay=false){
@@ -20,7 +24,9 @@ export class WallMenuView {
     this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(1,.75),new THREE.MeshBasicMaterial({map:this.texture,side:THREE.DoubleSide,depthTest:!overlay,depthWrite:!overlay}));this.mesh.renderOrder=overlay?1000:0;
     this.group.add(this.anchor);this.anchor.add(this.mesh);this.group.name='myroom-wall-menu';
   }
-  place(room:RoomModel){return positionWallMenu(this.anchor,room);}
+  place(room:RoomModel){if(this.roomId!==room.id){this.roomId=room.id;this.resetPlacement();}if(this.moved)return true;const placed=positionWallMenu(this.anchor,room);if(placed){this.defaultPosition.copy(this.anchor.position);this.defaultRotation.copy(this.anchor.quaternion);}return placed;}
+  intersection(origin:THREE.Vector3,direction:THREE.Vector3){this.group.updateWorldMatrix(true,true);return new THREE.Raycaster(origin,direction,0,8).intersectObject(this.mesh)[0];}
+  distanceTo(point:THREE.Vector3){this.mesh.updateWorldMatrix(true,false);const local=this.mesh.worldToLocal(point.clone());return local.distanceTo(new THREE.Vector3(THREE.MathUtils.clamp(local.x,-.5,.5),THREE.MathUtils.clamp(local.y,-.375,.375),0));}
   atUV(u:number,v:number){return hitMenu(this.hits,u,v);}
   draw(title:string,lines:string[],buttons:MenuButton[]){
     const c=this.context;c.fillStyle='#101e32';c.fillRect(0,0,1024,768);c.strokeStyle='#80efb0';c.lineWidth=5;c.strokeRect(3,3,1018,762);

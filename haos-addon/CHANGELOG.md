@@ -1,3 +1,10 @@
+## 0.9.2
+
+- Mode debug sans jeton sur activation explicite de debug_without_admin_token.
+- Le menu verrouillé affiche un refus sans ouvrir automatiquement le clavier.
+- Prise des bâtons aussi par gâchette pendant le rituel et messages visibles au mur.
+- Inclinaison des mains corrigée, curseur visible sur les panneaux, fenêtres saisissables à la poignée/pince.
+
 ## 0.9.1
 
 - Panneau de relevé 3D utilisable aux contrôleurs Quest : fermer le contour, enregistrer, annuler, revenir et quitter XR.

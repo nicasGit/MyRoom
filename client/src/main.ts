@@ -1,3 +1,4 @@
+import { MenuMover,MenuPointers,type MenuHand } from './xr-menu-interactions';
 import { WallMenuView } from './portal/wall-menu-view';
 import { surveyButtons,runSurveyCommand,useTouchOverlay } from './quest-survey-controls';
 import { SimulatorScene } from './modes/simulator-scene';
@@ -35,7 +36,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.9.1');
+diagnostic('Version client', '0.9.2');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -173,8 +174,8 @@ enter.onclick = async () => {
     const rays:THREE.Line[]=[];
     for(let index=0;index<2;index++){
       const controller=renderer.xr.getController(index);
-      const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,-3)]),new THREE.LineBasicMaterial({color:0x67e8f9}));
-      controller.add(line);scene.add(controller);rays.push(line);
+      const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,-3)]),new THREE.LineBasicMaterial({color:0x67e8f9,depthTest:false,depthWrite:false}));
+      line.renderOrder=2001;controller.add(line);scene.add(controller);rays.push(line);
     }
     const scanStatus=element('quest-scan-status'),importButton=element<HTMLButtonElement>('quest-import');
     let importRequested=false,importTimeout:ReturnType<typeof setTimeout>|undefined;
@@ -192,6 +193,7 @@ enter.onclick = async () => {
     const hudMaterial=new THREE.MeshBasicMaterial({map:hudTexture,side:THREE.DoubleSide,transparent:true,depthTest:false,depthWrite:false});
     const hud=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.55),hudMaterial);hud.renderOrder=1000;hud.visible=!touchOverlay;scene.add(hud);
     const hudAnchor=new InfoPanelAnchor();
+    const menuMover=new MenuMover(),menuPointers=new MenuPointers();scene.add(menuPointers.group);
     const surveyMenu=new WallMenuView(true),surveyAnchor=new InfoPanelAnchor(-.95);surveyMenu.group.visible=false;scene.add(surveyMenu.group);let surveyMenuKey='';
     const handsView=new XRHandsView();scene.add(handsView.group);
     let menuRequested=false;
@@ -272,8 +274,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { hudAnchor.reset();surveyAnchor.reset();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -318,9 +320,10 @@ enter.onclick = async () => {
       }, 1500);
     });
     session.addEventListener('select', event => {
+      if(menuMover.holding)return;
       if(surveyMenu.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(surveyMenu.intersects(origin,direction)){const id=surveyMenu.pick(origin,direction);if(id)runSurveyCommand(id,key=>element(key) as HTMLButtonElement,()=>wallLobby.setRoomMode(false),()=>{void session?.end();});return;}}}
       if(calibration&&wallLobby.view.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);
-        if(ray&&wallLobby.pick(new THREE.Vector3().copy(ray.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation))))return;
+        if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(wallLobby.view.intersects(origin,direction)){wallLobby.pick(origin,direction);return;}}
       }
       if(grabber.blocksSelect()||handCards.blocksSelect())return;
       if(calibration&&!survey.collecting){
@@ -348,7 +351,7 @@ enter.onclick = async () => {
       portal.update(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       gameGroup?.userData.animatePortal?.(Date.now());
       const screenInput=session!.interactionMode==='screen-space';
-      const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration):[];
+      const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration,portal.visible()&&!!portal.state?.active):[];
       const phoneAvailable=usePhoneHand(touchOverlay,session!.interactionMode,session!.inputSources);
       const phoneEnabled=phoneAvailable&&!!calibration&&!!pose&&!wallLobby.roomMode&&!survey.hasDraft()&&!hands.length;
       const context=!calibration?'Terminez le calibrage A/B.':socket?.readyState!==WebSocket.OPEN?'Serveur de jeu déconnecté : vérifiez la connexion.':!adventure.viewState()?'Aucune pièce active : ouvrez Pièces / Jeu.':wallLobby.roomMode?'Mode pièces actif : la prise est désactivée.':!pose?'Suivi AR indisponible.':!phoneAvailable?'Entrées suivies actives : utilisez la pince ou la poignée.':portal.visible()?'Accueil Vortex : regardez autour de vous pour trouver le panneau mural et votre bâton.':'Partie active : approchez la main de l’objet avant de prendre.';
@@ -367,11 +370,16 @@ enter.onclick = async () => {
       }
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
       handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration&&!phoneEnabled;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});
-      handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect());
-      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!handCards.blocksSelect()&&(!portal.visible()||!!portal.state?.active));
+      const menuHands:MenuHand[]=[];
+      if(frame&&calibration)for(const hand of hands){const source=Array.from(session!.inputSources).find(source=>source.handedness===hand.side);if(!source)continue;const joint=source.hand?.get('wrist')??source.hand?.get('index-finger-tip');const grip=joint?frame.getJointPose?.(joint,reference):source.gripSpace?frame.getPose(source.gripSpace,reference):undefined;if(grip)menuHands.push({side:hand.side,pressed:grabInputs.isGripping(source),position:hand.position.clone().applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin),orientation:new THREE.Quaternion().copy(grip.transform.orientation)});}
+      menuMover.update([wallLobby.view,surveyMenu],menuMover.holding||(!grabber.blocksSelect()&&!handCards.blocksSelect())?menuHands:[]);
+      handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding);
+      if(portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed))wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect()&&(!portal.visible()||!!portal.state?.active));
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);
+      const menuRays:{origin:THREE.Vector3;direction:THREE.Vector3}[]=[];if(frame)for(const source of Array.from(session!.inputSources)){const ray=frame.getPose(source.targetRaySpace,reference);if(ray)menuRays.push({origin:new THREE.Vector3().copy(ray.transform.position),direction:new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation))});}menuPointers.update([wallLobby.view,surveyMenu],menuRays);
       if (frame) frameReceived = true;
       const point = pose && floorFromPose(pose);
       adventure.updateAim(point??undefined);
@@ -391,7 +399,7 @@ enter.onclick = async () => {
         : !point ? 'Visez vers le sol, à moins de 10 mètres ; évitez de viser à l’horizontale.' : 'Visée valide : vous pouvez placer le repère.';
       lastTrackingReason = reason;
       overlay.classList.toggle('xr-tracking-valid', valid);
-      target.visible = valid&&(canPlace||wallLobby.roomMode);
+      target.visible = valid&&(canPlace||wallLobby.roomMode)&&!menuPointers.aiming;
       if (point) target.position.copy(point).setY(0.005);
       const ready = placement.update(point?.clone());
       if (ready && canPlace) {
@@ -416,7 +424,7 @@ let ownId = '';
 let revision = 0;
 let socket: WebSocket;
 const adventure=new AdventureClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
-const grabber=new ObjectGrabber(()=>ownId,()=>adventure.viewState()?.state.objects,message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},message=>{feedback.textContent=message;});
+const grabber=new ObjectGrabber(()=>ownId,()=>adventure.viewState()?.state.objects,message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},message=>{feedback.textContent=message;wallLobby.interactionNotice(message);});
 const handCards=new HandCards(()=>ownId,action=>adventure.handAction(action),message=>{feedback.textContent=message;});
 const portal=new PortalClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
 const wallLobby=new WallLobby(message=>{feedback.textContent=message;},()=>{grabber.cancel();handCards.cancel();survey.refresh();},token=>survey.authorize(token));
@@ -463,6 +471,7 @@ function connect() {
       if(message.type==='object_result'&&!message.changed)grabber.reject(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
+        const debug=!!message.adminAccess?.debug;wallLobby.setDebug(debug);survey.setDebug(debug);adventure.setDebug(debug);
         ownSlot=message.players.find((p:{id:string;slot:number})=>p.id===ownId)?.slot??0;if(message.portal)portal.receive(message.portal,ownSlot,message.model??null,!!message.adventure?.engine.testStartStepId);
         showPlayers(message.players); revision = message.puzzle.revision;
         survey.receive(message.model??null,message.libraryRevision??0);
