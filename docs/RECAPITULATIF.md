@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — trois modes d'affichage, version 0.9.0 en validation
+### 19 novembre 2026 — trois modes d'affichage, version 0.9.0 publiée
 
 Branche `feat/display-modes` : adaptateurs Virtual3D, CameraAR expérimental et
 QuestWebXR partageant les vues et commandes d'énigmes. Simulation sans WebXR ni
@@ -26,10 +26,16 @@ La scène est placée directement sous le choix de mode. Aucun essai complet d'�
 ni permission caméra réelle dans ce contrôle DOM, faute de pièce active locale.
 Avertissement Vite habituel du bloc
 Three.js de 574 kB. Aucun essai matériel iPad, Android ou Quest, aucune validation
-WebKit réelle annoncée. Version non encore annoncée disponible.
+WebKit réelle annoncée.
+
+Publication confirmée : commits `986c8fb` et `0458ed0` intégrés et poussés sur main.
+Workflow final [44505159207](https://github.com/nicasGit/MyRoom/actions/runs/44505159207)
+réussi, contrôles Linux et publication ARM64 inclus. Image
+`ghcr.io/nicasgit/myroom:0.9.0` vérifiée Linux ARM64, label 0.9.0, digest
+`sha256:90a29c15e8236099196d4cd7223b5a967370e84a06fcbfe68bf9e41ceacc29f2`.
 Voir [le guide et les limites](display-modes.md).
 
-État au **18 novembre 2026**, fonctionnalités publiées jusqu’à **0.8.1**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.0**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
