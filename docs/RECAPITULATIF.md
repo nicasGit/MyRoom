@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — édition des obstacles Quest, préparation 0.10.0
+### 19 novembre 2026 — édition des obstacles Quest, 0.10.0 publiée
 
 Branche `feat/quest-obstacle-editor`. Inclinaison des mains simulées augmentée de
 30° en conservant les signes gauche/droite ; les mains réellement suivies gardent
@@ -24,7 +24,12 @@ Vérifications réussies : `npm run typecheck`, `npm run build`, `npm test`
 HTTP sans jeton avec debug désactivé, origine et données refusées, gestes à une
 et deux mains, perte de suivi, volume hors contour, capture et dédoublonnage des
 meubles. Avertissement Vite habituel : chunk Three.js de 574 kB.
-Aucun essai Quest matériel, ni validation HAOS annoncés. Publication en cours.
+Aucun essai Quest matériel, ni validation sur un appareil HAOS annoncés.
+Publication confirmée : commit `1cd3038` intégré sur main, workflow
+[44537462522](https://github.com/nicasGit/MyRoom/actions/runs/44537462522) réussi.
+Image `ghcr.io/nicasgit/myroom:0.10.0` vérifiée dans le registre : Linux ARM64,
+label version 0.10.0, digest
+`sha256:3706038bd9c0f7241583721837db3c2848cac999fe2c38d7673882c35ad7fc61`.
 
 ### 19 novembre 2026 — option debug facultative, 0.9.3 publiée
 
