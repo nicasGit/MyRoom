@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — ambiance du couloir, 0.12.1
+### 19 novembre 2026 — ambiance du couloir, 0.12.1 publiée
 
 Branche `feat/vortex-waiting-audio`. Boucle originale de moteur temporel inspirée
 du TARDIS : graves modulés, souffle et grincement synthétisés avec Web Audio,
@@ -26,7 +26,12 @@ Rendu Web Audio hors ligne Chrome à 48 kHz sur neuf secondes : boucle et fondus
 traités, silence confirmé après arrêt ; ce contrôle ne valide pas la restitution
 sonore du casque. Le premier essai navigateur a rencontré le serveur local arrêté,
 relancé pour exécuter le contrôle. Avertissement Vite habituel : chunk Three.js
-574 kB. Publication et image ARM64 à confirmer après le workflow.
+574 kB. `git diff --check` réussi. Publication confirmée : commit `a003dca`
+intégré sur main, workflow
+[44567698800](https://github.com/nicasGit/MyRoom/actions/runs/44567698800) réussi.
+Image `ghcr.io/nicasgit/myroom:0.12.1` vérifiée dans le registre : Linux ARM64,
+label version 0.12.1, digest
+`sha256:2a300b30e11e9f44552baaeced0e51e4d113b1dbfaa159c34af4eb57b2c6acd3`.
 Deux passages intermédiaires ont rencontré l'EPERM Windows connu lors du remplacement
 atomique de la bibliothèque des pièces ; aucun échec audio. Nouvelle exécution
 complète inchangée réussie (133/133). Après déplacement
