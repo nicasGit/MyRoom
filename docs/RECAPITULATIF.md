@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — révélation individuelle du vortex, 0.13.2
+### 19 novembre 2026 — révélation individuelle du vortex, 0.13.2 publiée
 
 Branche `fix/personal-vortex-unlock`. Chaque joueur voit le vortex et son panneau
 uniquement après la première prise de son propre bâton, confirmée côté serveur.
@@ -26,7 +26,11 @@ restauration des objets visibles avant l'animation ; bâtons toujours visibles.
 Test ajouté : première prise
 d'une autre place sans révélation, refus de franchissement/confirmation et de
 couloir, prise personnelle, reprise et reset. Aucun essai physique Quest annoncé.
-Publication ARM64 à confirmer après le workflow.
+Publication confirmée : commit `f5e78e9` intégré sur main, workflow
+[44597916355](https://github.com/nicasGit/MyRoom/actions/runs/44597916355) réussi.
+Image `ghcr.io/nicasgit/myroom:0.13.2` vérifiée dans le registre : Linux ARM64,
+label version 0.13.2, digest
+`sha256:6dfce3a36d100d36f5d32f2018deef88e1072715604e9a553ac4bdaf454da7d4`.
 
 ### 19 novembre 2026 — noms de pièces et reset d'aventure, 0.13.1 publiée
 
