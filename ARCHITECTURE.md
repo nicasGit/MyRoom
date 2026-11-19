@@ -1,5 +1,13 @@
 # Architecture MyRoom
 
+## Bâtons et vortex 0.11.0
+
+Le protocole de manipulation accepte un quaternion facultatif normalisé uniquement
+pour les bâtons. Le client le calcule dans le repère commun A/B ; le serveur conserve
+les baux et les mêmes validations de position. Les objets historiques restent en yaw.
+Le rendu du vortex est isolé dans `client/src/portal/vortex-view.ts` : animation
+procédurale Three.js sans modification de la machine d'états de franchissement.
+
 ## Préparation spatiale 0.10.3
 
 `portal/portal-placement.ts` calcule une proposition de couloir dans le modèle de

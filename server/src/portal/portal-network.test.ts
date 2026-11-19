@@ -26,7 +26,18 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
     await until(s=>s.portal.players.every((p:any)=>p.ready));
     async function grab(index:number,target:string){const s=await state(),pose=s.adventure.objects.poses[target];return send(index,{type:'object_action',action:'grab',target,revision:s.adventure.objects.revision,lease:'request',seq:1,hands:[{x:pose.x,y:pose.y+.2,z:pose.z}],pose},'object_result');}
     assert.equal((await grab(0,'staff2')).changed,false);
-    for(let i=0;i<4;i++){assert.equal((await grab(i,STAFF_IDS[i])).changed,true);s=await state();const held=s.adventure.objects.held.find((h:any)=>h.target===STAFF_IDS[i]),pose=s.adventure.objects.poses[STAFF_IDS[i]];assert.equal((await send(i,{type:'object_action',action:'drop',target:STAFF_IDS[i],revision:s.adventure.objects.revision,lease:held.lease,seq:2,hands:[{x:pose.x,y:pose.y+.2,z:pose.z}],pose},'object_result')).changed,true);}
+    for(let i=0;i<4;i++){
+      assert.equal((await grab(i,STAFF_IDS[i])).changed,true);s=await state();
+      const held=s.adventure.objects.held.find((h:any)=>h.target===STAFF_IDS[i]),pose=s.adventure.objects.poses[STAFF_IDS[i]];
+      const rotated={...pose,quaternion:{x:Math.SQRT1_2,y:0,z:0,w:Math.SQRT1_2}};
+      let observed=false;
+      const observe=(raw:unknown)=>{const message=JSON.parse(String(raw));if(message.type==='state'&&message.adventure.objects.poses[STAFF_IDS[i]]?.quaternion?.x===Math.SQRT1_2)observed=true;};
+      clients[(i+1)%4].on('message',observe);
+      assert.equal((await send(i,{type:'object_action',action:'move',target:STAFF_IDS[i],revision:s.adventure.objects.revision,lease:held.lease,seq:2,hands:[{x:pose.x,y:pose.y+.2,z:pose.z}],pose:rotated},'object_result')).changed,true);
+      assert.equal((await send(i,{type:'object_action',action:'drop',target:STAFF_IDS[i],revision:s.adventure.objects.revision,lease:held.lease,seq:3,hands:[{x:pose.x,y:pose.y+.2,z:pose.z}],pose:rotated},'object_result')).changed,true);
+      await until(state=>state.adventure.objects.poses[STAFF_IDS[i]]?.quaternion?.x===Math.SQRT1_2);
+      await new Promise(resolve=>setTimeout(resolve,30));assert.equal(observed,true);clients[(i+1)%4].off('message',observe);
+    }
     clients[3].close();await once(clients[3],'close');await until(s=>!s.portal.players[3].present);await connect(3,tokens[3]);clients[3].on('message',raw=>{const data=JSON.parse(String(raw));if(data.type==='state')latest=data;});await until(s=>s.portal.players[3].ready);assert.equal((await state()).portal.players[3].claimed,true);
     await until(s=>s.portal.phase==='portal-open');
     for(let i=0;i<4;i++){for(const d of [.2,-.1,-.4]){depth[i]=d;await new Promise(resolve=>setTimeout(resolve,450));}await until(s=>s.portal.players[i].crossed,3000);}

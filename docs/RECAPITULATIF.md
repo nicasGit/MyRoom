@@ -1,5 +1,39 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — bâtons libres et vortex, préparation 0.11.0
+
+Branche `feat/free-staff-rotation-vortex`. Les bâtons peuvent suivre l'orientation
+complète d'une main ou manette : quaternion calculé dans le repère A/B, rotation
+autour du point de prise conservé, position et orientation diffusées environ dix
+fois par seconde pendant la prise. Relâcher conserve la pose dans la session ;
+perdre le suivi, expirer ou se déconnecter conserve les règles d'annulation existantes.
+La possibilité d'attendre et de manipuler son bâton après son passage reste active
+tant que l'introduction n'est pas terminée. Attribution par place, baux, séquences,
+bornes et validation côté serveur conservés. Aucun lancer ou moteur physique ajouté.
+
+Le protocole ajoute un quaternion facultatif normalisé, strictement réservé aux
+bâtons ; anciennes commandes yaw et anciennes pièces restent lisibles. Coffre,
+table et panneaux conservent leurs règles de manipulation. Pas de nouvelle donnée
+persistée dans les placements des neuf objets. La main simulée du téléphone utilise
+également son orientation. Les faisceaux suivent maintenant la vraie pointe inclinée.
+
+Rendu du portail remplacé par un effet original bleu/cyan, inspiré de l'ambiance
+Sliders : surface spiralée procédurale, trois filaments de tunnel en profondeur,
+particules et bord lumineux. Pas d'extrait vidéo ou de ressource de la série.
+Le tunnel visuel suit le sens du passage ; ouverture et transitions serveur inchangées.
+Il ne constitue pas un rendu d'un second univers à travers une fenêtre spatiale.
+Chrome PC : shaders compilés, aperçu inspecté, six appels de dessin et 3 440 triangles
+pour le vortex isolé. Aucune mesure de fréquence d'images sur Quest.
+
+Contrôles réussis : `npm run typecheck`, `npm run build`, `npm test` (126 tests),
+`git diff --check`. Premier passage échoué sur EPERM Windows connu de RoomStore ;
+aucun échec des tests de rotation ou du vortex. Passage complet suivant réussi.
+Tests : pivot de prise et rotation complète, retour yaw historique, rejet des
+quaternions invalides et des rotations complètes des gros objets, mouvement et
+pose de quatre bâtons diffusés aux autres clients, transitions et départ unique.
+Avertissement Vite habituel : chunk Three.js 574 kB. Aucun essai matériel Quest
+par l'agent. Publication en cours.
+
 ### 19 novembre 2026 — préparation du portail et mains aux manettes, 0.10.3 publiée
 
 Branche `fix/portal-preparation-controller-hands`. Le changement du nombre de joueurs

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { toRoom,type makeCalibration } from './calibration';
 import { requiredHands,type ObjectCommand,type ObjectId,type ObjectPose,type ObjectSnapshot } from '../../server/src/object-manipulation.js';
-export type GrabHand={side:'left'|'right';position:THREE.Vector3;pressed:boolean;yaw:number;source?:XRInputSource};
+export type GrabHand={side:'left'|'right';position:THREE.Vector3;pressed:boolean;yaw:number;orientation?:THREE.Quaternion;source?:XRInputSource};
 const up=new THREE.Vector3(0,1,0);
 const angle=(n:number)=>Math.atan2(Math.sin(n),Math.cos(n));
 export function nearGrabbable(group:THREE.Group|undefined,position:THREE.Vector3){
@@ -15,10 +15,16 @@ export function nearGrabbable(group:THREE.Group|undefined,position:THREE.Vector3
     return box.applyMatrix4(inverse).distanceToPoint(position)<.25;
   });
 }
-export function gripTransform(start:GrabHand[],current:GrabHand[],original:ObjectPose):ObjectPose{
+export function gripTransform(start:GrabHand[],current:GrabHand[],original:ObjectPose,fullRotation=false):ObjectPose{
   if(!start.length||start.length!==current.length||new Set(start.map(h=>h.side)).size!==start.length||start.some((h,i)=>h.side!==current[i].side))throw new Error('Mains incohérentes.');
   const center=(hands:GrabHand[])=>hands.reduce((p,h)=>p.add(h.position),new THREE.Vector3()).multiplyScalar(1/hands.length);
   const a=center(start),b=center(current);
+  if(fullRotation&&start.length===1&&start[0].orientation&&current[0].orientation){
+    const delta=current[0].orientation.clone().multiply(start[0].orientation.clone().invert());
+    const rotation=delta.clone().multiply(original.quaternion?new THREE.Quaternion().copy(original.quaternion):new THREE.Quaternion().setFromAxisAngle(up,original.yaw)).normalize();
+    const offset=new THREE.Vector3(original.x,original.y,original.z).sub(a).applyQuaternion(delta).add(b);
+    return {x:offset.x,y:Math.max(0,offset.y),z:offset.z,yaw:new THREE.Euler().setFromQuaternion(rotation,'YXZ').y,quaternion:{x:rotation.x,y:rotation.y,z:rotation.z,w:rotation.w}};
+  }
   const turn=start.length===2?angle(Math.atan2(current[1].position.z-current[0].position.z,current[1].position.x-current[0].position.x)-Math.atan2(start[1].position.z-start[0].position.z,start[1].position.x-start[0].position.x)):angle(current[0].yaw-start[0].yaw);
   const offset=new THREE.Vector3(original.x,original.y,original.z).sub(a).applyAxisAngle(up,-turn).add(b);
   return {x:offset.x,y:Math.max(0,offset.y),z:offset.z,yaw:angle(original.yaw-turn)};
@@ -40,7 +46,7 @@ export class GrabInputs {
         const p=new THREE.Vector3().copy(a.transform.position),q=new THREE.Vector3().copy(b.transform.position),distance=p.distanceTo(q);
         pressed=this.selected.has(source)||distance<(this.pinched.get(source)?0.045:0.03);this.pinched.set(source,pressed);position=p.add(q).multiplyScalar(0.5);orientation=b.transform.orientation;
       }else if(source.gripSpace){const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;position=new THREE.Vector3().copy(pose.transform.position);orientation=pose.transform.orientation;pressed=this.squeezed.has(source)||!!source.gamepad?.buttons[1]?.pressed||staffTrigger&&(this.selected.has(source)||!!source.gamepad?.buttons[0]?.pressed);}
-      if(position&&orientation){const forward=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(orientation)).applyAxisAngle(up,calibration.yaw);result.push({source,side:source.handedness,position:toRoom(position,calibration),pressed,yaw:Math.atan2(forward.x,-forward.z)});}
+      if(position&&orientation){const rotation=new THREE.Quaternion().setFromAxisAngle(up,calibration.yaw).multiply(new THREE.Quaternion().copy(orientation));const forward=new THREE.Vector3(0,0,-1).applyQuaternion(rotation);result.push({source,orientation:rotation,side:source.handedness,position:toRoom(position,calibration),pressed,yaw:Math.atan2(forward.x,-forward.z)});}
     }
     for(const source of this.pinched.keys())if(!Array.from(sources).includes(source))this.pinched.delete(source);
     for(const source of this.squeezed)if(!Array.from(sources).includes(source))this.squeezed.delete(source);
@@ -75,8 +81,8 @@ export class ObjectGrabber {
         this.command(hold,'drop');this.notify('Objet posé ; position partagée dans la session.');
         this.hold=undefined;this.blockedUntil=now+600;return;
       }
-      hold.hands=current;hold.pose=gripTransform(hold.start,current,hold.original);const node=roots[hold.target]!;node.position.set(hold.pose.x,hold.pose.y,hold.pose.z);node.rotation.y=hold.pose.yaw;
-      if(now-hold.lastSent>=220){this.command(hold,'move');hold.lastSent=now;}
+      hold.hands=current;hold.pose=gripTransform(hold.start,current,hold.original,hold.target.startsWith('staff'));const node=roots[hold.target]!;node.position.set(hold.pose.x,hold.pose.y,hold.pose.z);if(hold.pose.quaternion)node.quaternion.copy(hold.pose.quaternion);else node.rotation.set(0,hold.pose.yaw,0);
+      if(now-hold.lastSent>=(hold.target.startsWith('staff')?100:220)){this.command(hold,'move');hold.lastSent=now;}
     }else if(pressed.length&&now>=this.blockedUntil&&roots){
       group.updateMatrixWorld(true);const rootInverse=new THREE.Matrix4().copy(group.matrixWorld).invert();
       const candidate=Object.entries(roots).map(([target,node])=>{

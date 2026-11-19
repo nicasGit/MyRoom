@@ -15,7 +15,40 @@ import { makeCalibration } from '../../client/src/calibration.js';
 import { RealisticHand,controllerHandOrientation,controllerFingerPose } from '../../client/src/realistic-hand.js';
 import { surveyButtons,runSurveyCommand,useTouchOverlay } from '../../client/src/quest-survey-controls.js';
 import { MenuMover,MenuPointers } from '../../client/src/xr-menu-interactions.js';
+import { vortexView } from '../../client/src/portal/vortex-view.js';
+import { disposeGroup } from '../../client/src/model-view.js';
+import { applyObjectPoses } from '../../client/src/adventure-view.js';
 import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
+
+test('staff orientation: full wrist rotation follows its grip pivot without changing heavy-object rules',()=>{
+  const a:GrabHand={side:'right',position:new THREE.Vector3(1,1,1),pressed:true,yaw:0,orientation:new THREE.Quaternion()};
+  const orientation=new THREE.Quaternion().setFromEuler(new THREE.Euler(.8,.4,1.2));
+  const b={...a,position:new THREE.Vector3(1.1,1.1,1),orientation};
+  const pose=gripTransform([a],[b],{x:1,y:.7,z:1,yaw:0},true);
+  assert.ok(new THREE.Quaternion().copy(pose.quaternion!).angleTo(orientation)<1e-7);
+  const expected=new THREE.Vector3(0,-.3,0).applyQuaternion(orientation).add(b.position);
+  assert.ok(new THREE.Vector3(pose.x,pose.y,pose.z).distanceTo(expected)<1e-8);
+  assert.equal(gripTransform([a],[b],{x:1,y:.7,z:1,yaw:0}).quaternion,undefined);
+  const group=new THREE.Group(),staff=new THREE.Group();group.userData.grabbables={staff1:staff};group.add(staff);
+  applyObjectPoses(group,{revision:1,poses:{staff1:pose},held:[]});assert.ok(staff.quaternion.angleTo(orientation)<1e-7);
+  applyObjectPoses(group,{revision:2,poses:{staff1:{x:1,y:.7,z:1,yaw:0}},held:[]});assert.ok(staff.quaternion.angleTo(new THREE.Quaternion())<1e-7);
+});
+
+test('staff quaternion protocol: rejects malformed, non-unit and non-staff rotations; accepts legacy yaw',()=>{
+  const command={type:'object_action',action:'grab',target:'staff1',revision:0,lease:'request',seq:1,hands:[{x:1,y:1,z:1}],pose:{x:1,y:.7,z:1,yaw:0}};
+  assert.equal(parseObjectCommand(command).pose.quaternion,undefined);
+  assert.equal(parseObjectCommand({...command,pose:{...command.pose,quaternion:{x:0,y:0,z:0,w:1}}}).pose.quaternion?.w,1);
+  for(const quaternion of [{x:0,y:0,z:0,w:0},{x:0,y:0,z:0,w:2},{x:NaN,y:0,z:0,w:1},{x:0,y:0,z:0},{x:0,y:0,z:0,w:1,extra:true}])assert.throws(()=>parseObjectCommand({...command,pose:{...command.pose,quaternion}}));
+  assert.throws(()=>parseObjectCommand({...command,target:'chest',pose:{...command.pose,quaternion:{x:0,y:0,z:0,w:1}}}));
+});
+
+test('vortex: finite animated tunnel and shader, reusable disposal without changing game state',()=>{
+  const vortex=vortexView(1.4,2.2),before=(vortex.group.children.at(-1) as THREE.Points).geometry.attributes.position.array.slice();
+  vortex.animate(12.3);const points=(vortex.group.children.at(-1) as THREE.Points).geometry.attributes.position.array;
+  assert.ok(points.every(Number.isFinite));assert.notDeepEqual(points,before);assert.equal(points.length,360);
+  const shader=(vortex.group.children[0] as THREE.Mesh).material as THREE.ShaderMaterial;assert.equal(shader.uniforms.time.value,12.3);assert.equal(shader.depthWrite,false);
+  vortex.crossed();disposeGroup(vortex.group);assert.equal(vortex.group.userData.disposed,true);
+});
 
 test('Quest survey: close respects validation, cancel then return, exit available while saving',()=>{
   assert.equal(useTouchOverlay(true,'world-space'),false);assert.equal(useTouchOverlay(true,'screen-space'),true);assert.equal(useTouchOverlay(false,undefined),false);

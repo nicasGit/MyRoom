@@ -1,7 +1,7 @@
 import { PUZZLE_ITEMS,inside,puzzlePanel,findPuzzlePanel,type PuzzleItem,type RoomModel } from './scene-schema.js';
 import { record,integer,list,text } from './engine/validation.js';
 export type ObjectId=PuzzleItem|'panel'|import('./portal/portal-types.js').StaffId;
-export type ObjectPose={x:number;y:number;z:number;yaw:number};
+export type ObjectPose={x:number;y:number;z:number;yaw:number;quaternion?:{x:number;y:number;z:number;w:number}};
 export type HandPoint={x:number;y:number;z:number};
 export type ObjectCommand={type:'object_action';action:'grab'|'move'|'drop'|'cancel';target:ObjectId;revision:number;lease:string;seq:number;hands:HandPoint[];pose:ObjectPose};
 export type ObjectSnapshot={revision:number;poses:Partial<Record<ObjectId,ObjectPose>>;held:{target:ObjectId;owner:string;lease:string;expiresAt:number}[]};
@@ -10,8 +10,14 @@ function point(value:unknown){const p=record(value,['x','y','z']);for(const n of
 export function parseObjectCommand(value:unknown):ObjectCommand{
   const c=record(value,['type','action','target','revision','lease','seq','hands','pose']);
   if(Object.keys(c).length!==8||c.type!=='object_action'||!['grab','move','drop','cancel'].includes(String(c.action))||![...PUZZLE_ITEMS,'panel','staff1','staff2','staff3','staff4'].includes(c.target as ObjectId))throw new Error('Commande de manipulation invalide.');
-  const pose=record(c.pose,['x','y','z','yaw']);const p=point({x:pose.x,y:pose.y,z:pose.z});if(typeof pose.yaw!=='number'||!Number.isFinite(pose.yaw)||Math.abs(pose.yaw)>Math.PI)throw new Error('Rotation invalide.');
-  return {type:'object_action',action:c.action as ObjectCommand['action'],target:c.target as ObjectId,revision:integer(c.revision),lease:text(c.lease,64),seq:integer(c.seq),hands:list(c.hands,2).map(point),pose:{...p,yaw:pose.yaw}};
+  const pose=record(c.pose,['x','y','z','yaw','quaternion']);const p=point({x:pose.x,y:pose.y,z:pose.z});if(typeof pose.yaw!=='number'||!Number.isFinite(pose.yaw)||Math.abs(pose.yaw)>Math.PI)throw new Error('Rotation invalide.');
+  let quaternion:ObjectPose['quaternion'];
+  if(pose.quaternion!==undefined){
+    const q=record(pose.quaternion,['x','y','z','w']);
+    if(!String(c.target).startsWith('staff')||Object.keys(q).length!==4||[q.x,q.y,q.z,q.w].some(n=>typeof n!=='number'||!Number.isFinite(n))||Math.abs(Math.hypot(q.x as number,q.y as number,q.z as number,q.w as number)-1)>.001)throw Error('Orientation du bâton invalide.');
+    quaternion={x:q.x as number,y:q.y as number,z:q.z as number,w:q.w as number};
+  }
+  return {type:'object_action',action:c.action as ObjectCommand['action'],target:c.target as ObjectId,revision:integer(c.revision),lease:text(c.lease,64),seq:integer(c.seq),hands:list(c.hands,2).map(point),pose:{...p,yaw:pose.yaw,...(quaternion?{quaternion}:{})}};
 }
 export class ObjectManipulation {
   private revision=0;

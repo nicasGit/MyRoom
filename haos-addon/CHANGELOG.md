@@ -1,3 +1,11 @@
+## 0.11.0
+
+- Bâtons : orientation complète de la main (inclinaison, roulis et rotation), synchronisée pendant l'attente des autres joueurs et conservée au relâchement dans la session.
+- Protocole rétrocompatible : quaternion facultatif strictement validé pour les bâtons ; autres objets et anciens placements inchangés.
+- Vortex bleu/cyan procédural : spirales animées, tunnel 3D, particules et bord lumineux, inspiré de l'ambiance Sliders.
+- Faisceaux suivant la pointe des bâtons inclinés ; mêmes règles d'ouverture et de franchissement.
+- Vérifications logicielles uniquement, sans validation physique Quest.
+
 ## 0.10.3
 
 - Nombre de joueurs modifiable même si l'ancien couloir est invalide ; la confirmation physique reste exigée.

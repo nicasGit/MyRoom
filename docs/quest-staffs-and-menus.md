@@ -1,5 +1,19 @@
 # Bâtons et panneaux Quest — 0.10.1
 
+## Bâtons libres et vortex — 0.11.0
+
+Gardez une main fermée sur votre bâton pour le déplacer, l'incliner ou le retourner.
+Il suit la rotation complète de la main ou manette, visible par les autres joueurs.
+Vous pouvez continuer à le manipuler pendant l'attente du groupe, y compris après
+votre passage, tant que l'introduction est active. Relâcher le pose ; il n'y a pas de
+lancer, de gravité ou de collision physique complète. Les limites de déplacement et
+l'attribution du bâton à votre place restent vérifiées côté serveur.
+
+Le vortex affiche un tourbillon bleu/cyan avec un tunnel visuel et des particules.
+Son ouverture reste déclenchée par la première prise ; l'aventure attend toujours
+les passages du groupe. Cet effet ne montre pas encore les joueurs d'un autre
+univers à travers le portail. Validation sur Quest physique encore nécessaire.
+
 ## Préparation simplifiée — 0.10.3
 
 Dans Paramètres du menu mural, choisissez le nombre de joueurs. Si un ancien

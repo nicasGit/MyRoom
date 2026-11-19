@@ -37,7 +37,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.10.3');
+diagnostic('Version client', '0.11.0');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
