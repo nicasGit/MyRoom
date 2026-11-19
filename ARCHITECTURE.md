@@ -1,5 +1,16 @@
 # Architecture MyRoom
 
+## Révélation personnelle 0.13.2
+
+La vue du vortex utilise l'attribution `claimed` de la place courante, confirmée
+par le serveur après la première prise de son propre bâton. Vortex, panneau,
+faisceaux, flèche et confirmation sont masqués avant cette attribution, y compris
+dans l'aperçu joueur. Le couloir local exige la même condition. Le serveur ne
+valide pas les poses de franchissement ou confirmations accessibles sans bâton ;
+les contournements administrateur explicites restent disponibles.
+L'ouverture collective démarre toujours à la première prise, mais chaque joueur
+la découvre à sa propre prise. Aucun changement des placements ou d'A/B.
+
 ## Noms de pièces et réinitialisation 0.13.1
 
 `rooms/rename` effectue une mutation de métadonnées versionnée et atomique dans

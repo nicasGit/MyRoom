@@ -1,4 +1,5 @@
 import { CrossingDetector } from '../../../server/src/portal/crossing-detector.js';
+import { hasStaffAccess } from './portal-access';
 import type { PortalPublic,Vec3 } from '../../../server/src/portal/portal-types.js';
 
 /** Local visual prediction only. Progression always comes from TeamPortal. */
@@ -10,7 +11,7 @@ export class PortalWaiting {
   reset(){this.detector.reset();this.entered=false;this.key='';this.last=undefined;}
   update(state:PortalPublic|undefined,slot:number,head:Vec3|undefined,now:number){
     const player=state?.players.find(p=>p.slot===slot);
-    if(!state?.active||!head||!player?.present||!player.ready||!['portal-open','transitioning'].includes(state.phase)){
+    if(!state?.active||!hasStaffAccess(state,slot)||!head||!player?.present||!player.ready||!['portal-open','transitioning'].includes(state.phase)){
       this.reset();return false;
     }
     const key=JSON.stringify([state.sessionId,slot,state.config.portal]);

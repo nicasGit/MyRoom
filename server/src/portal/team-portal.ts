@@ -58,9 +58,9 @@ export class TeamPortal {
       if(previous&&(now<=previous.at||now-previous.at<100||Math.hypot(v.x-previous.p.x,v.y-previous.p.y,v.z-previous.p.z)>Math.min(0.8,(now-previous.at)/1000*3+0.1)))throw Error('Déplacement incohérent ou trop fréquent.');
       if(!insideRoom(v,room.floor))throw Error('Pose hors de la pièce.');
       this.pose.set(slot,{p:v,at:now,seq:c.seq,mode});if(!p.ready){p.ready=true;this.state.revision++;}
-      if(mode!=='camera-ar'&&this.state.phase==='portal-open'&&this.allReady()&&!p.crossed&&this.detectors[slot-1].sample(v,now,this.state.config.portal,mode==='quest-webxr'?.04:.3))this.cross(slot,mode==='virtual-3d'?'virtual-crossing':'physical-xr');
+      if(p.claimed&&mode!=='camera-ar'&&this.state.phase==='portal-open'&&this.allReady()&&!p.crossed&&this.detectors[slot-1].sample(v,now,this.state.config.portal,mode==='quest-webxr'?.04:.3))this.cross(slot,mode==='virtual-3d'?'virtual-crossing':'physical-xr');
     }else if(c.action==='unready'){this.pose.delete(slot);p.ready=false;this.detectors[slot-1].reset();this.state.revision++;}
-    else {if(!p.ready)throw Error('Signalez votre présence avant la confirmation accessible.');this.cross(slot,mode==='camera-ar'?'camera-confirmation':'accessible-confirmation');}
+    else {if(!p.ready)throw Error('Signalez votre présence avant la confirmation accessible.');if(!p.claimed)throw Error('Prenez votre bâton personnel avant de traverser le vortex.');this.cross(slot,mode==='camera-ar'?'camera-confirmation':'accessible-confirmation');}
     this.seen.add(c.commandId);if(this.seen.size>512)this.seen.delete(this.seen.values().next().value!);
   }
   clearTracking(slot:number){this.pose.delete(slot);this.detectors[slot-1]?.reset();const player=this.state.players[slot-1];if(player?.ready){player.ready=false;this.state.revision++;}}

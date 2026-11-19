@@ -14,6 +14,7 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 import { suggestPortalPlacement,configurePortalPlacement } from './portal-placement.js';
 import { PortalWaiting } from '../../../client/src/portal/portal-waiting.js';
+import { hasStaffAccess } from '../../../client/src/portal/portal-access.js';
 import { roomCenter } from './portal-placement.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
 const config={...structuredClone(DEFAULT_PORTAL),confirmed:true};
@@ -104,6 +105,20 @@ test('accueil global : visible par défaut, placement et rituel indépendants du
 function fixture(){const portal=new TeamPortal();portal.configure(config);portal.begin('session',['Un','Deux','Trois','Quatre'],model,1000);portal.presence([1,2,3,4],1000);return portal;}
 function pose(portal:TeamPortal,slot:number,seq:number,at:number,d=0.6){const s=portal.snapshot();portal.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq,action:'pose',position:{x:4,y:1.6,z:3+d}},slot,model,at);}
 function open(){const portal=fixture();for(let i=1;i<=4;i++)pose(portal,i,1,1100);portal.tick(1100,()=>{});for(let i=1;i<=4;i++)portal.claim(i,STAFF_IDS[i-1]);portal.tick(1200,()=>{});portal.tick(6200,()=>{});return portal;}
+
+test('personal vortex: another player opening does not unlock your view or passage; own claim survives reconnect',()=>{
+  const p=fixture();for(let i=1;i<=4;i++)pose(p,i,1,1100);p.tick(1100,()=>{});p.claim(1,'staff1');p.tick(1200,()=>{});p.tick(6200,()=>{});
+  assert.equal(hasStaffAccess(p.snapshot(),1),true);assert.equal(hasStaffAccess(p.snapshot(),2),false);assert.equal(hasStaffAccess(p.snapshot(),0),false);
+  for(const [index,d] of [.6,.2,-.1,-.4].entries())pose(p,2,index+2,6500+index*300,d);
+  let s=p.snapshot();assert.equal(s.players[1].crossed,false);
+  assert.throws(()=>p.act({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:randomUUID(),seq:6,action:'confirm'},2,model,7500),/bâton/);
+  const waiting=new PortalWaiting();assert.equal(waiting.update(s,2,{x:4,y:1.6,z:2.9},8000),false);
+  p.claim(2,'staff2');assert.equal(hasStaffAccess(p.snapshot(),2),true);
+  p.presence([1,3,4],8100);p.presence([1,2,3,4],8200);assert.equal(hasStaffAccess(p.snapshot(),2),true);
+  s=p.snapshot();assert.equal(s.players[1].claimed,true);
+  p.cancel();assert.equal(hasStaffAccess(p.snapshot(),2),false);
+  p.begin('new',['A','B','C','D'],model,9000);assert.equal(hasStaffAccess(p.snapshot(),2),false);
+});
 
 test('ghost positions: only fresh validated XR poses, copies, expiry, loss, camera/virtual exclusion and cancellation',()=>{
   const p=fixture();

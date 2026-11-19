@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { PortalPublic,PortalCommand } from '../../../server/src/portal/portal-types.js';
 import { toRoom,type makeCalibration } from '../calibration';
 import { portalView } from './portal-view';
+import { hasStaffAccess } from './portal-access';
 import { modelGroup,disposeGroup } from '../model-view';
 import { createPreview } from '../model-view';
 import type { RoomModel } from '../../../server/src/scene-schema.js';
@@ -11,7 +12,7 @@ export class PortalClient {
   constructor(private send:(command:PortalCommand)=>boolean,private calibration:()=>ReturnType<typeof makeCalibration>|undefined,private changed:()=>void,private notify:(text:string)=>void){
     for(const id of ['adventure-desktop','adventure-ar']){const panel=document.createElement('section');panel.hidden=true;document.getElementById(id)!.before(panel);this.panels.push(panel);}
     const host=this.host;host.hidden=true;this.panels[0].after(host);
-    this.preview=createPreview(host,model=>{const group=modelGroup(model);if(this.previewState?.config.enabled&&this.previewState.phase!=='completed')group.add(portalView(this.previewState));return group;});
+    this.preview=createPreview(host,model=>{const group=modelGroup(model);if(this.previewState?.config.enabled&&this.previewState.phase!=='completed')group.add(portalView(this.previewState,this.slot));return group;});
     document.addEventListener('pointerdown',()=>{try{this.audio=new AudioContext();void this.audio.resume();}catch{}},{once:true});
   }
   visible(){return !this.bypassIntro&&!!this.state?.config.enabled&&this.state.phase!=='completed';}
@@ -21,21 +22,21 @@ export class PortalClient {
     const changed=bypassChanged||previous?.revision!==state.revision||previous?.sessionId!==state.sessionId;
     if(changed){
       for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!;root.hidden=this.visible();}
-      this.panels.forEach(panel=>{panel.hidden=!this.visible();panel.replaceChildren();if(!this.visible())return;const text=document.createElement('p');text.textContent=this.story();panel.append(text);const button=document.createElement('button');button.textContent='Mode accessible : valider mon passage sans traverser';button.disabled=state.phase!=='portal-open';button.onclick=()=>this.confirm();panel.append(button);});
+      this.panels.forEach(panel=>{panel.hidden=!this.visible();panel.replaceChildren();if(!this.visible())return;const text=document.createElement('p');text.textContent=this.story();panel.append(text);const button=document.createElement('button');button.textContent='Mode accessible : valider mon passage sans traverser';button.disabled=state.phase!=='portal-open'||!hasStaffAccess(state,slot);button.onclick=()=>this.confirm();panel.append(button);});
       this.host.hidden=!this.visible();this.previewState=state;this.preview(this.visible()?model:null);this.changed();
       const crossed=state.players.find(p=>p.slot===slot)?.crossed&&!previous?.players.find(p=>p.slot===slot)?.crossed;
-      if(state.phase==='opening'&&previous?.phase!=='opening'||crossed)this.chime(state);
+      if(hasStaffAccess(state,slot)&&((state.phase==='opening'&&previous?.phase!=='opening')||crossed||!hasStaffAccess(previous,slot)&&state.phase==='portal-open'))this.chime(state);
       if(crossed)this.notify('Votre passage est validé. Attendez vos coéquipiers dans la même pièce.');
     }
   }
-  story(){const s=this.state;if(!s||!this.visible())return '';if(!s.active)return 'Bienvenue dans MyRoom. Calibrez les reperes A/B : le vortex et les batons sont l’accueil commun avant toute aventure. L’organisateur prepare puis demarre le rituel.';return `${s.simulation?'SIMULATION PC · ':''}Team Portal · ${s.phase} · ${s.players.filter(p=>p.claimed).length}/${s.config.playerCount??4} bâtons · ${s.players.filter(p=>p.crossed).length}/${s.config.playerCount??4} passages. ${s.phase==='portal-open'?'Le passage est ouvert. Marchez calmement dans le sens de la flèche ou utilisez la confirmation accessible.':'Prenez votre bâton : la première prise ouvre le vortex. Tous les joueurs choisis doivent être calibrés et passer pour commencer.'}`;}
+  story(){const s=this.state;if(!s||!this.visible())return '';if(s.active&&!hasStaffAccess(s,this.slot))return 'Prenez votre b\u00e2ton personnel pour r\u00e9v\u00e9ler le vortex et son panneau.';if(!s.active)return 'Bienvenue dans MyRoom. Calibrez les reperes A/B : le vortex et les batons sont l’accueil commun avant toute aventure. L’organisateur prepare puis demarre le rituel.';return `${s.simulation?'SIMULATION PC · ':''}Team Portal · ${s.phase} · ${s.players.filter(p=>p.claimed).length}/${s.config.playerCount??4} bâtons · ${s.players.filter(p=>p.crossed).length}/${s.config.playerCount??4} passages. ${s.phase==='portal-open'?'Le passage est ouvert. Marchez calmement dans le sens de la flèche ou utilisez la confirmation accessible.':'Prenez votre bâton : la première prise ouvre le vortex. Tous les joueurs choisis doivent être calibrés et passer pour commencer.'}`;}
   private command(action:PortalCommand['action'],position?:THREE.Vector3){const s=this.state;if(!s?.active)return;this.send({type:'portal_action',sessionId:s.sessionId,revision:s.revision,commandId:crypto.randomUUID(),seq:++this.seq,action,...(position?{position:{x:position.x,y:position.y,z:position.z}}:{})});}
   update(local:THREE.Vector3|undefined,now=performance.now()){
     if(!this.state?.active||this.state.simulation)return;const calibration=this.calibration();
     if(!local||!calibration){if(this.wasReady){this.command('unready');this.wasReady=false;}return;}
     if(now-this.last>=300){this.last=now;const point=toRoom(local,calibration);if(this.audio){this.audio.listener.positionX.value=point.x;this.audio.listener.positionY.value=point.y;this.audio.listener.positionZ.value=point.z;}this.command('pose',point);this.wasReady=true;}
   }
-  confirm(){this.command('confirm');}
+  confirm(){if(!hasStaffAccess(this.state,this.slot)){this.notify('Prenez votre bâton personnel pour révéler le vortex.');return;}this.command('confirm');}
   updateVirtual(position:THREE.Vector3,now=performance.now()){
     if(!this.state?.active||this.state.simulation)return;
     if(now-this.last>=300){this.last=now;this.command('pose',position);this.wasReady=true;}

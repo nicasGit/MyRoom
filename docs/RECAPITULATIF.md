@@ -1,5 +1,33 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — révélation individuelle du vortex, 0.13.2
+
+Branche `fix/personal-vortex-unlock`. Chaque joueur voit le vortex et son panneau
+uniquement après la première prise de son propre bâton, confirmée côté serveur.
+Les faisceaux, flèche, confirmation accessible et son d'ouverture suivent le même
+accès ; bâtons et menu restent disponibles avant la prise. Relâcher conserve
+l'attribution pendant le rituel. Reconnexion à la même place la conserve ; reset
+et nouvelle session la retirent. Le premier bâton démarre toujours l'ouverture
+collective de cinq secondes ; chacun découvre l'état courant à sa prise.
+
+WebXR, simulateurs et aperçu joueur utilisent la même place authentifiée, sans
+révélation dans un aperçu anonyme. Visibilité initialisée avant la première image
+et réappliquée à chaque animation, y compris après restauration des objets visibles
+dans la boucle XR. Le couloir exige également l'attribution du bâton ; le serveur
+ne valide pas une traversée physique avant prise et refuse la confirmation
+accessible sans bâton. Contournements administrateur explicites conservés.
+A/B, placements, coffre, blackjack, fantômes et son d'attente inchangés.
+
+Vérifications réussies : `npm run typecheck`, `npm run build`, `npm test`
+(141/141), `git diff --check`. Avertissement Vite habituel : chunk Three.js 574 kB.
+Contrôle de la vue Three.js dans Chrome : vortex et panneau visibles pour la place
+ayant pris son bâton, masqués pour l'autre place et l'aperçu anonyme, même après
+restauration des objets visibles avant l'animation ; bâtons toujours visibles.
+Test ajouté : première prise
+d'une autre place sans révélation, refus de franchissement/confirmation et de
+couloir, prise personnelle, reprise et reset. Aucun essai physique Quest annoncé.
+Publication ARM64 à confirmer après le workflow.
+
 ### 19 novembre 2026 — noms de pièces et reset d'aventure, 0.13.1 publiée
 
 Branche `feat/room-names-adventure-reset`. Chaque fiche de la bibliothèque admin

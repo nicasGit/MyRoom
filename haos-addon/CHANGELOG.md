@@ -1,3 +1,11 @@
+## 0.13.2
+
+- Vortex, panneau en bois, faisceaux et flèche révélés individuellement après la prise de son propre bâton.
+- Prendre le bâton d'un autre joueur n'ouvre pas l'accès ; relâcher son bâton conserve la révélation pendant le rituel.
+- Couloir et confirmation accessible exigent aussi cette attribution ; passage physique non validé sans bâton.
+- Même affichage dans WebXR, les simulateurs et l'aperçu joueur ; nouvelle session et reset retirent l'accès.
+- Contrôles logiciels uniquement, sans essai physique Quest.
+
 ## 0.13.1
 
 - Renommage des pièces depuis leur fiche d'administration, sans changer l'identifiant, les placements, la pièce active ou la progression.

@@ -64,6 +64,27 @@ Les poses de tête sont envoyées environ trois fois par seconde uniquement pend
 
 Le détecteur exige un départ à au moins 30 cm devant le plan et une intersection du rectangle utile. Depuis 0.12.0, l'arrivée WebXR est validée à 4 cm derrière le plan de tête ; le simulateur virtuel conserve une arrivée à 30 cm. Les bords ont une marge de 8 cm. Les sauts excessifs et trous de suivi annulent l’historique ; des oscillations autour du plan ne suffisent pas. Le sens, la hauteur et la largeur sont contrôlés. Une place ne peut valider qu’un passage par session.
 
+## Révélation personnelle 0.13.2
+
+Chaque participant doit prendre son propre bâton pour voir le vortex et son
+panneau en bois. Avant cette première prise validée par le serveur, les bâtons
+restent visibles et accessibles, mais pas le vortex, le panneau, les faisceaux
+ou la flèche. Prendre le bâton d'une autre place reste refusé. Relâcher son bâton
+ne masque pas le portail : l'attribution est conservée jusqu'au prochain rituel.
+La reconnexion à la même place conserve cette attribution ; un reset ou une
+nouvelle session la retire. L'ouverture collective dure toujours cinq secondes
+à partir de la première prise, sans attendre toutes les prises ; un joueur qui
+prend son bâton ensuite découvre l'ouverture dans son état courant.
+
+Le couloir et la confirmation accessible sont également réservés aux participants
+ayant pris leur bâton. Le serveur ignore le franchissement physique avant cette
+prise et refuse une confirmation accessible sans bâton. La détection et A/B ne
+changent pas. Les commandes administrateur de passage forcé restent des
+contournements explicitement identifiés. Le son d'ouverture n'est pas joué chez
+un participant qui n'a pas encore pris son bâton. Les simulateurs et l'aperçu
+joueur appliquent la même règle individuelle ; aucun aperçu anonyme ne révèle
+le portail. Cette règle remplace la visibilité collective des versions précédentes.
+
 ## Centrage, panneau et fantômes 0.13.0
 
 Pour une nouvelle pièce sans placement, le vortex est proposé au centre géométrique
