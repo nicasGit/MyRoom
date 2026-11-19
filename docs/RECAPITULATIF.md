@@ -1,5 +1,38 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — ambiance du couloir, 0.12.1
+
+Branche `feat/vortex-waiting-audio`. Boucle originale de moteur temporel inspirée
+du TARDIS : graves modulés, souffle et grincement synthétisés avec Web Audio,
+sans extrait de série ni fichier externe. Elle joue personnellement dans le
+couloir après validation serveur du passage, pas pendant l'aperçu non confirmé.
+Volume modéré, entrée en 400 ms et sortie en 180 ms ; une seule source active,
+tampon mono de huit secondes réutilisé et nœuds déconnectés après arrêt.
+Le tampon est préparé après le geste de lancement, à 22,05 kHz maximum, pour
+éviter sa synthèse au premier franchissement dans la boucle d'animation XR.
+
+Déverrouillage lors d'un geste utilisateur ou du lancement WebXR. Refus ou
+suspension audio ne bloquent pas le jeu ; prochain appui réessaie. Arrêt à la
+fin/annulation du rituel, perte de suivi, recalibrage, masquage de la session XR,
+déconnexion ou sortie XR ; fermeture du contexte à la sortie de la page.
+Règles, protocole, calibrage, pièces et modes simulateurs inchangés.
+Volume réglable avec les commandes générales du casque ; boucle non synchronisée
+entre appareils. Aucun essai physique Quest ni écoute matérielle annoncés.
+
+Contrôles réussis : `npm run typecheck`, `npm run build`, `npm test` (133 tests),
+dont trois tests audio : signal périodique fini et borné, absence de multiplication
+des sources sur les images répétées, arrêt/reprise/nettoyage et audio indisponible.
+Rendu Web Audio hors ligne Chrome à 48 kHz sur neuf secondes : boucle et fondus
+traités, silence confirmé après arrêt ; ce contrôle ne valide pas la restitution
+sonore du casque. Le premier essai navigateur a rencontré le serveur local arrêté,
+relancé pour exécuter le contrôle. Avertissement Vite habituel : chunk Three.js
+574 kB. Publication et image ARM64 à confirmer après le workflow.
+Deux passages intermédiaires ont rencontré l'EPERM Windows connu lors du remplacement
+atomique de la bibliothèque des pièces ; aucun échec audio. Nouvelle exécution
+complète inchangée réussie (133/133). Après déplacement
+du pré-calcul audio, TypeScript a aussi détecté un retour de tampon potentiellement
+indéfini : corrigé avec un retour typé avant les vérifications finales.
+
 ### 19 novembre 2026 — couloir personnel après passage de tête, 0.12.0 publiée
 
 Branche `feat/head-crossing-waiting-corridor`. Dans la session immersive WebXR,

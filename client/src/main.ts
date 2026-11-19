@@ -28,6 +28,10 @@ import { handPreview } from './hand-preview';
 import { PhoneControls } from './phone-controls';
 import { PortalWaiting } from './portal/portal-waiting';
 import { waitingCorridor } from './portal/waiting-corridor';
+import { WaitingAudio } from './portal/waiting-audio';
+
+const waitingSound=new WaitingAudio();
+document.addEventListener('pointerdown',()=>{void waitingSound.unlock();});
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }
 const enter = element<HTMLButtonElement>('enter');
@@ -39,7 +43,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.12.0');
+diagnostic('Version client', '0.12.1');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -120,6 +124,7 @@ overlay.addEventListener('beforexrselect', event => {
 });
 enter.onclick = async () => {
   if (!navigator.xr) return;
+  void waitingSound.unlock();
   enter.disabled = true;
   xrEvent('session_requested');
   let session: XRSession | undefined;
@@ -135,6 +140,7 @@ enter.onclick = async () => {
       requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection','mesh-detection','hand-tracking'], domOverlay: { root: overlay },
     });
     currentXRSession=session;
+    session.addEventListener('visibilitychange',()=>{if(session?.visibilityState!=='visible')waitingSound.setActive(false);});
     const touchOverlay = useTouchOverlay(!!session.domOverlayState,session.interactionMode);
     adventure.setXRActive(true);
     xrEvent('session_started', { overlay: touchOverlay });
@@ -283,8 +289,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { waitingSound.setActive(false);waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { waitingSound.setActive(false);waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -362,6 +368,7 @@ enter.onclick = async () => {
       gameGroup?.userData.animatePortal?.(Date.now());
       const roomHead=pose&&calibration&&!survey.hasDraft()&&!wallLobby.roomMode&&portal.visible()?toRoom(new THREE.Vector3().copy(pose.transform.position),calibration):undefined;
       const inCorridor=waiting.update(portal.state,ownSlot,roomHead,_time);
+      waitingSound.setActive(inCorridor&&socket?.readyState===WebSocket.OPEN&&!!portal.state?.players.find(player=>player.slot===ownSlot)?.crossed&&session!.visibilityState==='visible');
       if(inCorridor&&roomHead&&calibration&&portal.state){
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);
@@ -508,6 +515,7 @@ function connect() {
     } catch { status.textContent = 'Réponse serveur invalide.'; }
   };
   socket.onclose = event => {
+    waitingSound.setActive(false);
     displayClient.disconnect();
       portal.update(undefined);grabber.cancel();handCards.cancel();
     adventure.setConnected(false);
@@ -520,5 +528,5 @@ function connect() {
   socket.onerror = () => { status.textContent = 'Connexion WebSocket indisponible.'; };
 }
 solve.onclick = () => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'solve', revision })); };
-window.addEventListener('pagehide', () => { clearTimeout(retry); socket.onclose = null; socket.close(); });
+window.addEventListener('pagehide', () => { waitingSound.dispose();clearTimeout(retry); socket.onclose = null; socket.close(); });
 connect();

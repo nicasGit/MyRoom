@@ -17,9 +17,48 @@ import { surveyButtons,runSurveyCommand,useTouchOverlay } from '../../client/src
 import { MenuMover,MenuPointers } from '../../client/src/xr-menu-interactions.js';
 import { vortexView } from '../../client/src/portal/vortex-view.js';
 import { waitingTunnel } from '../../client/src/portal/waiting-corridor.js';
+import { WaitingAudio,temporalEngineSample } from '../../client/src/portal/waiting-audio.js';
 import { disposeGroup } from '../../client/src/model-view.js';
 import { applyObjectPoses } from '../../client/src/adventure-view.js';
 import type { WallMenuView } from '../../client/src/portal/wall-menu-view.js';
+
+test('waiting audio: periodic original engine is finite, bounded and not silent',()=>{
+  let energy=0;
+  for(let i=0;i<8000;i++){
+    const t=i/1000,sample=temporalEngineSample(t);
+    assert.ok(Number.isFinite(sample)&&Math.abs(sample)<=.1);energy+=sample*sample;
+    assert.ok(Math.abs(sample-temporalEngineSample(t+8))<1e-9);
+  }
+  assert.ok(Math.sqrt(energy/8000)>.01);
+  assert.ok(Math.abs(temporalEngineSample(8-1/48000)-temporalEngineSample(0))<.002);
+});
+
+test('waiting audio: gesture gating, repeated frames, fade-out, restart and disposal do not leak sources',async()=>{
+  let created=0,started=0,stopped=0,disconnected=0,closed=0,resumed=0;
+  const param={value:.7,setValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
+  const context={state:'suspended',sampleRate:1000,currentTime:2,destination:{},
+    async resume(){resumed++;this.state='running';},async close(){closed++;this.state='closed';},
+    createBuffer(_channels:number,length:number){return {getChannelData:()=>new Float32Array(length)};},
+    createGain(){return {gain:param,connect(){},disconnect(){disconnected++;}};},
+    createBufferSource(){created++;return {buffer:null,loop:false,onended:undefined as (()=>void)|undefined,connect(){},start(){started++;},stop(){stopped++;this.onended?.();},disconnect(){disconnected++;}};},
+  };
+  const audio=new WaitingAudio(()=>context as unknown as AudioContext);
+  audio.setActive(true);assert.equal(created,0);
+  await audio.unlock();assert.equal(resumed,1);assert.equal(started,1);
+  for(let i=0;i<100;i++)audio.setActive(true);
+  assert.equal(created,1);
+  audio.setActive(false);audio.setActive(false);assert.equal(stopped,1);assert.equal(disconnected,2);
+  audio.setActive(true);assert.equal(started,2);
+  audio.dispose();await audio.unlock();audio.setActive(true);
+  assert.equal(stopped,2);assert.equal(disconnected,4);assert.equal(closed,1);assert.equal(started,2);
+});
+
+test('waiting audio: denied audio can retry on a later gesture without blocking gameplay',async()=>{
+  let attempts=0;
+  const audio=new WaitingAudio(()=>{attempts++;throw Error('Audio unavailable');});
+  audio.setActive(true);await audio.unlock();audio.setActive(false);
+  await audio.unlock();assert.equal(attempts,2);audio.dispose();
+});
 
 test('waiting universe: opaque enclosing geometry, stable room transform, animation and cleanup',()=>{
   const view=waitingTunnel(),start=view.group.matrix.clone();

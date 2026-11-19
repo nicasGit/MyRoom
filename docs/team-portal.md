@@ -66,6 +66,18 @@ Le détecteur exige un départ à au moins 30 cm devant le plan et une intersect
 
 ## Couloir personnel 0.12.0
 
+Depuis 0.12.1, après validation de son passage, le joueur entend une boucle
+originale de moteur temporel inspirée du TARDIS : pulsations graves, souffle et
+grincement modulé. Aucun enregistrement de la série. Synthèse locale Web Audio,
+volume modéré et fondus doux ; seuls les joueurs déjà dans leur couloir entendent
+l'ambiance. Elle s'arrête à la fin/annulation du rituel, perte de suivi,
+recalibrage, déconnexion, masquage de la session XR ou sortie XR. L'aperçu de tête
+non encore validé reste silencieux. Le navigateur doit avoir autorisé l'audio après
+un geste (lancement WebXR ou appui sur la page) ; en cas de refus le jeu continue
+silencieusement, et un prochain appui peut réessayer. Le volume général se règle
+sur le casque. Pas de synchronisation temporelle de la boucle entre appareils.
+Son et confort restent à vérifier sur Quest réel.
+
 Avec un suivi WebXR calibré, approcher depuis la flèche, à au moins 30 cm devant
 le portail, puis passer doucement la tête dans son ouverture. Dès 1,5 cm derrière
 le plan, un aperçu local remplace le passthrough par un tunnel bleu/violet animé,

@@ -1,3 +1,10 @@
+## 0.12.1
+
+- Ambiance originale de moteur temporel dans le couloir après validation du passage, inspirée du TARDIS, sans extrait de la série.
+- Boucle locale à volume modéré avec fondus ; arrêt à la fin du rituel, perte de suivi, casque masqué, déconnexion ou sortie XR.
+- Synthèse Web Audio après un geste utilisateur ; aucun téléchargement audio et aucune incidence sur la progression si le navigateur refuse le son.
+- Vérifications logicielles uniquement, sans essai physique Quest.
+
 ## 0.12.0
 
 - Couloir de vortex personnel après le franchissement de la tête en WebXR : décor opaque animé et compteur des passages en direct, sans déplacer la caméra.

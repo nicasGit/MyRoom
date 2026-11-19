@@ -1,5 +1,13 @@
 # Architecture MyRoom
 
+## Ambiance du couloir 0.12.1
+
+`WaitingAudio` synthétise une boucle locale de huit secondes via Web Audio,
+déverrouillée par un geste utilisateur. Elle suit l'affichage personnel du couloir
+et la validation serveur du passage, sans nouveau message ou règle d'aventure.
+Une seule source active, fondus d'entrée/sortie et nettoyage des nœuds ; son refusé
+ou suspendu ne bloque pas le jeu. Le contexte est fermé à la sortie de la page.
+
 ## Couloir personnel 0.12.0
 
 `PortalWaiting` sépare la prédiction visuelle locale du franchissement validé par
