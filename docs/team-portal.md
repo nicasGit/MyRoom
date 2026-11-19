@@ -88,6 +88,9 @@ Dans le couloir, les autres participants WebXR suivis apparaissent en silhouette
 translucides avec leur nom, même s'ils n'ont pas encore passé le vortex. La tête
 et la projection au sol utilisent leur position A/B ; le torse et l'encombrement
 corporel sont estimés, sans suivi des mains ou du corps partagé. Les silhouettes
+utilisent la pose de point de vue fournie par WebXR : sur un casque, celle de la
+tête ; sur un téléphone en WebXR natif, celle de la caméra tenue en main, qui ne
+doit donc pas être prise pour une localisation précise du corps. Les silhouettes
 restent visibles devant le panneau/décor, deviennent orangées à moins de 90 cm
 horizontalement et s'effacent entre 600 et 1 000 ms d'âge. Une pose perdue,
 déconnexion, changement de mode ou fin du rituel retire le fantôme. Le panneau

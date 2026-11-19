@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — vortex centré, panneau et fantômes, 0.13.0
+### 19 novembre 2026 — vortex centré, panneau et fantômes, 0.13.0 publiée
 
 Branche `feat/centered-vortex-sign-ghosts`. Le placement automatique privilégie
 le centroïde du sol, puis une position libre proche parmi les candidats validés,
@@ -46,7 +46,13 @@ cinq programmes compilés, 16 appels de dessin et 1 366 triangles pour ce montag
 avec un autre joueur. Aucune mesure de performance ni validation matérielle Quest.
 Contrôles finaux également réussis : `npm run typecheck`, `npm run build`,
 `npm test` (137/137) et `git diff --check`. Avertissement Vite habituel : chunk
-Three.js de 574 kB. Publication ARM64 à confirmer après le workflow.
+Three.js de 574 kB. Publication confirmée : commit `f0b7d3a` intégré sur main,
+workflow [44578338067](https://github.com/nicasGit/MyRoom/actions/runs/44578338067)
+réussi. Image `ghcr.io/nicasgit/myroom:0.13.0` vérifiée dans le registre : Linux
+ARM64, label version 0.13.0, digest
+`sha256:c3925a28d4646f3ab16138570567208b49cc982945785fc420d570f75de12900`.
+Précision documentaire : WebXR fournit une pose de point de vue ; sur un téléphone
+en WebXR natif, celle-ci représente la caméra, pas la tête ni le corps du porteur.
 
 ### 19 novembre 2026 — ambiance du couloir, 0.12.1 publiée
 
