@@ -35,6 +35,7 @@ export class WallMenuView {
     this.hits=buttons.slice(0,36).map((button,i)=>{const cols=buttons.length>14?6:2,width=cols===6?150:465,height=cols===6?62:58;
       const hit={id:button.id,x:32+(i%cols)*(width+18),y:244+Math.floor(i/cols)*(height+12),width,height};
       c.fillStyle=button.disabled?'#24303e':'#234361';c.fillRect(hit.x,hit.y,width,height);c.fillStyle=button.disabled?'#87919b':'#ffffff';c.font=`${cols===6?25:24}px sans-serif`;c.fillText(button.title.slice(0,cols===6?9:32),hit.x+12,hit.y+38);return {...hit,disabled:button.disabled};}).filter(hit=>!hit.disabled);
+    c.fillStyle='#a7f3d0';c.font='22px sans-serif';c.fillText('Déplacer : viser + poignée / pince · Boutons : gâchette',32,752);
     this.texture.needsUpdate=true;
   }
   pick(origin:THREE.Vector3,direction:THREE.Vector3){

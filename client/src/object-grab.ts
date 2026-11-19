@@ -1,9 +1,20 @@
 import * as THREE from 'three';
 import { toRoom,type makeCalibration } from './calibration';
 import { requiredHands,type ObjectCommand,type ObjectId,type ObjectPose,type ObjectSnapshot } from '../../server/src/object-manipulation.js';
-export type GrabHand={side:'left'|'right';position:THREE.Vector3;pressed:boolean;yaw:number};
+export type GrabHand={side:'left'|'right';position:THREE.Vector3;pressed:boolean;yaw:number;source?:XRInputSource};
 const up=new THREE.Vector3(0,1,0);
 const angle=(n:number)=>Math.atan2(Math.sin(n),Math.cos(n));
+export function nearGrabbable(group:THREE.Group|undefined,position:THREE.Vector3){
+  if(!group)return false;
+  group.updateMatrixWorld(true);
+  const inverse=group.matrixWorld.clone().invert();
+  return Object.values(group.userData.grabbables??{}).some(value=>{
+    const node=value as THREE.Object3D;if(node.userData.grabDisabled)return false;
+    const bounds=node.userData.grabBounds as THREE.Box3|undefined;
+    const box=bounds?bounds.clone().applyMatrix4(node.matrixWorld):new THREE.Box3().setFromObject(node);
+    return box.applyMatrix4(inverse).distanceToPoint(position)<.25;
+  });
+}
 export function gripTransform(start:GrabHand[],current:GrabHand[],original:ObjectPose):ObjectPose{
   if(!start.length||start.length!==current.length||new Set(start.map(h=>h.side)).size!==start.length||start.some((h,i)=>h.side!==current[i].side))throw new Error('Mains incohérentes.');
   const center=(hands:GrabHand[])=>hands.reduce((p,h)=>p.add(h.position),new THREE.Vector3()).multiplyScalar(1/hands.length);
@@ -13,6 +24,8 @@ export function gripTransform(start:GrabHand[],current:GrabHand[],original:Objec
   return {x:offset.x,y:Math.max(0,offset.y),z:offset.z,yaw:angle(original.yaw-turn)};
 }
 export class GrabInputs {
+  private selected=new Set<XRInputSource>();
+  select(source:XRInputSource,pressed:boolean){if(pressed)this.selected.add(source);else this.selected.delete(source);}
   isGripping(source:XRInputSource){return this.squeezed.has(source)||!!this.pinched.get(source)||!!source.gamepad?.buttons[1]?.pressed;}
   private squeezed=new Set<XRInputSource>();
   private pinched=new Map<XRInputSource,boolean>();
@@ -25,12 +38,13 @@ export class GrabInputs {
         const thumb=source.hand.get('thumb-tip'),index=source.hand.get('index-finger-tip');if(!thumb||!index)continue;
         const a=frame.getJointPose?.(thumb,reference),b=frame.getJointPose?.(index,reference);if(!a||!b){this.pinched.delete(source);continue;}
         const p=new THREE.Vector3().copy(a.transform.position),q=new THREE.Vector3().copy(b.transform.position),distance=p.distanceTo(q);
-        pressed=distance<(this.pinched.get(source)?0.045:0.025);this.pinched.set(source,pressed);position=p.add(q).multiplyScalar(0.5);orientation=b.transform.orientation;
-      }else if(source.gripSpace){const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;position=new THREE.Vector3().copy(pose.transform.position);orientation=pose.transform.orientation;pressed=this.squeezed.has(source)||!!source.gamepad?.buttons[1]?.pressed||staffTrigger&&!!source.gamepad?.buttons[0]?.pressed;}
-      if(position&&orientation){const forward=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(orientation)).applyAxisAngle(up,calibration.yaw);result.push({side:source.handedness,position:toRoom(position,calibration),pressed,yaw:Math.atan2(forward.x,-forward.z)});}
+        pressed=this.selected.has(source)||distance<(this.pinched.get(source)?0.045:0.03);this.pinched.set(source,pressed);position=p.add(q).multiplyScalar(0.5);orientation=b.transform.orientation;
+      }else if(source.gripSpace){const pose=frame.getPose(source.gripSpace,reference);if(!pose)continue;position=new THREE.Vector3().copy(pose.transform.position);orientation=pose.transform.orientation;pressed=this.squeezed.has(source)||!!source.gamepad?.buttons[1]?.pressed||staffTrigger&&(this.selected.has(source)||!!source.gamepad?.buttons[0]?.pressed);}
+      if(position&&orientation){const forward=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(orientation)).applyAxisAngle(up,calibration.yaw);result.push({source,side:source.handedness,position:toRoom(position,calibration),pressed,yaw:Math.atan2(forward.x,-forward.z)});}
     }
     for(const source of this.pinched.keys())if(!Array.from(sources).includes(source))this.pinched.delete(source);
     for(const source of this.squeezed)if(!Array.from(sources).includes(source))this.squeezed.delete(source);
+    for(const source of this.selected)if(!Array.from(sources).includes(source))this.selected.delete(source);
     return result.sort((a,b)=>a.side.localeCompare(b.side));
   }
 }
@@ -66,7 +80,9 @@ export class ObjectGrabber {
     }else if(pressed.length&&now>=this.blockedUntil&&roots){
       group.updateMatrixWorld(true);const rootInverse=new THREE.Matrix4().copy(group.matrixWorld).invert();
       const candidate=Object.entries(roots).map(([target,node])=>{
-        const box=new THREE.Box3().setFromObject(node!),local=box.applyMatrix4(rootInverse),near=pressed.filter(h=>local.distanceToPoint(h.position)<0.15);
+        if(node?.userData.grabDisabled)return {target:target as ObjectId,near:[],distance:Infinity};
+        const bounds=node?.userData.grabBounds as THREE.Box3|undefined;
+        const box=bounds?bounds.clone().applyMatrix4(node!.matrixWorld):new THREE.Box3().setFromObject(node!),local=box.applyMatrix4(rootInverse),near=pressed.filter(h=>local.distanceToPoint(h.position)<(bounds?0.22:0.15));
         return {target:target as ObjectId,near,distance:Math.min(...pressed.map(h=>local.distanceToPoint(h.position)))};
       }).filter(c=>c.near.length&&!this.attempted.has(c.target)).sort((a,b)=>a.distance-b.distance)[0];
       const guidance=candidate?(snapshot.held.some(l=>l.target===candidate.target)?'Objet déjà tenu par un joueur.':candidate.near.length<requiredHands(candidate.target)?'Gros objet : approchez les deux mains et maintenez les deux prises.':''):'Approchez les mains de l’objet en maintenant la pince ou la poignée.';

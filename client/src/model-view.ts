@@ -40,7 +40,9 @@ export function modelGroup(model: RoomModel, closed=true) {
   return group;
 }
 export function disposeGroup(group: THREE.Object3D) {
+  group.userData.disposed=true;
   group.traverse(object=> {
+    object.userData.disposed=true;
     const mesh=object as THREE.Mesh;
     mesh.geometry?.dispose();
     const materials=mesh.material ? (Array.isArray(mesh.material)?mesh.material:[mesh.material]) : [];

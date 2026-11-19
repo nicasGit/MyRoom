@@ -16,7 +16,7 @@ import { modelGroup, disposeGroup } from './model-view';
 import { capturePlanes,captureMeshes,importSurfaces,QuestButtons } from './quest-scan';
 import { AdventureClient } from './adventure-client';
 import { adventureGroup,animateAdventure,applyObjectPoses } from './adventure-view';
-import { GrabInputs,ObjectGrabber } from './object-grab';
+import { GrabInputs,ObjectGrabber,nearGrabbable } from './object-grab';
 import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
 import { PortalClient } from './portal/portal-client';
@@ -37,7 +37,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.10.0');
+diagnostic('Version client', '0.10.1');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -171,6 +171,8 @@ enter.onclick = async () => {
     const camera = new THREE.PerspectiveCamera();
     const grabInputs=new GrabInputs();
     const squeezeStart=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,true),squeezeEnd=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,false);
+    const selectStart=(event:XRInputSourceEvent)=>grabInputs.select(event.inputSource,true),selectEnd=(event:XRInputSourceEvent)=>grabInputs.select(event.inputSource,false);
+    session.addEventListener('selectstart',selectStart);session.addEventListener('selectend',selectEnd);
     session.addEventListener('squeezestart',squeezeStart);session.addEventListener('squeezeend',squeezeEnd);
     const rays:THREE.Line[]=[];
     for(let index=0;index<2;index++){
@@ -277,7 +279,7 @@ enter.onclick = async () => {
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    disposeScene = () => { obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -322,7 +324,7 @@ enter.onclick = async () => {
       }, 1500);
     });
     session.addEventListener('select', event => {
-      if(menuMover.holding||obstacleEditor.holding)return;
+      if(menuMover.blocksSelect()||obstacleEditor.holding)return;
       if(surveyMenu.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(surveyMenu.intersects(origin,direction)){const id=surveyMenu.pick(origin,direction);if(id)runSurveyCommand(id,key=>element(key) as HTMLButtonElement,()=>wallLobby.setRoomMode(false),()=>{void session?.end();});return;}}}
       if(calibration&&wallLobby.view.group.visible){const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);
         if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(wallLobby.view.intersects(origin,direction)){wallLobby.pick(origin,direction);return;}}
@@ -373,7 +375,7 @@ enter.onclick = async () => {
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
       handDots.forEach((dot,index)=>{const hand=hands[index];dot.visible=!!hand&&!!calibration&&!phoneEnabled;if(hand&&calibration){dot.position.copy(hand.position).applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin);dot.material.color.setHex(hand.pressed?0xffd54f:0x67e8f9);}});
       const menuHands:MenuHand[]=[];
-      if(frame&&calibration)for(const hand of hands){const source=Array.from(session!.inputSources).find(source=>source.handedness===hand.side);if(!source)continue;const joint=source.hand?.get('wrist')??source.hand?.get('index-finger-tip');const grip=joint?frame.getJointPose?.(joint,reference):source.gripSpace?frame.getPose(source.gripSpace,reference):undefined;if(grip)menuHands.push({side:hand.side,pressed:grabInputs.isGripping(source),position:hand.position.clone().applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin),orientation:new THREE.Quaternion().copy(grip.transform.orientation)});}
+      if(frame&&calibration)for(const hand of hands){const source=hand.source??Array.from(session!.inputSources).find(source=>source.handedness===hand.side);if(!source)continue;const joint=source.hand?.get('wrist')??source.hand?.get('index-finger-tip');const grip=joint?frame.getJointPose?.(joint,reference):source.gripSpace?frame.getPose(source.gripSpace,reference):undefined;const ray=frame.getPose(source.targetRaySpace,reference);if(grip)menuHands.push({ray:ray&&!nearGrabbable(gameGroup,hand.position)?{origin:new THREE.Vector3().copy(ray.transform.position),direction:new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation))}:undefined,side:hand.side,pressed:grabInputs.isGripping(source),position:hand.position.clone().applyAxisAngle(new THREE.Vector3(0,1,0),-calibration.yaw).add(calibration.origin),orientation:new THREE.Quaternion().copy(grip.transform.orientation)});}
       menuMover.update([wallLobby.view,surveyMenu],menuMover.holding||(!obstacleEditor.holding&&!grabber.blocksSelect()&&!handCards.blocksSelect())?menuHands:[]);
       if(calibration){obstacleEditor.group.position.copy(calibration.origin);obstacleEditor.group.rotation.y=-calibration.yaw;}
       obstacleEditor.update(wallLobby.roomMode&&pose&&!menuMover.holding?survey.editableObstacles:undefined,hands.map(h=>({...h,pressed:menuHands.some(m=>m.side===h.side&&m.pressed)})));

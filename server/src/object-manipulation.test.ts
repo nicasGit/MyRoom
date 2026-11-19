@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { ObjectManipulation,parseObjectCommand,type ObjectCommand } from './object-manipulation.js';
 import { parseRoom,suggestPuzzleLayout,type RoomModel } from './scene-schema.js';
-import { gripTransform,GrabInputs,ObjectGrabber,type GrabHand } from '../../client/src/object-grab.js';
+import { gripTransform,GrabInputs,ObjectGrabber,nearGrabbable,type GrabHand } from '../../client/src/object-grab.js';
+import { fitStaff,STAFF_MODELS } from '../../client/src/portal/staff-models.js';
 import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
@@ -33,6 +34,70 @@ test('controller hands: mirrored local tilt retains controller orientation witho
   const right=orientation.clone().invert().multiply(controllerHandOrientation(orientation,'right'));
   assert.ok(left.z>0&&right.z<0);assert.ok(Math.abs(left.z+right.z)<1e-10);assert.deepEqual(orientation,before);
   assert.ok(controllerHandOrientation(orientation,'right').angleTo(orientation)>.5);
+  const pitch=new THREE.Euler().setFromQuaternion(right,'XYZ').x;
+  assert.ok(Math.abs(pitch-(.25-Math.PI/6))<1e-8);
+});
+
+test('remote menu: nearest ray target comes within reach, faces the user, then follows grip and blocks release clicks',()=>{
+  const parent=new THREE.Group();parent.position.set(2,0,1);parent.rotation.y=.7;
+  const placement=new THREE.Group();parent.add(placement);placement.position.set(0,1,-4);parent.updateMatrixWorld(true);
+  const panel={group:parent,placement,distanceTo:()=>4,markMoved:()=>{},intersection:()=>({distance:4}) as THREE.Intersection};
+  const mover=new MenuMover(),position=new THREE.Vector3(0,1,0),orientation=new THREE.Quaternion();
+  const hand={side:'right',pressed:false,position,orientation,ray:{origin:position,direction:new THREE.Vector3(0,0,-1)}};
+  mover.update([panel],[hand]);assert.equal(mover.holding,false);
+  mover.update([panel],[{...hand,pressed:true}]);assert.equal(mover.holding,true);
+  assert.ok(placement.getWorldPosition(new THREE.Vector3()).distanceTo(new THREE.Vector3(0,1,-.85))<1e-8);
+  assert.ok(new THREE.Vector3(0,0,1).applyQuaternion(placement.getWorldQuaternion(new THREE.Quaternion())).z>.99);
+  mover.update([panel],[{...hand,pressed:true,position:new THREE.Vector3(.2,1,0)}]);
+  assert.ok(Math.abs(placement.getWorldPosition(new THREE.Vector3()).x-.2)<1e-8);
+  mover.update([panel],[hand]);assert.equal(mover.holding,false);assert.equal(mover.blocksSelect(),true);
+  parent.visible=false;mover.update([panel],[{...hand,pressed:true}]);assert.equal(mover.holding,false);
+});
+
+test('staff input: native select works without gamepad mapping, stays restricted outside intro, and resets when disconnected',()=>{
+  const input=new GrabInputs(),calibration=makeCalibration(new THREE.Vector3(),new THREE.Vector3(1,0,0));
+  const source={handedness:'right',targetRayMode:'tracked-pointer',gripSpace:{}} as XRInputSource;
+  const frame={getPose:()=>({transform:{position:new THREE.Vector3(1,1,1),orientation:new THREE.Quaternion()}})} as unknown as XRFrame;
+  input.select(source,true);
+  assert.equal(input.read(frame,{} as XRReferenceSpace,[source] as unknown as XRInputSourceArray,calibration,true)[0].pressed,true);
+  assert.equal(input.read(frame,{} as XRReferenceSpace,[source] as unknown as XRInputSourceArray,calibration,false)[0].pressed,false);
+  input.read(frame,{} as XRReferenceSpace,[] as unknown as XRInputSourceArray,calibration,true);
+  assert.equal(input.read(frame,{} as XRReferenceSpace,[source] as unknown as XRInputSourceArray,calibration,true)[0].pressed,false);
+});
+
+test('staffs: four local models, normalized bounds and a grab volume independent of halos and labels',()=>{
+  assert.equal(new Set(STAFF_MODELS).size,4);
+  const model=new THREE.Mesh(new THREE.BoxGeometry(.3,2,.3));
+  const fitted=fitStaff(model,.7),bounds=new THREE.Box3().setFromObject(fitted);
+  assert.ok(Math.abs(bounds.min.y)<1e-8);assert.ok(Math.abs(bounds.max.y-.7)<1e-8);
+  const group=new THREE.Group(),staff=new THREE.Group();group.add(staff);
+  staff.userData.grabBounds=new THREE.Box3(new THREE.Vector3(-.1,0,-.1),new THREE.Vector3(.1,.7,.1));
+  group.userData.grabbables={staff1:staff};
+  assert.equal(nearGrabbable(group,new THREE.Vector3(.15,.3,0)),true);
+  staff.userData.grabDisabled=true;assert.equal(nearGrabbable(group,new THREE.Vector3(.15,.3,0)),false);
+  model.geometry.dispose();(model.material as THREE.Material).dispose();
+});
+
+test('staff server: portal objects do not require adventure puzzle placements, ordinary objects still do',()=>{
+  const room=parseRoom({id:'intro',name:'Intro',floor:[{x:0,z:0},{x:4,z:0},{x:4,z:4},{x:0,z:4}],height:2.5,obstacles:[],openings:[]});
+  const objects=new ObjectManipulation(),pose={x:1,y:.6,z:1,yaw:0};objects.configure(room,0,{staff1:pose});
+  const c: ObjectCommand={type:'object_action',action:'grab',target:'staff1',revision:objects.snapshot().revision,lease:'request',seq:1,hands:[{x:1,y:.8,z:1}],pose};
+  assert.equal(objects.act(c,'actor',room,0,'lease').changed,true);
+  assert.equal(objects.act({...c,target:'chest'},'other',room,1,'other').changed,false);
+  assert.equal(objects.act({...c,action:'drop',lease:'lease',seq:2},'actor',room,2,'unused').changed,true);
+});
+
+test('staff client/server: one physical hand acquires a lease, moves and releases under a rotated calibration',()=>{
+  const room=parseRoom({id:'grab',name:'Grab',floor:[{x:0,z:0},{x:4,z:0},{x:4,z:4},{x:0,z:4}],height:2.5,obstacles:[],openings:[]});
+  const objects=new ObjectManipulation();objects.configure(room,0,{staff1:{x:1,y:.6,z:1,yaw:0}});
+  const group=new THREE.Group(),staff=new THREE.Group();group.position.set(4,0,3);group.rotation.y=.8;group.add(staff);staff.position.set(1,.6,1);
+  staff.userData.grabBounds=new THREE.Box3(new THREE.Vector3(-.1,0,-.1),new THREE.Vector3(.1,.74,.1));group.userData.grabbables={staff1:staff};
+  const actions:string[]=[],grabber=new ObjectGrabber(()=>'actor',()=>objects.snapshot(),c=>{const result=objects.act(c,'actor',room,100,'lease');assert.equal(result.changed,true,result.message);actions.push(c.action);return true;},()=>{});
+  const hand:GrabHand={side:'right',position:new THREE.Vector3(1,.9,1),pressed:true,yaw:0};
+  grabber.update(group,[hand],true,0);assert.equal(objects.snapshot().held.length,1);
+  grabber.update(group,[{...hand,position:new THREE.Vector3(1.1,1,1)}],true,300);
+  grabber.update(group,[{...hand,position:new THREE.Vector3(1.1,1,1),pressed:false}],true,350);
+  assert.deepEqual(actions,['grab','move','drop']);assert.equal(objects.snapshot().held.length,0);assert.ok(Math.abs(objects.snapshot().poses.staff1!.x-1.1)<1e-8);
 });
 test('menu grip: world-space drag under a rotated parent, release and tracking loss preserve local placement',()=>{
   const group=new THREE.Group(),placement=new THREE.Group();group.position.set(3,0,2);group.rotation.y=.8;group.add(placement);placement.position.set(0,1,-1);group.updateMatrixWorld(true);

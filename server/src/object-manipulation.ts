@@ -25,7 +25,7 @@ export class ObjectManipulation {
   snapshot():ObjectSnapshot{return {revision:this.revision,poses:structuredClone(this.poses),held:[...this.held].map(([target,l])=>({target,owner:l.owner,lease:l.lease,expiresAt:l.expiresAt}))};}
   maintain(players:readonly string[],now:number){let changed=false;for(const [id,lease] of this.held)if(!players.includes(lease.owner)||lease.expiresAt<=now){this.poses[id]=lease.original;this.held.delete(id);changed=true;}if(changed)this.revision++;return changed;}
   act(c:ObjectCommand,owner:string,model:RoomModel|null,now:number,leaseId:string){
-    const reject=(message:string)=>({changed:false,message});if(!model?.puzzles||!this.poses[c.target])return reject('Objet indisponible.');
+    const reject=(message:string)=>({changed:false,message});if(!model||(!model.puzzles&&!c.target.startsWith('staff'))||!this.poses[c.target])return reject('Objet indisponible.');
     const current=this.poses[c.target]!,held=this.held.get(c.target);
     if(c.action==='grab'){
       if(c.revision!==this.revision)return reject('Les objets ont changé. Réessayez.');
@@ -38,7 +38,7 @@ export class ObjectManipulation {
       if(c.pose.y<0||c.pose.y>model.height-0.2||!inside(c.pose,model.floor)||Math.hypot(c.pose.x-current.x,c.pose.y-current.y,c.pose.z-current.z)>0.8)return reject('Déplacement trop rapide, hors pièce ou hauteur invalide.');
       if(model.obstacles.some(o=>Math.abs(c.pose.x-o.x)<o.width/2&&Math.abs(c.pose.z-o.z)<o.depth/2&&c.pose.y<o.height-0.02))return reject('Objet dans un obstacle.');
       let pose={...c.pose};
-      if(c.target==='panel') {const panel=findPuzzlePanel(model,c.pose);if(!panel)return reject('Aucun mur libre pour le panneau.');const p=puzzlePanel({...model,puzzles:{...model.puzzles,panel}})!;pose={...p.position,y:p.height,yaw:p.yaw};}
+      if(c.target==='panel') {const panel=findPuzzlePanel(model,c.pose);if(!panel)return reject('Aucun mur libre pour le panneau.');const p=puzzlePanel({...model,puzzles:{...model.puzzles!,panel}})!;pose={...p.position,y:p.height,yaw:p.yaw};}
       this.poses[c.target]=pose;held!.seq=c.seq;held!.expiresAt=now+4000;
       if(c.action==='drop')this.held.delete(c.target);
     }

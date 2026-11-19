@@ -1,3 +1,11 @@
+## 0.10.1
+
+- Inclinaison vers le bas de 30° des mains simulées, sans changer les poses des mains réellement suivies.
+- Prise des bâtons : événements natifs pince/gâchette, zone de saisie dédiée, sélection du bâton de sa place et indépendance des placements d'énigmes.
+- Quatre modèles CC0 différents, KayKit et TCCDev/OpenGameArt, servis localement avec textures et provenance.
+- Panneaux administrateur et outils de pièce : viser puis maintenir poignée/pince pour rapprocher et déplacer ; relâcher pose sans cliquer.
+- Validation logicielle uniquement ; aucune validation physique Quest annoncée.
+
 ## 0.10.0
 
 - Mains simulées inclinées de 30° supplémentaires, orientations gauche/droite conservées.

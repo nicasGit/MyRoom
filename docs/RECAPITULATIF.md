@@ -1,5 +1,43 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — mains, bâtons et panneau à distance, préparation 0.10.1
+
+Retour utilisateur : scan Quest satisfaisant, mains encore à incliner vers le bas,
+bâton impossible à prendre et panneau mural trop éloigné. Branche
+`feat/quest-staffs-distance-menu`. Rotation locale X diminuée de 30° pour les mains
+simulées ; roulis gauche/droite conservé, suivi optique articulé inchangé.
+
+Prise : événements natifs selectstart/selectend pris en compte en complément des
+boutons de manette pour l'introduction et de la pince mesurée pour les mains.
+Zone de saisie dédiée au bâton, marge de 22 cm, indépendante du halo et du nom.
+Le client ignore les bâtons des autres places pour la saisie ; serveur inchangé
+pour l'attribution, présence, calibrage déclaré et session active. La manipulation
+d'un bâton n'exige plus un placement d'énigmes, contrairement aux objets de jeu.
+Ces corrections ciblent plusieurs blocages possibles ; leur efficacité sur le
+casque de l'utilisateur reste à confirmer par un nouvel essai physique.
+
+Quatre modèles CC0 locaux : staff et wand KayKit Adventurers, Skeleton_Staff KayKit
+Skeletons, SWS de TCCDev sur OpenGameArt. Textures et licences/provenance conservées
+dans [les ressources](../client/public/models/staffs/README.md). Hauteurs normalisées,
+matériaux visibles sans éclairage, cache des modèles, clones isolés et nettoyage
+protégé si une scène est détruite pendant le chargement. Forme procédurale de secours.
+
+Panneau admin et outils de pièce : viser à huit mètres maximum puis maintenir
+poignée/pince attire le panneau à 85 cm du rayon, face à l'utilisateur ; la main
+peut ensuite le déplacer. Relâcher le pose localement sans déclencher de bouton.
+Une prise d'objet à proximité garde la priorité sur le panneau visé en arrière-plan.
+Position locale au client, réinitialisée au recalibrage/changement de pièce.
+
+Vérifications réussies : `npm run typecheck`, `npm run build`, `npm test`
+(120 tests sans échec) et `git diff --check`. Tests ajoutés : rotation vers le bas,
+prise native sans gamepad, cycle client/serveur saisir-déplacer-poser dans un repère
+tourné, indépendance des énigmes, normalisation et priorité des zones de saisie,
+rapprochement du panneau et protection contre le clic au relâchement.
+Chargement des quatre modèles avec textures et hauteur normalisée vérifié dans
+Chrome PC via les vrais fichiers glTF/GLB, ainsi que la protection d'un chargement
+tardif après destruction de la scène. Avertissement Vite connu : Three.js 574 kB.
+Aucun essai physique Quest effectué par l'agent. Publication en cours.
+
 ### 19 novembre 2026 — édition des obstacles Quest, 0.10.0 publiée
 
 Branche `feat/quest-obstacle-editor`. Inclinaison des mains simulées augmentée de

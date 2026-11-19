@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import type { WallMenuView } from './portal/wall-menu-view';
-export type MenuHand={side:string;pressed:boolean;position:THREE.Vector3;orientation:THREE.Quaternion};
-type Panel=Pick<WallMenuView,'group'|'placement'|'distanceTo'|'markMoved'>;
+export type MenuHand={side:string;pressed:boolean;position:THREE.Vector3;orientation:THREE.Quaternion;ray?:{origin:THREE.Vector3;direction:THREE.Vector3}};
+type Panel=Pick<WallMenuView,'group'|'placement'|'distanceTo'|'markMoved'> & Partial<Pick<WallMenuView,'intersection'>>;
 export class MenuMover {
   private hold?:{panel:Panel;side:string;offset:THREE.Matrix4};
+  private releasedUntil=0;
   get holding(){return !!this.hold;}
-  reset(){this.hold=undefined;}
+  blocksSelect(){return this.holding||performance.now()<this.releasedUntil;}
+  reset(){if(this.hold)this.releasedUntil=performance.now()+500;this.hold=undefined;}
   update(panels:Panel[],hands:MenuHand[]){
     if(this.hold){const hand=hands.find(h=>h.side===this.hold!.side);
       if(!hand?.pressed||!panels.includes(this.hold.panel)||!this.hold.panel.group.visible){this.reset();return;}
@@ -16,7 +18,21 @@ export class MenuMover {
     }
     for(const hand of hands.filter(h=>h.pressed)){
       const panel=panels.filter(p=>p.group.visible&&p.distanceTo(hand.position)<.18).sort((a,b)=>a.distanceTo(hand.position)-b.distanceTo(hand.position))[0];
-      if(!panel)continue;panel.placement.updateWorldMatrix(true,false);
+      if(!panel){
+        if(!hand.ray)continue;
+        const hit=panels.filter(p=>p.group.visible).map(p=>({panel:p,hit:p.intersection?.(hand.ray!.origin,hand.ray!.direction)})).filter(p=>p.hit&&p.hit.distance<=8).sort((a,b)=>a.hit!.distance-b.hit!.distance)[0];
+        if(!hit)continue;
+        // Bring the targeted panel to a readable distance, then use the same grip drag.
+        const node=hit.panel.placement;node.parent?.updateWorldMatrix(true,false);
+        const worldPosition=hand.ray.origin.clone().addScaledVector(hand.ray.direction,.85);
+        const worldRotation=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(hand.ray.origin,worldPosition,new THREE.Vector3(0,1,0)));
+        const world=new THREE.Matrix4().compose(worldPosition,worldRotation,node.getWorldScale(new THREE.Vector3()));
+        if(node.parent)world.premultiply(node.parent.matrixWorld.clone().invert());
+        world.decompose(node.position,node.quaternion,node.scale);node.updateWorldMatrix(true,false);
+        const grip=new THREE.Matrix4().compose(hand.position,hand.orientation,new THREE.Vector3(1,1,1));
+        this.hold={panel:hit.panel,side:hand.side,offset:grip.invert().multiply(node.matrixWorld)};hit.panel.markMoved();return;
+      }
+      panel.placement.updateWorldMatrix(true,false);
       const grip=new THREE.Matrix4().compose(hand.position,hand.orientation,new THREE.Vector3(1,1,1));
       this.hold={panel,side:hand.side,offset:grip.invert().multiply(panel.placement.matrixWorld)};panel.markMoved();return;
     }

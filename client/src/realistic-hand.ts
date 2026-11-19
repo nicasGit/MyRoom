@@ -9,7 +9,7 @@ const jointNames=[...new Set(chains.flat())];
 type Rest={position:THREE.Vector3;quaternion:THREE.Quaternion};
 export function controllerHandOrientation(orientation:THREE.Quaternion,side:'left'|'right',phone=false){
   const tilt=.65+THREE.MathUtils.degToRad(30);
-  return orientation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(phone?.65:.25,0,side==='left'?tilt:-tilt)));
+  return orientation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler((phone?.65:.25)-THREE.MathUtils.degToRad(30),0,side==='left'?tilt:-tilt)));
 }
 export class RealisticHand {
   readonly group=new THREE.Group();ready=false;
