@@ -6,6 +6,7 @@ import { mkdtempSync,rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { adminAccess } from './admin-access.js';
+import { suggestPuzzleLayout,type RoomModel } from './scene-schema.js';
 test('admin debug requires explicit opt-in and an empty token; short tokens do not open access',()=>{
   assert.deepEqual(adminAccess('',false),{debug:false,configured:false,roomSaveWithoutToken:true});
   assert.deepEqual(adminAccess('',true),{debug:true,configured:false,roomSaveWithoutToken:true});
@@ -33,6 +34,15 @@ test('admin HTTP: debug access keeps origin and data validation; configured toke
         assert.equal((await fetch(base+'reset',{method:'POST',headers,body:'{}'})).status,200);
         assert.equal((await fetch(base+'reset',{method:'POST',headers:{...headers,Origin:'https://elsewhere.test'},body:'{}'})).status,403);
         assert.equal((await fetch(base+'display-modes',{method:'POST',headers,body:'{"extra":true}'})).status,400);
+        const post=(path:string,body:unknown)=>fetch(base+path,{method:'POST',headers,body:JSON.stringify(body)});
+        const missing=await post('adventure/start',{});assert.equal(missing.status,400);assert.match((await missing.json()).error,/placements/);
+        const room:RoomModel={id:'ritual',name:'Ritual',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};room.puzzles=suggestPuzzleLayout(room,()=>.4);
+        assert.equal((await post('rooms/save',{revision:1,room})).status,200);
+        const unconfirmed=await post('adventure/start',{});assert.equal(unconfirmed.status,400);assert.match((await unconfirmed.json()).error,/confirmer/);
+        const state=await(await fetch(base+'state')).json();
+        assert.equal((await post('portal',{action:'configure',revision:state.portal.revision,config:{...state.portal.config,confirmed:true}})).status,200);
+        assert.equal((await post('adventure/start',{})).status,200);assert.equal((await(await fetch(base+'state')).json()).portal.active,true);
+        const malformed=await fetch(base+'adventure/start',{method:'POST',headers,body:'{'});assert.equal(malformed.status,400);assert.match((await malformed.json()).error,/JSON/);
       }
     }finally{child.kill();await once(child,'exit');rmSync(directory,{recursive:true,force:true});}
   }

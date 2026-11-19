@@ -1,3 +1,10 @@
+## 0.10.2
+
+- Démarrage du rituel : renvoyer le motif réel du refus (placements, espace à confirmer, session), au lieu de « Requête JSON invalide » pour un JSON correct.
+- Journal serveur adventure_start_refused pour identifier le prérequis bloquant.
+- Bouton « Lancer le jeu en WebXR » mis en évidence en haut de l'accueil, avant les modes et les diagnostics.
+- Aucun changement des permissions, de la confirmation de l'espace ou de la progression.
+
 ## 0.10.1
 
 - Inclinaison vers le bas de 30° des mains simulées, sans changer les poses des mains réellement suivies.

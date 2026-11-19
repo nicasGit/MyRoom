@@ -79,7 +79,7 @@ test('display adapters share the scene and retain the existing native XR lifecyc
 test('display client: mode selection never asks permission; activating and leaving Quest closes native XR',async()=>{
   class Element {
     options:Element[]=[];value='';textContent='';disabled=false;hidden=false;className='';
-    setAttribute(){} append(...children:Element[]){this.options.push(...children);} prepend(){}
+    setAttribute(){} append(...children:Element[]){this.options.push(...children);} prepend(){} querySelector(){return null;}
   }
   const oldDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),oldWindow=Object.getOwnPropertyDescriptor(globalThis,'window');
   Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>new Element(),addEventListener(){}}});

@@ -4,6 +4,10 @@
 <body>
   <main>
     <h1>MyRoom</h1><p>Prototype partagé · Quest 2 / Quest 3 / Quest 3S</p>
+    <section id="game-launch" aria-label="Lancer le jeu">
+      <button id="enter" disabled>Lancer le jeu en WebXR</button>
+      <p id="status" role="status"></p>
+    </section>
     <section aria-label="Installer MyRoom">
       <button id="install-app" hidden>Installer MyRoom sur cet appareil</button>
       <p id="install-status" role="status"></p>
@@ -11,9 +15,7 @@
     </section>
     <p><a href="/admin.html">Administration de la salle →</a></p>
     <h2>Diagnostic WebXR</h2><ul id="diagnostics"></ul>
-    <button id="enter" disabled>Démarrer immersive-ar</button>
     <p>Quest 3 : configurez l’espace dans le casque et autorisez les données spatiales. Après A/B, importez les surfaces disponibles. Aux contrôleurs : A/X importer, B droit enregistrer le brouillon après vérification, Y gauche annuler. Les surfaces dépendent des capacités du navigateur.</p>
-    <p id="status" role="status"></p>
     <p>Déplacer les objets après A/B : pincer près d’un petit objet avec une main, ou maintenir les poignées des contrôleurs. Coffre, table et panneau nécessitent les deux mains. Relâcher pose l’objet ; perdre le suivi annule la prise. Un indice se cache sous le coffre. Les mains suivies dépendent des capacités WebXR accordées par le navigateur.</p>
     <h2>Joueurs (4 places)</h2><ol id="players"></ol>
     <h2>Calibrage manuel</h2>

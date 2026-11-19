@@ -14,7 +14,7 @@ export class DisplayClient {
     for(const id of Object.keys(MODE_LABELS) as DisplayMode[]){const option=document.createElement('option');option.value=id;option.textContent=MODE_LABELS[id];this.select.append(option);}
     this.activateButton.textContent='Activer le mode';this.select.disabled=true;this.select.onchange=()=>this.choose(this.select.value as DisplayMode);this.activateButton.onclick=()=>{void this.activate();};
     const fallback=document.createElement('button');fallback.textContent='Retour immédiat en 3D';fallback.onclick=()=>this.fallback('unsupported');this.status.setAttribute('role','status');
-    panel.append(title,this.select,this.activateButton,fallback,this.status);host.prepend(panel);
+    panel.append(title,this.select,this.activateButton,fallback,this.status);const launch=host.querySelector('#game-launch');if(launch)launch.after(panel);else host.prepend(panel);
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.current==='camera-ar')this.fallback('camera-failed');});
     window.addEventListener('pagehide',()=>{this.generation++;void this.active?.stop();},{once:true});
   }

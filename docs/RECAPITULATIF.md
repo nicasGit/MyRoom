@@ -1,5 +1,27 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — refus du rituel et accueil WebXR, préparation 0.10.2
+
+Branche `fix/ritual-errors-home-launch`. Le menu envoyait correctement `{}` à
+adventure/start, mais la capture générale de l'API remplaçait les exceptions métier
+de startSession par « Requête JSON invalide ». La route renvoie maintenant le
+motif réel du refus et journalise adventure_start_refused. Les prérequis physiques,
+placements, droits admin et règles de progression restent exigés. Le motif exact
+du refus sur le serveur HAOS de l'utilisateur n'est pas connu à distance.
+
+Le bouton existant, son identifiant et son parcours WebXR sont conservés, déplacés
+dans une zone « Lancer le jeu » en haut de l'accueil. Statut de lancement au même
+endroit, sélection des modes placée ensuite. L'accès reste conditionné aux capacités
+du navigateur et à la politique serveur ; aucune permission caméra demandée ici.
+
+Tests HTTP étendus : placements absents, espace non confirmé, démarrage réussi
+après confirmation et vrai JSON malformé. Premier passage : le double DOM du test
+DisplayClient manquait querySelector, ajouté au double ; contrôles finaux réussis :
+`npm run typecheck`, `npm run build`, `npm test` (120 tests), `git diff --check`.
+Avertissement Vite habituel : chunk Three.js 574 kB.
+Accueil vérifié dans Chrome PC : bouton avant modes, installation et diagnostics.
+Aucun essai physique Quest effectué. Publication en cours.
+
 ### 19 novembre 2026 — mains, bâtons et panneau à distance, 0.10.1 publiée
 
 Retour utilisateur : scan Quest satisfaisant, mains encore à incliner vers le bas,
