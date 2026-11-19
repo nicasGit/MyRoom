@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — couloir personnel après passage de tête, 0.12.0
+### 19 novembre 2026 — couloir personnel après passage de tête, 0.12.0 publiée
 
 Branche `feat/head-crossing-waiting-corridor`. Dans la session immersive WebXR,
 le passage de la tête dans le plan du vortex affiche individuellement un couloir
@@ -35,7 +35,12 @@ inversé et angle, ouverture utile, sauts et lacunes ; géométrie opaque, anima
 sans déplacement de caméra et nettoyage. Aperçu Chrome inspecté : trois programmes
 compilés, six appels de dessin pour couloir et panneau. Avertissement Vite habituel
 sur le chunk Three.js de 574 kB. Aucun essai matériel Quest effectué par l'agent.
-Publication et image ARM64 à confirmer après le workflow.
+Publication confirmée : commit `8ed42a8` intégré sur main ; workflow
+[44565020200](https://github.com/nicasGit/MyRoom/actions/runs/44565020200) réussi
+(validation et publication). Image `ghcr.io/nicasgit/myroom:0.12.0` vérifiée dans
+le registre : Linux ARM64, label version 0.12.0, digest
+`sha256:89202fc076757ba7444f965aea185d40ec8c16cda4a90e1b729dfb0bc875add9`.
+`git diff --check` réussi. Documentation de publication uniquement après ces vérifications.
 
 ### 19 novembre 2026 — bâtons libres et vortex, 0.11.0 publiée
 
