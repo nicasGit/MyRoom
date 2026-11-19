@@ -5,6 +5,15 @@ import { createPreview } from './model-view';
 type Calibration=ReturnType<typeof makeCalibration>;
 const el=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 export class Survey {
+  private saveWithoutToken=false;
+  setSaveAccess(value:boolean){this.saveWithoutToken=value;}
+  get editableObstacles(){return this.stage==='ready'&&!this.saving?this.draft:undefined;}
+  private obstacleUndo:RoomModel['obstacles'][]=[];
+  updateObstacle(index:number,obstacle:RoomModel['obstacles'][number]){
+    if(!this.editableObstacles||!this.draft?.obstacles[index])return false;
+    try{const obstacles=structuredClone(this.draft.obstacles);obstacles[index]=obstacle;const room=parseRoom({...this.draft,obstacles});this.obstacleUndo.push(structuredClone(this.draft.obstacles));this.draft=room;this.feedback('Volume modifié dans le brouillon. Enregistrez pour le conserver.');this.refresh();return true;}
+    catch(error){this.feedback(String(error));return false;}
+  }
   private debug=false;setDebug(value:boolean){this.debug=value;}
   authorize(token:string){this.token=token;}
   private model:RoomModel|null=null;
@@ -42,6 +51,7 @@ export class Survey {
     };
     el('survey-undo').onclick=()=> {
       if(!this.draft||this.saving) return;
+      if(this.stage==='ready'&&this.obstacleUndo.length){this.draft.obstacles=this.obstacleUndo.pop()!;this.feedback('Modification du volume annulée.');this.refresh();return;}
       if(this.stage==='obstacle'||this.stage==='opening') {this.firstCorner=undefined;this.stage='ready';}
       else if(this.stage==='floor') this.draft.floor.pop();
       else if(this.edits.pop()==='opening')this.draft.openings.pop();
@@ -61,7 +71,7 @@ export class Survey {
   }
   get collecting(){return !this.saving&&(this.stage==='floor'||this.stage==='obstacle'||this.stage==='opening');}
   get label(){return this.stage==='opening'?'Placer le centre de l’ouverture':this.stage==='floor'?`Placer le coin ${(this.draft?.floor.length??0)+1}`:this.firstCorner?'Placer le 2e coin de l’obstacle':'Placer le 1er coin de l’obstacle';}
-  get instruction(){return this.stage==='opening'?'Ouverture : visez le sol au pied de son centre sur le mur choisi, puis placez le point.':this.stage==='floor'?'Contour : placez les coins dans l’ordre en visant le sol, puis fermez le contour.':this.stage==='obstacle'?'Obstacle : placez deux coins opposés de son empreinte au sol. Le volume est aligné sur les axes A/B.':'Calibrage prêt. Relevez une nouvelle pièce ou modifiez la pièce active.';}
+  get instruction(){if(this.editableObstacles)return 'Obstacles : pince ou poign\u00e9e. Une main d\u00e9place ; deux mains ajustent largeur, profondeur et hauteur. Rel\u00e2chez puis enregistrez.';return this.stage==='opening'?'Ouverture : visez le sol au pied de son centre sur le mur choisi, puis placez le point.':this.stage==='floor'?'Contour : placez les coins dans l’ordre en visant le sol, puis fermez le contour.':this.stage==='obstacle'?'Obstacle : placez deux coins opposés de son empreinte au sol. Le volume est aligné sur les axes A/B.':'Calibrage prêt. Relevez une nouvelle pièce ou modifiez la pièce active.';}
   current(){return this.draft??this.model;}
   closed(){return this.stage!=='floor';}
   pendingCorner(){return this.firstCorner;}
@@ -69,7 +79,7 @@ export class Survey {
   importRoom(room:RoomModel){
     if(!this.getCalibration()||this.saving)throw new Error('Terminez le calibrage A/B avant l’import.');
     if(this.draft)throw new Error('Enregistrez ou annulez le brouillon avant un nouvel import.');
-    this.draft=parseRoom(room);this.baseRevision=this.revision;this.stage='ready';this.edits=[];this.firstCorner=undefined;this.saveMessage='';
+    this.obstacleUndo=[];this.draft=parseRoom(room);this.baseRevision=this.revision;this.stage='ready';this.edits=[];this.firstCorner=undefined;this.saveMessage='';
     el<HTMLInputElement>('survey-name').value=room.name;el<HTMLInputElement>('survey-height').value=String(room.height);
     this.refresh();
   }
@@ -84,11 +94,13 @@ export class Survey {
   }
   cancel(){
     if(this.saving)return;
-    this.draft=null;this.stage='none';this.firstCorner=undefined;this.saveMessage='';
+    this.obstacleUndo=[];
+    this.obstacleUndo=[];this.draft=null;this.stage='none';this.firstCorner=undefined;this.saveMessage='';
     this.feedback('Relevé annulé. Les pièces déjà enregistrées sont conservées.');this.refresh();
   }
   private begin(edit:boolean){
     if(!this.getCalibration()||this.saving)return;
+    this.obstacleUndo=[];
     this.baseRevision=this.revision;this.saveMessage='';
     this.draft=edit&&this.model?structuredClone(this.model):{id:crypto.randomUUID(),name:'Nouvelle pièce',height:2.5,floor:[],obstacles:[],openings:[]};
     this.draft.openings??=[];this.edits=[];
@@ -118,7 +130,7 @@ export class Survey {
         const a=this.firstCorner;
         const obstacle={name:el<HTMLInputElement>('obstacle-name').value||`Obstacle ${this.draft.obstacles.length+1}`,x:(a.x+p.x)/2,z:(a.z+p.z)/2,width:Math.abs(p.x-a.x),depth:Math.abs(p.z-a.z),height:Number(el<HTMLInputElement>('obstacle-height').value)};
         parseRoom({...this.draft,obstacles:[...this.draft.obstacles,obstacle]});
-        this.draft.obstacles.push(obstacle);this.edits.push('obstacle');this.firstCorner=undefined;this.stage='ready';this.feedback(`${obstacle.name} ajouté. Vous pouvez en ajouter un autre ou enregistrer.`);
+        this.obstacleUndo=[];this.draft.obstacles.push(obstacle);this.edits.push('obstacle');this.firstCorner=undefined;this.stage='ready';this.feedback(`${obstacle.name} ajouté. Vous pouvez en ajouter un autre ou enregistrer.`);
       }
       this.refresh();
     }catch(error){this.feedback(String(error));}
@@ -129,7 +141,7 @@ export class Survey {
       const kind=el<HTMLSelectElement>('opening-kind').value;
       const opening={name:el<HTMLInputElement>('opening-name').value||(kind==='door'?'Porte':'Fenêtre'),kind,wall:Number(el<HTMLSelectElement>('opening-wall').value),offset:offset??Number(el<HTMLInputElement>('opening-offset').value),width:Number(el<HTMLInputElement>('opening-width').value),height:Number(el<HTMLInputElement>('opening-height').value),sill:kind==='door'?0:Number(el<HTMLInputElement>('opening-sill').value)};
       const validated=parseRoom({...this.draft,openings:[...this.draft.openings,opening]});
-      this.draft.openings=validated.openings;this.edits.push('opening');this.stage='ready';
+      this.obstacleUndo=[];this.draft.openings=validated.openings;this.edits.push('opening');this.stage='ready';
       el<HTMLInputElement>('opening-offset').value=String(opening.offset);
       this.feedback(`${opening.name} ajoutée. Enregistrez pour conserver la découpe du mur.`);this.refresh();
     }catch(error){this.feedback(String(error));}
@@ -142,7 +154,7 @@ export class Survey {
     el<HTMLButtonElement>('survey-close').disabled=this.stage!=='floor'||(this.draft?.floor.length??0)<3||this.saving;
     el<HTMLButtonElement>('survey-obstacle').disabled=this.stage!=='ready'||this.saving;
     el<HTMLButtonElement>('survey-save').disabled=this.stage!=='ready'||this.saving;
-    const saveReason=this.saving?'Enregistrement sur le serveur…':this.stage==='floor'?'Fermez le contour (au moins trois coins) avant d’enregistrer.':this.stage==='obstacle'?'Terminez les deux coins de l’obstacle, ou annulez cet ajout.':this.stage==='opening'?'Placez le centre de l’ouverture, ou annulez cet ajout.':this.draft?'Prêt à enregistrer. Un jeton administrateur valide est requis.':'';
+    const saveReason=this.saving?'Enregistrement sur le serveur…':this.stage==='floor'?'Fermez le contour (au moins trois coins) avant d’enregistrer.':this.stage==='obstacle'?'Terminez les deux coins de l’obstacle, ou annulez cet ajout.':this.stage==='opening'?'Placez le centre de l’ouverture, ou annulez cet ajout.':this.draft?(this.debug||this.saveWithoutToken?'Prêt à enregistrer sans jeton.':'Prêt à enregistrer ; autorisation vérifiée au moment de la sauvegarde.'):'';
     el('survey-save-status').textContent=this.saveMessage||saveReason;
     for(const id of ['survey-opening','survey-opening-aim'])el<HTMLButtonElement>(id).disabled=this.stage!=='ready'||this.saving;
     const wallKey=JSON.stringify(this.draft?.floor);
@@ -155,7 +167,7 @@ export class Survey {
       const item=document.createElement('li'),remove=document.createElement('button');
       item.textContent=`${opening.name} · mur ${opening.wall+1} · ${opening.width} × ${opening.height} m · bas ${opening.sill} m `;
       remove.textContent='Retirer';remove.disabled=this.stage!=='ready'||this.saving;
-      remove.onclick=()=>{if(!this.draft||this.stage!=='ready'||this.saving)return;this.draft.openings.splice(i,1);this.edits=this.edits.filter(kind=>kind!=='opening');this.refresh();};
+      remove.onclick=()=>{if(!this.draft||this.stage!=='ready'||this.saving)return;this.obstacleUndo=[];this.draft.openings.splice(i,1);this.edits=this.edits.filter(kind=>kind!=='opening');this.refresh();};
       item.append(remove);list.append(item);
     });
     const current=this.current();
@@ -175,8 +187,11 @@ export class Survey {
       const room=parseRoom({...this.draft,name:el<HTMLInputElement>('survey-name').value,height:Number(el<HTMLInputElement>('survey-height').value)});
       const field=el<HTMLInputElement>('room-admin-token'),arField=el<HTMLInputElement>('survey-admin-token');
       if(arField.value||field.value){this.token=arField.value||field.value;field.value='';arField.value='';}
-      if(!this.debug&&this.token.length<16){el<HTMLDetailsElement>('survey-auth').open=true;throw new Error('Jeton administrateur manquant ou trop court : saisissez admin_token dans « Autorisation d’enregistrement », puis réessayez. Le brouillon est conservé.');}
-      this.saving=true;this.feedback('Enregistrement sur le serveur…');this.refresh();
+      this.saving=true;this.refresh();
+      const access=await fetch('/api/admin/auth',{signal:AbortSignal.timeout(5000)}).then(response=>response.ok?response.json():null).catch(()=>null);
+      if(access)this.saveWithoutToken=!!access.roomSaveWithoutToken||!!access.debug;
+      if(!this.debug&&!this.saveWithoutToken&&this.token.length<16){el<HTMLDetailsElement>('survey-auth').open=true;throw new Error('Jeton requis par le serveur. Si admin_token est vide dans HAOS, mettez l’add-on à jour et redémarrez. Brouillon conservé.');}
+      this.feedback('Enregistrement sur le serveur…');this.refresh();
       const response=await fetch('/api/admin/rooms/save',{method:'POST',headers:{Authorization:`Bearer ${this.token}`,'Content-Type':'application/json'},body:JSON.stringify({revision:this.baseRevision,room}),signal:AbortSignal.timeout(10000)});
       const result=await response.json().catch(()=>({error:`Réponse non JSON du serveur (HTTP ${response.status}). Vérifiez le proxy HTTPS.`})) as {library?:RoomLibrary;error?:string};
       if(!response.ok||!result?.library){if(response.status===401){this.token='';el<HTMLDetailsElement>('survey-auth').open=true;}throw new Error(result?.error??'Enregistrement impossible : réponse serveur invalide.');}

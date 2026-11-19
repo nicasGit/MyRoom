@@ -19,11 +19,12 @@ function reply(res: ServerResponse, status: number, body: unknown) {
 export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore) {
   const token = process.env.ADMIN_TOKEN ?? '';
   const access=adminAccess(token);
+  const roomSave=access.roomSaveWithoutToken&&req.method==='POST'&&req.url==='/api/admin/rooms/save';
   if(req.method==='GET'&&req.url==='/api/admin/auth'){reply(res,200,access);return;}
-  if (!access.debug&&token.length < 16) { reply(res, 503, { error: 'Configurer admin_token avec au moins 16 caractères puis redémarrer.' }); return; }
+  if (!access.debug&&!roomSave&&token.length < 16) { reply(res, 503, { error: 'Configurer admin_token avec au moins 16 caractères puis redémarrer.' }); return; }
   const supplied = req.headers.authorization ?? '';
   const hash = (text: string) => createHash('sha256').update(text).digest();
-  if (!access.debug&&!timingSafeEqual(hash(supplied), hash(`Bearer ${token}`))) {
+  if (!access.debug&&!roomSave&&!timingSafeEqual(hash(supplied), hash(`Bearer ${token}`))) {
     reply(res, 401, { error: 'Jeton administrateur incorrect.' }); return;
   }
   if (req.method === 'GET' && req.url === '/api/admin/state') {

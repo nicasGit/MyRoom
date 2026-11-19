@@ -4,6 +4,25 @@ import { area,inside,parseFloor,parseRoom,type RoomModel } from '../../server/sr
 
 export type Surface={label:string;orientation:string;points:{x:number;y:number;z:number}[]};
 type Calibration=ReturnType<typeof makeCalibration>;
+const furniture=new Set(['table','desk','couch','sofa','bed','chair','storage','shelf']);
+
+// Only labelled furniture meshes are converted; a global room mesh is not an obstacle.
+export function captureMeshes(frame:XRFrame,reference:XRReferenceSpace):Surface[]{
+  const surfaces:Surface[]=[];
+  for(const mesh of frame.detectedMeshes??[]){
+    if(surfaces.length>=32)break;
+    const label=(mesh.semanticLabel??'').toLowerCase();
+    if(!furniture.has(label)||mesh.vertices.length<9||mesh.vertices.length>60000||mesh.vertices.length%3)continue;
+    const pose=frame.getPose(mesh.meshSpace,reference);if(!pose)continue;
+    const matrix=new Matrix4().fromArray(pose.transform.matrix),points:Vector3[]=[];
+    for(let i=0;i<mesh.vertices.length;i+=3)points.push(new Vector3(mesh.vertices[i],mesh.vertices[i+1],mesh.vertices[i+2]).applyMatrix4(matrix));
+    if(points.some(p=>!p.toArray().every(Number.isFinite)))continue;
+    // Preserve only bounding corners, not an unbounded mesh payload.
+    const bounds=['x','y','z'].map(axis=>{const values=points.map(p=>p[axis as 'x'|'y'|'z']);return [Math.min(...values),Math.max(...values)];});
+    surfaces.push({label,orientation:'volume',points:bounds[0].flatMap(x=>bounds[1].flatMap(y=>bounds[2].map(z=>({x,y,z}))))});
+  }
+  return surfaces;
+}
 
 export class QuestButtons {
   private states=new WeakMap<XRInputSource,boolean[]>();
@@ -69,11 +88,16 @@ export function importSurfaces(surfaces:Surface[],calibration:Calibration,id:str
   warnings.push(heights.length?'Hauteur estimée depuis les surfaces : vérifiez-la.':'Hauteur proposée : 2,5 m, à mesurer et corriger.');
   let room=parseRoom({id,name:'Pièce importée du Quest',floor,height,obstacles:[],openings:[]});
   let skipped=0;
-  for(const surface of converted){
-    if(surface.orientation!=='horizontal'||!['table','desk','couch','sofa','bed'].includes(surface.label))continue;
+  for(const surface of [...converted].sort((a,b)=>Number(b.orientation==='volume')-Number(a.orientation==='volume'))){
+    if(!['horizontal','volume'].includes(surface.orientation)||!furniture.has(surface.label))continue;
     const xs=surface.points.map(p=>p.x),zs=surface.points.map(p=>p.z),ys=surface.points.map(p=>p.y);
     const x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);
     const obstacle={name:`${surface.label} ${room.obstacles.length+1}`,x:(x0+x1)/2,z:(z0+z1)/2,width:x1-x0,depth:z1-z0,height:Math.max(...ys)};
+    if(room.obstacles.some(o=>{
+      const overlapX=Math.max(0,Math.min(o.x+o.width/2,x1)-Math.max(o.x-o.width/2,x0));
+      const overlapZ=Math.max(0,Math.min(o.z+o.depth/2,z1)-Math.max(o.z-o.depth/2,z0));
+      return overlapX*overlapZ/Math.max(.001,Math.min(o.width*o.depth,obstacle.width*obstacle.depth))>.8;
+    }))continue;
     try{room=parseRoom({...room,obstacles:[...room.obstacles,obstacle]});}catch{skipped++;}
   }
   if(skipped)warnings.push(`${skipped} surface(s) de meuble ignorée(s), hors limites ou hors contour.`);

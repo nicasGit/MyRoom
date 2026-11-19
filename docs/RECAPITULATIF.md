@@ -1,5 +1,31 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 19 novembre 2026 — édition des obstacles Quest, préparation 0.10.0
+
+Branche `feat/quest-obstacle-editor`. Inclinaison des mains simulées augmentée de
+30° en conservant les signes gauche/droite ; les mains réellement suivies gardent
+leurs poses articulaires. Sauvegarde des pièces autorisée lorsque admin_token est
+vide, indépendamment du debug explicite. Exception limitée à rooms/save ; jeton
+configuré, origine, validation, révision et restrictions de session conservés.
+Le client vérifie l'autorisation au moment de sauvegarder et protège les doubles
+requêtes pendant cette vérification.
+
+Éditeur local de volumes dans le mode pièces : une main déplace, deux mains
+redimensionnent indépendamment les axes. Aperçu puis validation au relâchement,
+annulation du geste si suivi perdu, historique d'annulation dans le brouillon.
+Les obstacles restent au sol et alignés sur A/B ; limites de pièce et placements
+d'énigmes validés avant acceptation. Aucun changement du format des pièces.
+Import des maillages de meubles étiquetés si exposés par WebXR, boîtes englobantes
+bornées et dédoublonnage avec les plans. Bouton d'import dans le panneau 3D.
+Voir [le guide Quest](quest-obstacle-editor.md) pour le parcours et les limites.
+
+Vérifications réussies : `npm run typecheck`, `npm run build`, `npm test`
+(115 tests, aucun échec), `git diff --check`. Tests supplémentaires : sauvegarde
+HTTP sans jeton avec debug désactivé, origine et données refusées, gestes à une
+et deux mains, perte de suivi, volume hors contour, capture et dédoublonnage des
+meubles. Avertissement Vite habituel : chunk Three.js de 574 kB.
+Aucun essai Quest matériel, ni validation HAOS annoncés. Publication en cours.
+
 ### 19 novembre 2026 — option debug facultative, 0.9.3 publiée
 
 Erreur rapportée par l'utilisateur : Supervisor refuse l'ancienne configuration contenant

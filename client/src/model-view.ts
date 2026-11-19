@@ -32,9 +32,9 @@ export function modelGroup(model: RoomModel, closed=true) {
       group.add(wall);
     });
   }
-  model.obstacles.forEach(o=> {
+  model.obstacles.forEach((o,index)=> {
     const mesh=new THREE.Mesh(new THREE.BoxGeometry(o.width,o.height,o.depth),new THREE.MeshBasicMaterial({color:0xffbd73,transparent:true,opacity:0.4,depthWrite:false}));
-    mesh.position.set(o.x,o.height/2,o.z);
+    mesh.userData.obstacleIndex=index;mesh.position.set(o.x,o.height/2,o.z);
     mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:0xffbd73}))); group.add(mesh);
   });
   return group;

@@ -1,3 +1,11 @@
+## 0.10.0
+
+- Mains simulées inclinées de 30° supplémentaires, orientations gauche/droite conservées.
+- Sauvegarde des pièces sans jeton si admin_token est vide, sans ouvrir les autres commandes admin.
+- Obstacles : déplacement à une main, dimensions ajustables à deux mains, validation et annulation dans le brouillon.
+- Import facultatif des volumes de meubles Quest exposés par WebXR, dédoublonnage des plans, accès depuis les outils 3D.
+- Aucun essai matériel Quest réalisé par l'agent ; les données spatiales disponibles dépendent du navigateur.
+
 ## 0.9.3
 
 - Option debug_without_admin_token facultative : les configurations existantes sans cette clé restent valides.

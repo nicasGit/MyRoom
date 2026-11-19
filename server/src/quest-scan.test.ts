@@ -1,13 +1,24 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Matrix4,Vector3 } from 'three';
-import { capturePlanes,importSurfaces,QuestButtons,type Surface } from '../../client/src/quest-scan.ts';
+import { capturePlanes,captureMeshes,importSurfaces,QuestButtons,type Surface } from '../../client/src/quest-scan.ts';
 import { makeCalibration } from '../../client/src/calibration.ts';
 import { area } from './scene-schema.js';
 
 const calibration=makeCalibration(new Vector3(),new Vector3(1,0,0));
 const floor:Surface={label:'floor',orientation:'horizontal',points:[{x:-1,y:0,z:-1},{x:4,y:0,z:-1},{x:4,y:0,z:3},{x:-1,y:0,z:3}]};
 const table:Surface={label:'table',orientation:'horizontal',points:[{x:1,y:0.8,z:1},{x:2,y:0.8,z:1},{x:2,y:0.8,z:2},{x:1,y:0.8,z:2}]};
+
+test('mesh furniture capture is bounded, transformed, deduplicated and tracking-dependent',()=>{
+  const mesh={semanticLabel:'TABLE',meshSpace:{},vertices:new Float32Array([0,0,0,1,.8,0,1,.8,1,0,0,1])};
+  const frame={detectedMeshes:new Set([mesh,{...mesh,semanticLabel:'wall'}]),getPose:()=>({transform:{matrix:new Matrix4().makeTranslation(1,0,1).elements}})};
+  const captured=captureMeshes(frame as unknown as XRFrame,{} as XRReferenceSpace);
+  assert.equal(captured.length,1);assert.equal(captured[0].points.length,8);
+  const result=importSurfaces([...captured,floor,table],calibration,'mesh');
+  assert.equal(result.room.obstacles.length,1);assert.equal(result.room.obstacles[0].width,1);
+  assert.deepEqual(captureMeshes({...frame,getPose:()=>null} as unknown as XRFrame,{} as XRReferenceSpace),[]);
+  assert.deepEqual(captureMeshes({detectedMeshes:new Set([{...mesh,vertices:new Float32Array([NaN,0,0,1,1,1,2,2,2])}]),getPose:frame.getPose} as unknown as XRFrame,{} as XRReferenceSpace),[]);
+});
 
 test('commandes Quest : nouveaux appuis seulement et enregistrement réservé au bouton droit',()=>{
   const input={handedness:'right',gamepad:{mapping:'xr-standard',buttons:Array.from({length:6},()=>({pressed:false}))}};
