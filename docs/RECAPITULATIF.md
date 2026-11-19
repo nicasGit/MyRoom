@@ -1,6 +1,6 @@
 # MyRoom — Récapitulatif des réalisations
 
-### 19 novembre 2026 — bâtons et debug administrateur, 0.9.2 en validation
+### 19 novembre 2026 — menus Quest, bâtons et debug administrateur, 0.9.2 publiée
 
 Branche `fix/debug-admin-staff-grab`. Le menu verrouillé ouvrait automatiquement
 le formulaire du jeton après une action protégée, ce qui faisait apparaître le clavier
@@ -17,7 +17,7 @@ authentification inchangée ; un jeton trop court non vide ne donne jamais le de
 Le contrôle automatique avait refusé l'activation implicite par défaut sur le service
 partagé ; l'option explicite évite cette ouverture involontaire. La validation des données,
 des révisions et de l'origine des écritures reste active. Aucun secret diffusé ; le mode
-debug est signalé aux clients. Tests et publication en cours, aucun essai matériel Quest.
+debug est signalé aux clients. Aucun essai matériel Quest effectué par l'agent.
 
 Retour utilisateur complémentaire : inclinaison des mains inversée, visée cachée par
 le panneau et besoin de déplacer la fenêtre. Inclinaison gauche/droite inversée.
@@ -38,6 +38,12 @@ déplace pas le focus en mode verrouillé, route portal appelée en debug sans c
 saisie/déplacement local, maintien de la position après réception du même modèle,
 réinitialisation et curseur sur la surface confirmés. Aucun essai physique Quest,
 aucun test de prise réelle sur casque revendiqué. Avertissement Vite habituel 574 kB.
+
+Publication confirmée : commit `7b62094` sur main, workflow
+[44529450043](https://github.com/nicasGit/MyRoom/actions/runs/44529450043) réussi
+avec contrôles Linux et publication ARM64. Image `ghcr.io/nicasgit/myroom:0.9.2`
+vérifiée Linux ARM64, label 0.9.2, digest
+`sha256:14791668a94f3d55957681cce436967ffaf37637380dc96402a708d649cbeaad`.
 
 ### 19 novembre 2026 — correction Quest, version 0.9.1 publiée
 
@@ -110,7 +116,7 @@ réussi, contrôles Linux et publication ARM64 inclus. Image
 `sha256:90a29c15e8236099196d4cd7223b5a967370e84a06fcbfe68bf9e41ceacc29f2`.
 Voir [le guide et les limites](display-modes.md).
 
-État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.1**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
+État au **19 novembre 2026**, fonctionnalités publiées jusqu’à **0.9.2**, incluant le mode test administrateur et le blackjack hybride de la Phase 2. Ce document rassemble les travaux effectués dans le dépôt, les parcours d’utilisation, les vérifications et les limites connues. Les résultats matériels rapportés par l’utilisateur sont distingués des tests logiciels réalisés pendant le développement.
 
 ## 1. Projet et architecture
 
