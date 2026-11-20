@@ -1,5 +1,27 @@
 # Bibliothèque d’objets — première version 0.14.0
 
+## Placement depuis le casque et la vue PC (0.15.2)
+
+Hors partie, après calibrage et activation d'une pièce enregistrée, ouvrir
+**Accueil → Bibliothèque d'objets** dans le panneau mural et choisir un modèle.
+Viser hors du panneau : l'aperçu suit l'intersection du rayon avec un plan
+horizontal manuel. Régler sa hauteur de base, rotation ou taille dans le panneau.
+Contour vert : pose autorisée dans les limites de la pièce ; rouge : corriger.
+Gâchette ou sélection/pince pour confirmer ; **Annuler le placement** abandonne
+l'aperçu sans créer d'objet. La pose confirmée est enregistrée immédiatement.
+Le mode suppose un sol commun A/B et ne détecte pas les surfaces physiques.
+Les superpositions entre objets sont possibles, par exemple une lampe sur une
+table : vérifier les obstacles réels soi-même. Après déplacement avec les mains,
+utiliser **Enregistrer les placements** pour conserver les ajustements.
+
+Sur PC, dans **Bibliothèque de pièces**, sélectionner un objet dans la vue 3D
+ou sa liste. **Déplacer** affiche les flèches XYZ ; **Tourner** permet la rotation
+horizontale. La hauteur reste entre sol et plafond. Tirer le gizmo puis cliquer
+**Enregistrer la position**. **Annuler / recharger** restaure les poses serveur.
+Une modification concurrente bloque la sauvegarde et demande une recharge.
+Les objets fixes peuvent être repositionnés dans cet éditeur administrateur.
+La taille et les autres propriétés restent disponibles dans la fiche d'objet.
+
 ## Utilisation
 
 Dans l’administration, activer une pièce, arrêter la partie puis ouvrir

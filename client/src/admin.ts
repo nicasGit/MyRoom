@@ -1,14 +1,12 @@
 import { setImportedCatalog } from '../../server/src/object-library.js';
 import { LibraryAdmin } from './library/library-admin';
-import { addLibraryObjects } from './library/object-view';
-import { modelGroup } from './model-view';
+import { roomObjectEditor } from './library/room-object-editor';
 import { TEAM_LEON, randomPlayerNames } from '../../server/src/player-name-presets.js';
 import { DisplayAdmin,type DisplayClient } from './display-admin';
 import type { ModePolicy } from '../../server/src/display-modes.js';
 import './admin.css';
 import { PortalAdmin } from './portal/portal-admin';
 import type { PortalPublic } from '../../server/src/portal/portal-types.js';
-import { createPreview } from './model-view';
 import { area,type RoomLibrary } from '../../server/src/scene-schema.js';
 import { AdventureEditor } from './adventure-editor';
 import type { AdventureState } from '../../server/src/adventure.js';
@@ -26,7 +24,8 @@ const notice = el('notice');
 const portalAdmin=new PortalAdmin(el('dashboard'),body=>api('portal',body),text=>{notice.textContent=text;});
 let library:RoomLibrary|undefined;
 let libraryRevision=-1;
-const preview=createPreview(el('admin-room-preview'),model=>addLibraryObjects(modelGroup(model),model));
+const roomEditor=roomObjectEditor(el('admin-room-preview'),body=>api('rooms/objects',body),refresh);
+const preview=roomEditor.receive;
 const objectLibrary=new LibraryAdmin(el('dashboard'),body=>api('rooms/objects',body),refresh);
 const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)=>api('rooms/save',{room,revision}),()=>{void refresh();});
 const startAdventure=document.createElement('button');startAdventure.textContent='Commencer les énigmes';startAdventure.id='adventure-start';el('adventure-reset').after(startAdventure);
@@ -124,6 +123,7 @@ function render(state: State) {
   startAdventure.textContent=state.portal.config.enabled?'Commencer avec l’intro Vortex':'Commencer les enigmes';
   startAdventure.disabled=state.portal.active||state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
   library=state.library;
+  preview(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision,state.adventure.objects,state.adventure.running||state.portal.active);
   objectLibrary.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision,state.adventure.objects,state.adventure.running||state.portal.active);
   adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);
   el('adventure-overview').textContent=`${state.adventure.running?'Partie en cours':'Préparation'} · ${state.adventure.phase} · ${state.adventure.message}`;
@@ -146,7 +146,6 @@ function render(state: State) {
       rename.onsubmit=event=>{event.preventDefault();void action('rooms/rename',{id:room.id,name:name.value.trim(),revision:expectedRevision});};
       card.append(rename,activate,remove);return card;
     }));
-    preview(active);
   }
   el('count').textContent = `${state.players.length} / 4`;
   el('puzzle').textContent = state.puzzle.solved ? 'Résolue' : 'À résoudre';

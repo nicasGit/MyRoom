@@ -1,5 +1,33 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Placement bibliothèque casque et admin PC, 0.15.2
+
+Branche `feat/headset-library-placement`. Dans le menu mural, choisir un modèle
+du catalogue intégré ou importé ouvre un aperçu translucide au rayon. Réglage
+de hauteur de base, rotation et taille ; gâchette/sélection hors panneau pour
+poser. Contour vert/rouge selon les limites de pièce. Confirmation enregistrée
+immédiatement sur le serveur ; annulation sans créer d'objet. Après pose,
+réglages habituels et prise une/deux mains disponibles, puis enregistrer les
+placements après ajustement manuel. Catalogue paginé sur quatre modèles pour
+garder les boutons lisibles. Réservé à la préparation hors partie, après A/B
+et hors brouillon de relevé. Le plan horizontal de placement est manuel et
+ne représente pas une détection de surface Quest.
+
+Admin PC : la vue de pièce devient un éditeur avec sélection par clic ou liste,
+gizmo de translation XYZ et rotation Y. Sauvegarde explicite, annulation/recharge,
+révisions capturées au début de l'édition et rejet si changement concurrent.
+Les objets fixes restent éditables par l'admin ; les règles de prise en jeu
+restent inchangées. Poses explicites validées côté serveur, anciennes commandes
+d'ajout automatique conservées. Vérifications : npm run typecheck, npm run build,
+npm test (156 réussis), git diff --check. Chrome sur données de test isolées :
+déplacement du gizmo, sauvegarde HTTP 200 et pose relue depuis le serveur ;
+conflit provoqué par un autre ajout, sauvegarde bloquée, recharge fonctionnelle.
+Le test initial a révélé une hauteur négative via glissement dans un plan du
+gizmo : corrigé par bornage vertical sol/plafond, puis sauvegarde vérifiée.
+Tests de rayon/hauteur, validation des poses, droits API, commandes périmées,
+objets tenus et restauration disque. Avertissement habituel de bundle Three.js.
+Aucun test matériel Quest. Publication en cours.
+
 ### 20 novembre 2026 - Coffre importé, 0.15.1
 
 Branche `feat/imported-puzzle-chest`. Le coffre d'énigme utilise le GLB

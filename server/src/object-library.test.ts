@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { placementPose } from '../../client/src/library/xr-library-placement.js';
 import { OBJECT_CATALOG,parseRoomObjects,type RoomObject } from './object-library.js';
 import { parseRoom,type RoomModel,suggestPuzzleLayout } from './scene-schema.js';
 import { ObjectManipulation,parseObjectCommand,type ObjectCommand } from './object-manipulation.js';
@@ -53,6 +54,31 @@ test('library authoring: atomic disk round trip, live poses saved, stale/held co
     const removed=editRoomObjects(added,{action:'remove',id:'table-a',revision:3,objectRevision:snapshot.revision},snapshot);
     assert.equal(removed.objects!.items.length,1);
   }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+test('headset placement: ray intersects chosen height, rejects distant/backwards/parallel rays',()=>{
+  const choice={asset:'kenney-books',height:.75,yaw:.4,scale:1.2};
+  const pose=placementPose(new THREE.Vector3(4,1.75,4),new THREE.Vector3(0,-1,0),choice);
+  assert.deepEqual(pose,{x:4,y:.75,z:4,yaw:.4,scale:1.2});
+  assert.equal(placementPose(new THREE.Vector3(4,1.75,4),new THREE.Vector3(0,1,0),choice),undefined);
+  assert.equal(placementPose(new THREE.Vector3(4,1.75,4),new THREE.Vector3(1,0,0),choice),undefined);
+  assert.equal(placementPose(new THREE.Vector3(4,10,4),new THREE.Vector3(0,-1,0),choice),undefined);
+  assert.equal(placementPose(new THREE.Vector3(NaN,1,4),new THREE.Vector3(0,-1,0),choice),undefined);
+});
+
+test('headset authoring: explicit pose persists, validates bounds and does not change legacy auto placement',()=>{
+  const model=fixture(),objects=new ObjectManipulation();objects.configure(model,0);
+  const snapshot=objects.snapshot(),command={action:'add',asset:'kenney-books',revision:0,objectRevision:snapshot.revision};
+  const pose={x:2,y:.75,z:2,yaw:.4,scale:.8};
+  const placed=editRoomObjects(model,{...command,pose},snapshot);
+  assert.deepEqual(placed.objects!.items.at(-1)!.pose,pose);
+  assert.deepEqual(model,fixture());
+  assert.equal(editRoomObjects(model,command,snapshot).objects!.items.length,2);
+  for(const invalid of [{...pose,x:-10},{...pose,y:10},{...pose,x:NaN},{...pose,scale:0},{...pose,extra:1},{...pose,yaw:Infinity}])assert.throws(()=>editRoomObjects(model,{...command,pose:invalid},snapshot));
+  assert.throws(()=>editRoomObjects(model,{...command,pose,objectRevision:-1},snapshot));
+  assert.throws(()=>editRoomObjects(model,{...command,pose},{...snapshot,held:[{target:'prop:table-a',owner:'a',lease:'x',expiresAt:9}]}));
+  const directory=mkdtempSync(join(tmpdir(),'myroom-headset-placement-'));
+  try{const store=new RoomStore(directory);store.change('save',0,placed);assert.deepEqual(new RoomStore(directory).active()!.objects,placed.objects);}finally{rmSync(directory,{recursive:true,force:true});}
 });
 
 test('library interaction: server enforces fixed/two hands, leases, stale/duplicate actions, bounds, resizing and disconnect',()=>{
@@ -126,6 +152,12 @@ test('library network: protected authoring, shared poses, concurrent refusal and
     let s=await state();const add={action:'add',asset:'kenney-table',revision:s.library.revision,objectRevision:s.adventure.objects.revision};
     assert.equal((await post('rooms/objects',add,false)).status,401);assert.equal((await post('rooms/objects',add)).status,200);
     assert.equal((await post('rooms/objects',add)).status,400);
+    s=await state();const explicit={...add,asset:'kenney-books',revision:s.library.revision,objectRevision:s.adventure.objects.revision,pose:{x:2,y:.75,z:2,yaw:.3,scale:1}};
+    assert.equal((await post('rooms/objects',explicit,false)).status,401);
+    assert.equal((await post('rooms/objects',explicit)).status,200);
+    assert.equal((await post('rooms/objects',explicit)).status,400);
+    s=await state();assert.deepEqual(s.library.rooms[0].objects.items[1].pose,explicit.pose);
+    assert.equal((await post('rooms/objects',{...explicit,revision:s.library.revision,objectRevision:s.adventure.objects.revision,pose:{...explicit.pose,x:-10}})).status,400);
     s=await state();const item=s.library.rooms[0].objects.items[0],target=`prop:${item.id}`,pose=s.adventure.objects.poses[target];
     const command={type:'object_action',action:'grab',target,revision:s.adventure.objects.revision,lease:'request',seq:1,hands:[{x:pose.x-.25,y:.4,z:pose.z},{x:pose.x+.25,y:.4,z:pose.z}],pose};
     const shared=wait(clients[1],'state');assert.equal((await send(0,command)).changed,true);assert.equal((await shared).adventure.objects.held.length,1);

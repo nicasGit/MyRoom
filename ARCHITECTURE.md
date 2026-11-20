@@ -1,5 +1,15 @@
 # Architecture MyRoom
 
+## Placement bibliothèque 0.15.2
+
+L'ajout d'objet accepte une pose facultative validée par le schéma existant et
+les limites de pièce, sous les mêmes révisions de bibliothèque/manipulation.
+Sans pose, l'ancien placement automatique reste disponible. Le casque utilise
+un aperçu au rayon et un plan horizontal manuel réglable dans le repère A/B.
+La vue admin PC réutilise les objets GLB avec TransformControls, brouillon local
+et sauvegarde explicite. Un changement concurrent impose de recharger le
+brouillon ; aucune règle d'énigme n'est déplacée côté rendu.
+
 ## Catalogue importé 0.15.0
 
 ModelStore charge les versions du catalogue avant RoomStore. Les GLB binaires

@@ -1,3 +1,9 @@
+## 0.15.2
+
+- Casque : choisir un objet dans la bibliothèque, aperçu au rayon, hauteur/rotation/taille puis pose enregistrée dans la pièce.
+- Admin PC : sélection dans la vue 3D, flèches de déplacement, rotation et sauvegarde explicite avec protection contre les modifications concurrentes.
+- Validation serveur des poses explicites ; ancien ajout automatique conservé pour les autres interfaces.
+
 ## 0.15.1
 
 - Coffre de l'énigme : modèle importé treasure_chest_1k, couvercle animé et verrou masqué après réussite.

@@ -1,5 +1,6 @@
 import { setImportedCatalog } from '../../server/src/object-library.js';
 import { addLibraryObjects } from './library/object-view';
+import { XRLibraryPlacement } from './library/xr-library-placement';
 import { ObstacleEditor } from './obstacle-editor';
 import { MenuMover,MenuPointers,type MenuHand } from './xr-menu-interactions';
 import { WallMenuView } from './portal/wall-menu-view';
@@ -46,7 +47,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.15.1');
+diagnostic('Version client', '0.15.2');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -176,6 +177,7 @@ enter.onclick = async () => {
     scene.add(corridor.group);
     const corridorBackground=new THREE.Color(0x030614);
     scene.add(wallLobby.view.group);
+    const libraryPlacement=new XRLibraryPlacement();scene.add(libraryPlacement.group);
     let gameGroup:THREE.Group|undefined;
     let gameKey='';
     updateAdventureScene=()=>{
@@ -303,8 +305,8 @@ enter.onclick = async () => {
     let frameReceived = false;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
-    resetScene = () => { roomNameEditor=undefined;waitingSound.setActive(false);waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
-    disposeScene = () => { document.removeEventListener('myroom-room-name',editRoomName);waitingSound.setActive(false);waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
+    resetScene = () => { wallLobby.placement=undefined;libraryPlacement.clear();roomNameEditor=undefined;waitingSound.setActive(false);waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
+    disposeScene = () => { wallLobby.placement=undefined;libraryPlacement.clear();libraryPlacement.group.removeFromParent();document.removeEventListener('myroom-room-name',editRoomName);waitingSound.setActive(false);waiting.reset();disposeGroup(corridor.group);scene.background=null;obstacleEditor.dispose();menuMover.reset();menuPointers.dispose();surveyMenu.dispose();phoneControls.dispose();wallLobby.view.group.removeFromParent();overlay.classList.remove('xr-lobby-ready','xr-room-mode');grabber.cancel();handCards.cancel();session?.removeEventListener('selectstart',selectStart);session?.removeEventListener('selectend',selectEnd);session?.removeEventListener('squeezestart',squeezeStart);session?.removeEventListener('squeezeend',squeezeEnd);clearTimeout(placementTimer);clearTimeout(importTimeout);importButton.onclick=null;importButton.disabled=true;handsView.dispose();for(const dot of handDots){dot.geometry.dispose();dot.material.dispose();dot.removeFromParent();}hud.removeFromParent();hudTexture.dispose();hudMaterial.dispose();hud.geometry.dispose(); unbindPlace(); reference.removeEventListener('reset', resetCalibration); geometry.dispose(); target.geometry.dispose(); materialA.dispose(); materialB.dispose(); if(surveyGroup)disposeGroup(surveyGroup);if(gameGroup)disposeGroup(gameGroup);for(const ray of rays){ray.geometry.dispose();(ray.material as THREE.Material).dispose();ray.removeFromParent();}updateSurveyScene=()=>{};updateAdventureScene=()=>{}; };
     reference.addEventListener('reset', resetCalibration);
     resetCalibration();
     function selectPoint(point: THREE.Vector3) {
@@ -355,6 +357,13 @@ enter.onclick = async () => {
         if(ray){const origin=new THREE.Vector3().copy(ray.transform.position),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation));if(wallLobby.view.intersects(origin,direction)){wallLobby.pick(origin,direction);return;}}
       }
       if(grabber.blocksSelect()||handCards.blocksSelect())return;
+      if(calibration&&wallLobby.placement){
+        const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference);
+        if(ray){const origin=toRoom(new THREE.Vector3().copy(ray.transform.position),calibration),direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(ray.transform.orientation)).applyAxisAngle(new THREE.Vector3(0,1,0),calibration.yaw);
+          libraryPlacement.update(wallLobby.placement,adventure.viewState()?.model,origin,direction);
+          if(libraryPlacement.pose)void wallLobby.placeObject(libraryPlacement.pose);else wallLobby.interactionNotice('Placement refusé : visez le plan choisi dans la pièce, contour vert.');
+        }return;
+      }
       if(calibration&&!survey.collecting){
         if(gameGroup&&!survey.hasDraft()){
           const ray=event.frame.getPose(event.inputSource.targetRaySpace,reference),viewer=event.frame.getViewerPose(reference);
@@ -374,6 +383,12 @@ enter.onclick = async () => {
     });
     renderer.setAnimationLoop((_time, frame) => {
       const pose = frame?.getViewerPose(reference);
+      if(calibration){libraryPlacement.group.position.copy(calibration.origin);libraryPlacement.group.rotation.y=-calibration.yaw;}
+      const placementSource=Array.from(session!.inputSources).filter(source=>source.targetRayMode==='tracked-pointer').sort((a,b)=>Number(b.handedness==='right')-Number(a.handedness==='right'))[0];
+      const placementRay=frame&&placementSource?frame.getPose(placementSource.targetRaySpace,reference):pose;
+      const placementOrigin=placementRay&&calibration?toRoom(new THREE.Vector3().copy(placementRay.transform.position),calibration):undefined;
+      const placementDirection=placementRay&&calibration?new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(placementRay.transform.orientation)).applyAxisAngle(new THREE.Vector3(0,1,0),calibration.yaw):undefined;
+      libraryPlacement.update(calibration&&!survey.hasDraft()&&!wallLobby.roomMode?wallLobby.placement:undefined,adventure.viewState()?.model,placementOrigin,placementDirection);
       if(!gameGroup&&calibration&&!survey.hasDraft())updateAdventureScene();
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)applyObjectPoses(gameGroup,adventure.viewState()?.state.objects);
@@ -415,9 +430,9 @@ enter.onclick = async () => {
       if(calibration){obstacleEditor.group.position.copy(calibration.origin);obstacleEditor.group.rotation.y=-calibration.yaw;}
       obstacleEditor.update(wallLobby.roomMode&&pose&&!menuMover.holding?survey.editableObstacles:undefined,hands.map(h=>({...h,pressed:menuHands.some(m=>m.side===h.side&&m.pressed)})));
       surveyGroup?.traverse(node=>{if(Number.isInteger(node.userData.obstacleIndex))node.visible=node.userData.obstacleIndex!==obstacleEditor.index;});
-      handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding);
-      if(portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed)&&!hands.some(hand=>nearGrabbable(gameGroup,hand.position))&&!grabber.blocksSelect())wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
-      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect());
+      handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding&&!wallLobby.placement);
+      if(!wallLobby.placement&&portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed)&&!hands.some(hand=>nearGrabbable(gameGroup,hand.position))&&!grabber.blocksSelect())wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect()&&!wallLobby.placement);
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);

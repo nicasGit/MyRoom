@@ -6,11 +6,25 @@ import type { PortalPublic } from '../../../server/src/portal/portal-types.js';
 import type { AdventureState } from '../../../server/src/adventure.js';
 import type { RoomModel } from '../../../server/src/scene-schema.js';
 import { WallMenuView,type MenuButton } from './wall-menu-view';
+import type { LibraryPose } from '../../../server/src/object-library.js';
+import type { PlacementChoice } from '../library/xr-library-placement';
 type Lobby={adventures:{id:string;version:string;title:string}[];names:string[];namesRevision:number};
 type AdminState={library:RoomLibrary;portal:PortalPublic;adventure:AdventureState;playerNames:string[];playerNamesRevision:number};
 export class WallLobby {
   readonly view=new WallMenuView();roomMode=false;
   placed=false;
+  placement?:PlacementChoice;
+  async placeObject(pose:LibraryPose){
+    if(!this.placement||this.busy)return;
+    this.busy=true;this.draw(true);
+    try{
+      const state=await this.request('state') as AdminState;
+      const result=await this.request('rooms/objects',{action:'add',asset:this.placement.asset,pose,revision:state.library.revision,objectRevision:state.adventure.objects!.revision}) as {library:RoomLibrary};
+      const model=result.library.rooms.find(room=>room.id===result.library.activeId);
+      this.objectId=model?.objects?.items.at(-1)?.id??'';this.model=model??null;
+      this.placement=undefined;this.tab='library-object';this.notice='Objet posé et enregistré. Prenez-le pour ajuster sa position.';this.nextPoll=0;
+    }catch(error){this.notice=String(error);this.notify(this.notice);}finally{this.busy=false;this.draw(true);}
+  }
   private debug=false;private model:RoomModel|null=null;private objectId='';
   setDebug(value:boolean){if(value===this.debug)return;this.debug=value;if(value){this.auth.hidden=true;this.input.value='';}this.draw(true);}
   interactionNotice(text:string){if(this.notice===text)return;this.notice=text;this.draw(true);}
@@ -38,6 +52,7 @@ export class WallLobby {
   }
   private async authorize(){try{await this.request('state');this.authorized(this.token);this.auth.hidden=true;this.notice='Organisateur autorisé sur cet appareil.';}catch(error){this.token='';this.authorized('');this.notice=String(error);}this.draw(true);}
   receive(model:RoomModel|null,portal:PortalPublic,adventure:AdventureState,lobby:Lobby){
+    if(model?.id!==this.model?.id||portal.active||adventure.running)this.placement=undefined;
     this.model=model;this.portal=portal;this.adventure=adventure;this.lobby=lobby;
     this.placed=!!model&&this.view.place(model);this.view.group.visible=this.placed;this.draw();
   }
@@ -51,7 +66,7 @@ export class WallLobby {
   pick(origin:THREE.Vector3,direction:THREE.Vector3){if(!this.view.group.visible)return false;const id=this.view.pick(origin,direction);if(!id)return false;void this.act(id);return true;}
   private draw(force=false){
     const p=this.portal,a=this.adventure,l=this.lobby;if(!p||!a||!l)return;
-    const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode,this.debug,this.model?.objects,this.objectId,importedCatalog().revision]);if(!force&&key===this.key)return;this.key=key;
+    const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode,this.debug,this.model?.objects,this.objectId,this.placement,importedCatalog().revision]);if(!force&&key===this.key)return;this.key=key;
     const selected=l.adventures.find(item=>item.id===a.engine.adventureId&&item.version===a.engine.adventureVersion);
     const lines=[selected?.title??a.engine.adventureId,`${p.players.filter(x=>x.present).length}/${p.config.playerCount??4} présents · ${p.players.filter(x=>x.crossed).length} passages · ${p.phase}`,this.debug?'DEBUG : droits administrateur pour tous':this.token?'Organisateur connecté':'Lecture seule · déverrouiller pour modifier',this.notice||(!p.active?'Démarrez le rituel avant de prendre votre bâton.':'Approchez votre bâton : poignée, pince ou gâchette.')];
     const buttons:MenuButton[]=[{id:'home',title:'Accueil'},{id:'adventures',title:'Aventures'},{id:'settings',title:'Paramètres'},{id:'rooms',title:this.roomMode?'Mode pièces actif':'Mode création de pièces'}];
@@ -70,9 +85,17 @@ export class WallLobby {
       buttons.push({id:'fit-portal',title:'Centrer le vortex'},{id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
     }
     if(this.tab==='library'){
-      lines[0]='Bibliothèque CC0 - préparation hors partie';
-      for(const asset of libraryAssets().slice(this.page*6,this.page*6+6))buttons.push({id:'library-add:'+asset.id,title:'Ajouter '+asset.name});
+      lines[0]='Bibliothèque - choisir puis viser pour poser';
+      lines[1]=`Modèles : page ${this.page+1}/${Math.max(1,Math.ceil(libraryAssets().length/4))}`;
+      for(const asset of libraryAssets().slice(this.page*4,this.page*4+4))buttons.push({id:'library-add:'+asset.id,title:asset.name});
       buttons.push({id:'library-catalog-prev',title:'Modèles précédents'},{id:'library-catalog-next',title:'Modèles suivants'},{id:'library-placed',title:'Objets de la pièce'},{id:'library-save',title:'Enregistrer les placements'});
+    }
+    if(this.tab==='library-placement'&&this.placement){
+      const choice=this.placement;lines[0]='Placement : '+(libraryAssets().find(a=>a.id===choice.asset)?.name??'Objet');
+      lines[1]='Visez dans la pièce, gâchette / pince pour poser.';
+      lines[2]=`Base ${choice.height.toFixed(2)} m ; taille ${choice.scale.toFixed(2)} ; rotation ${Math.round(choice.yaw*180/Math.PI)}°`;
+      lines[3]=this.notice||'Contour vert : valide ; rouge : hors pièce. Sol manuel.';
+      for(const [id,title] of [['down','Base -10 cm'],['up','Base +10 cm'],['left','Tourner -15°'],['right','Tourner +15°'],['smaller','Réduire'],['bigger','Agrandir'],['cancel','Annuler le placement']])buttons.push({id:'placement-'+id,title});
     }
     if(this.tab==='library-placed'){
       const items=this.model?.objects?.items??[];lines[0]=items.length+'/32 objets dans la pièce';
@@ -98,7 +121,7 @@ export class WallLobby {
   }
   private async act(id:string){
     if(this.busy)return;
-    if(['home','adventures','settings','rooms','library','library-placed'].includes(id)){this.tab=id;this.draw(true);return;}
+    if(['home','adventures','settings','rooms','library','library-placed'].includes(id)){this.placement=undefined;this.page=0;this.tab=id;this.draw(true);return;}
     if(id==='unlock'){if(this.debug){this.notice='Debug actif : accès ouvert sans jeton.';}else if(this.token){this.token='';this.authorized('');this.notice='Menu verrouillé.';}else{this.notice='Jeton requis ; autorisation avant AR si clavier indisponible.';this.openAuth();}this.draw(true);return;}
     if(id==='prev'||id==='next'){this.page=Math.max(0,Math.min(Math.ceil((this.lobby?.adventures.length??0)/4)-1,this.page+(id==='next'?1:-1)));this.draw(true);return;}
     if(id==='confirm'){document.dispatchEvent(new Event('myroom-portal-confirm'));return;}
@@ -109,7 +132,21 @@ export class WallLobby {
       document.getElementById(target[id])?.click();return;
     }
     if(!this.token&&!this.debug){this.notice='Menu verrouillé : utilisez Déverrouiller organisateur avant AR.';this.draw(true);return;}
-    if(id==='library-catalog-prev'||id==='library-catalog-next'){this.page=Math.max(0,Math.min(Math.ceil(libraryAssets().length/6)-1,this.page+(id.endsWith('next')?1:-1)));this.draw(true);return;}
+    if(id.startsWith('placement-')&&this.placement){
+      const choice=this.placement;
+      if(id==='placement-cancel'){this.placement=undefined;this.tab='library';}
+      else if(id==='placement-up'||id==='placement-down')choice.height=Math.max(0,Math.min(6,choice.height+(id==='placement-up'?.1:-.1)));
+      else if(id==='placement-left'||id==='placement-right'){const yaw=choice.yaw+(id==='placement-right'?1:-1)*Math.PI/12;choice.yaw=Math.atan2(Math.sin(yaw),Math.cos(yaw));}
+      else if(id==='placement-smaller'||id==='placement-bigger')choice.scale=Math.max(.1,Math.min(3,choice.scale*(id==='placement-bigger'?1.1:1/1.1)));
+      this.draw(true);return;
+    }
+    if(id.startsWith('library-add:')){
+      if(this.adventure?.running||this.portal?.active||this.roomMode){this.interactionNotice('Arrêtez la session et quittez les outils de pièce avant de meubler.');return;}
+      if(!this.model){this.interactionNotice('Activez une pièce enregistrée.');return;}
+      const asset=libraryAssets().find(a=>a.id===id.slice(12));if(!asset)return;
+      this.placement={asset:asset.id,height:0,yaw:asset.defaultYaw??0,scale:1};this.tab='library-placement';this.notice='';this.draw(true);return;
+    }
+    if(id==='library-catalog-prev'||id==='library-catalog-next'){this.page=Math.max(0,Math.min(Math.ceil(libraryAssets().length/4)-1,this.page+(id.endsWith('next')?1:-1)));this.draw(true);return;}
     if(id==='library-prev'||id==='library-next'){this.page=Math.max(0,Math.min(Math.max(0,Math.ceil((this.model?.objects?.items.length??0)/4)-1),this.page+(id==='library-next'?1:-1)));this.draw(true);return;}
     if(id.startsWith('library-select:')){this.objectId=id.slice(15);this.tab='library-object';this.draw(true);return;}
     if(id==='library-delete'){this.tab='library-delete';this.draw(true);return;}
