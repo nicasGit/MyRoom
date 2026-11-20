@@ -22,6 +22,8 @@ d'ajout automatique conservées. Vérifications : npm run typecheck, npm run bui
 npm test (156 réussis), git diff --check. Chrome sur données de test isolées :
 déplacement du gizmo, sauvegarde HTTP 200 et pose relue depuis le serveur ;
 conflit provoqué par un autre ajout, sauvegarde bloquée, recharge fonctionnelle.
+La fiche numérique accepte les coordonnées précises issues du gizmo, sans
+imposer un pas de saisie de 0,01 qui empêcherait d'enregistrer une autre propriété.
 Le test initial a révélé une hauteur négative via glissement dans un plan du
 gizmo : corrigé par bornage vertical sol/plafond, puis sauvegarde vérifiée.
 Tests de rayon/hauteur, validation des poses, droits API, commandes périmées,

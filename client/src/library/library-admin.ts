@@ -46,7 +46,7 @@ export class LibraryAdmin {
     const inputs=new Map<string,HTMLInputElement>();
     const field=(key:string,title:string,value:string,type='number',min?:string,max?:string)=>{
       const label=document.createElement('label'),input=document.createElement('input');label.textContent=title+' ';input.type=type;input.value=value;input.required=true;input.name=key;
-      if(type==='number'){input.step='0.01';if(min)input.min=min;if(max)input.max=max;}else input.maxLength=64;
+      if(type==='number'){input.step='any';if(min)input.min=min;if(max)input.max=max;}else input.maxLength=64;
       inputs.set(key,input);label.append(input);this.form.append(label);return input;
     };
     field('name','Nom',base.name,'text');for(const axis of ['x','y','z'] as const)field(axis,axis.toUpperCase()+' (m)',String(base.pose[axis]),'number',axis==='y'?'0':'-30','30');
