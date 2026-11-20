@@ -13,7 +13,11 @@ indice sous le coffre et règles serveur conservés. Aucun changement du calibra
 Vérifications : npm run typecheck, npm run build et npm test réussis (154 tests),
 git diff --check réussi. Avertissement habituel de taille du bundle Three.js.
 Structure du GLB vérifiée sur le serveur : corps, couvercle avec pivot arrière,
-poignées et verrou séparés. Rendu en casque non testé. Publication en cours.
+poignées et verrou séparés. Rendu en casque non testé. Publication vérifiée :
+commit `41eb530` sur main, [workflow 44744965917](https://github.com/nicasGit/MyRoom/actions/runs/44744965917)
+réussi. Image `ghcr.io/nicasgit/myroom:0.15.1`, plateforme `linux/arm64`,
+label `0.15.1`, digest
+`sha256:89b442741213f15ceee8f4a240ad21155df72dcf1c332fb21ba33434b72bab14`.
 
 ### 20 novembre 2026 - Bibliothèque GLB et import par lot, 0.15.0
 
