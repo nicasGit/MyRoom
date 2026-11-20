@@ -1,5 +1,39 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Fenêtre MR, continuité et réinitialisation, 0.15.4
+
+Branche `fix/portal-entry-window`. Depuis le couloir, un disque coplanaire écrit
+des pixels alpha zéro après le décor pour révéler le passthrough natif dans
+l'ouverture, en WebXR alpha-blend. Aucune capture vidéo ou texture de caméra.
+Les deux sens du franchissement visuel utilisent l'ellipse exacte du disque ;
+repasser devant le plan en contournant son bord ne quitte plus l'univers.
+Courtes pertes de suivi, discontinuités de pose et readiness serveur ne font
+plus disparaître un couloir déjà entré. Le panneau intérieur est conservé,
+conformément à la correction utilisateur. Progression serveur inchangée.
+
+Ambiance en boucle conservée avec l'univers local, reprise bornée d'un contexte
+audio suspendu/interrompu et relance possible si la source se termine de façon
+inattendue. Fin de session, déconnexion ou application masquée arrêtent toujours
+le son. Il s'agit d'un effet synthétisé original, pas d'un extrait du TARDIS.
+
+Réinitialisation du rituel : révision fraîche depuis l'admin PC, bouton protégé
+des doubles clics et résultat visible dans le panneau. Nouvelle session portail,
+bâtons, passages et prises libérés ; l'aventure est mise en pause sans effacer
+ses réussites, la pièce, le calibrage ni les modèles. Les étapes déjà en attente
+ou terminées ne sont pas relancées artificiellement à la fin de l'introduction.
+Vérifications : npm run typecheck, npm run build, npm test (162 réussis),
+git diff --check. Chrome : pixels RGBA alpha 0 dans le disque et alpha 255
+hors ouverture ; bouton de réinitialisation HTTP 200 après un rituel terminé,
+nouvelle session et compteurs/baux nuls relus depuis le serveur de test isolé.
+Tests de franchissement elliptique, contournement, tracking interrompu,
+source audio terminée/suspension, reset serveur et réseau. Un premier test
+unitaire de reset manquait la mise en présence de sa place simulée : fixture
+corrigée, contrôles conservés. Un passage complet a rencontré un HTTP 400
+au démarrage dans le test d'accès admin ; passage complet suivant réussi.
+Le test d'accès isolé est également exécuté pour vérifier ce point.
+Avertissement habituel de taille Three.js. Aucun test matériel Quest, ni
+validation du passthrough réel ou du son sur casque. Publication en cours.
+
 ### 20 novembre 2026 - Vortex plat et univers réversible, 0.15.3
 
 Branche `fix/reversible-vortex-universe`. L'immersion visuelle suit le passage

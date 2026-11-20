@@ -6,7 +6,7 @@ import { Adventure } from './adventure.js';
 import { text,integer,list } from './engine/validation.js';
 import { TeamPortal } from './portal/team-portal.js';
 import { SeatSessions } from './portal/seat-sessions.js';
-import { DEFAULT_PORTAL } from './portal/portal-types.js';
+import { DEFAULT_PORTAL,validatePlacement } from './portal/portal-types.js';
 import type { PortalPlacementStore } from './portal/placement-store.js';
 import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
@@ -20,9 +20,19 @@ export class Room {
   placementKey(){return (this.model?.id??'no-room')+'@team-portal@1';}
   startSession(simulation=false){this.adventure.configure(this.model);this.syncPortal();if(!this.model?.puzzles)throw Error('Configurez les placements avant le rituel.');if(this.portal.snapshot().config.enabled){if(this.adventure.snapshot().running||this.adventure.engine.snapshot().completedSteps.length||this.adventure.engine.snapshot().status!=='ready')throw Error('Arretez et reinitialisez la partie avant un nouveau rituel.');this.portal.begin(randomUUID(),this.playerNames,this.model,Date.now(),simulation);}else this.adventure.start();}
   stopSession(){this.portal.cancel();this.adventure.stop();}
+  restartRitual(){
+    this.adventure.configure(this.model);this.syncPortal();
+    const state=this.portal.snapshot();
+    if(!this.model?.puzzles||!state.config.enabled||!state.config.confirmed)throw Error('Configurez et confirmez le rituel avant de le recommencer.');
+    validatePlacement(state.config,this.model);
+    if(Object.keys(state.staffPositions??{}).length!==(state.config.playerCount??4))throw Error('Pas assez de place pour les bâtons.');
+    this.portal.cancel();this.adventure.stop();
+    this.portal.begin(randomUUID(),this.playerNames,this.model,Date.now());
+    this.objects.resetPortal(this.portal.staffPoses());
+  }
   objects=new ObjectManipulation();
   captainId:string|undefined;
-  maintain(now=Date.now()){this.syncPortal();const presence=this.portal.active&&this.portal.presence([...this.players.values()],now);const transition=this.portal.tick(now,()=>this.adventure.start());this.objects.configure(this.model,this.adventure.sceneEpoch,this.portal.staffPoses());const moved=this.objects.maintain([...this.players.keys()],now);if(!this.captainId||!this.players.has(this.captainId))this.captainId=[...this.players].sort((a,b)=>a[1]-b[1])[0]?.[0];return this.adventure.maintain({captainId:this.captainId,players:[...this.players.keys()],now})||moved||presence||transition;}
+  maintain(now=Date.now()){this.syncPortal();const presence=this.portal.active&&this.portal.presence([...this.players.values()],now);const transition=this.portal.tick(now,()=>{const status=this.adventure.engine.snapshot().status;if(status!=='pending'&&status!=='complete')this.adventure.start();});this.objects.configure(this.model,this.adventure.sceneEpoch,this.portal.staffPoses());const moved=this.objects.maintain([...this.players.keys()],now);if(!this.captainId||!this.players.has(this.captainId))this.captainId=[...this.players].sort((a,b)=>a[1]-b[1])[0]?.[0];return this.adventure.maintain({captainId:this.captainId,players:[...this.players.keys()],now})||moved||presence||transition;}
   leave(id:string){this.display.remove(id);this.players.delete(id);this.maintain();}
   constructor(public adventure=new Adventure()){}
   playerNames=['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];

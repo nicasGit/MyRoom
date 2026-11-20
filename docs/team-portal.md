@@ -1,5 +1,18 @@
 # Team Portal — préparation coopérative de session
 
+## Fenêtre d'entrée — 0.15.4
+
+Dans le couloir, l'ouverture laisse voir le passthrough réel en WebXR alpha-blend.
+Contourner son bord ne ramène plus en MR : il faut repasser par l'ellipse du
+trou. Le couloir et son ambiance restent actifs pendant une courte perte de
+suivi. Le panneau intérieur conserve son comportement. L'audio tente une reprise
+bornée après suspension ; une sélection XR reste disponible pour le déverrouiller.
+
+**Démarrer / réinitialiser le rituel** crée une nouvelle session, libère les prises
+et replace les bâtons. La progression des énigmes est conservée et mise en pause,
+la pièce et le calibrage restent disponibles. Le résultat de la commande apparaît
+dans le panneau Team Portal. Les anciennes commandes de session sont périmées.
+
 ## Univers personnel — 0.15.3
 
 Après prise de son bâton et ouverture du portail, faire passer la tête par le

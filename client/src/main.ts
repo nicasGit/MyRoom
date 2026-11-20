@@ -47,7 +47,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.15.3');
+diagnostic('Version client', '0.15.4');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -401,8 +401,8 @@ enter.onclick = async () => {
       if(inCorridor&&roomHead&&calibration&&portal.state){
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);
-        if(gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
-      }else corridor.group.visible=false;
+      }else if(!inCorridor)corridor.group.visible=false;
+      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
       scene.background=inCorridor?corridorBackground:null;
       const screenInput=session!.interactionMode==='screen-space';
       const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration,portal.visible()&&!!portal.state?.active):[];

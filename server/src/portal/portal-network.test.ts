@@ -54,5 +54,9 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
     const revision=s.adventure.revision;await new Promise(resolve=>setTimeout(resolve,1100));assert.equal((await state()).adventure.revision,revision);
     assert.equal((await post('adventure/stop',{})).status,200);s=await state();assert.equal((await post('portal',{action:'simulate-start',revision:s.portal.revision})).status,400);
     assert.equal((await post('adventure/test-mode',{enabled:true})).status,200);s=await state();assert.equal((await post('portal',{action:'simulate-start',revision:s.portal.revision})).status,200);s=await state();assert.equal(s.portal.simulation,true);assert.equal((await post('portal',{action:'skip',revision:s.portal.revision})).status,200);
+    s=await state();const previousSession=s.portal.sessionId,instances=s.adventure.engine.instances;
+    assert.equal((await post('portal',{action:'reset',revision:s.portal.revision})).status,200);
+    s=await state();assert.notEqual(s.portal.sessionId,previousSession);assert.equal(s.portal.active,true);
+    assert.ok(s.portal.players.every((p:any)=>!p.claimed&&!p.crossed));assert.equal(s.adventure.objects.held.length,0);assert.deepEqual(s.adventure.engine.instances,instances);
   }finally{clearInterval(pulse);clients.forEach(ws=>ws.terminate());child.kill();await once(child,'exit');rmSync(directory,{recursive:true,force:true});}
 });

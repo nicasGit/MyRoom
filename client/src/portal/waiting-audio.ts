@@ -18,11 +18,14 @@ export class WaitingAudio {
   private voice:{source:AudioBufferSourceNode;gain:GainNode}|undefined;
   private wanted=false;
   private disposed=false;
+  private resuming=false;
+  private nextResume=0;
   constructor(private createContext:()=>AudioContext=()=>new AudioContext()){}
   async unlock(){
     if(this.disposed)return;
     try{
       this.context??=this.createContext();
+      this.context.onstatechange=()=>{if(this.wanted&&!this.disposed&&this.context?.state==='running')this.setActive(true);};
       if(this.context.state==='suspended')await this.context.resume();
       // Precompute after the launch gesture, outside the XR animation loop.
       if(!this.disposed&&this.context.state==='running')this.prepareBuffer(this.context);
@@ -33,13 +36,17 @@ export class WaitingAudio {
     this.wanted=active;
     if(!active){this.stop();return;}
     const context=this.context;
-    if(this.disposed||this.voice||!context||context.state!=='running')return;
+    if(this.disposed||!context)return;
+    if((context.state==='suspended'||String(context.state)==='interrupted')&&!this.resuming&&Date.now()>=this.nextResume){
+      this.nextResume=Date.now()+2000;this.resuming=true;void context.resume().then(()=>{if(!this.disposed&&this.wanted)this.setActive(true);}).catch(()=>{}).finally(()=>{this.resuming=false;});
+    }
+    if(this.voice||context.state!=='running')return;
     try{
       const source=context.createBufferSource(),gain=context.createGain();
       source.buffer=this.prepareBuffer(context);source.loop=true;
       gain.gain.setValueAtTime(0,context.currentTime);gain.gain.linearRampToValueAtTime(.7,context.currentTime+.4);
       source.connect(gain);gain.connect(context.destination);
-      source.onended=()=>{source.disconnect();gain.disconnect();};
+      source.onended=()=>{if(this.voice?.source===source)this.voice=undefined;source.disconnect();gain.disconnect();};
       this.voice={source,gain};source.start();
     }catch{this.stop();}
   }

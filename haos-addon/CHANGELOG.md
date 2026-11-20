@@ -1,3 +1,11 @@
+## 0.15.4
+
+- Fenêtre transparente vers le passthrough dans le trou d'entrée depuis le couloir.
+- Sortie MR uniquement en retraversant l'ouverture elliptique ; contourner le plan conserve l'univers virtuel.
+- Courtes pertes de suivi et changements de préparation ne coupent plus l'univers et son ambiance ; reprise audio bornée après suspension.
+- Réinitialisation effective du rituel : nouvelle session, bâtons/passages/prises remis à zéro, progression d'énigmes et pièce conservées ; retour explicite dans le panneau admin.
+- Comportement du panneau intérieur conservé.
+
 ## 0.15.3
 
 - Vortex plat : disque, contour et particules coplanaires, sans volume conique visible en faisant le tour.

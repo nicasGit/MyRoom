@@ -91,6 +91,22 @@ test('waiting audio: denied audio can retry on a later gesture without blocking 
   await audio.unlock();assert.equal(attempts,2);audio.dispose();
 });
 
+test('waiting audio: unexpected source end and context suspension recover while ambience is wanted',async()=>{
+  let started=0,resumed=0;
+  const sources:{onended?:()=>void}[]=[];
+  const parameter={value:0,setValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
+  const context={state:'running',sampleRate:1000,currentTime:0,destination:{},
+    async resume(){resumed++;this.state='running';},async close(){this.state='closed';},
+    createBuffer(_channels:number,length:number){return {getChannelData:()=>new Float32Array(length)};},
+    createGain(){return {gain:parameter,connect(){},disconnect(){}};},
+    createBufferSource(){const source={buffer:null,loop:false,onended:undefined as (()=>void)|undefined,connect(){},disconnect(){},start(){started++;},stop(){this.onended?.();}};sources.push(source);return source;},
+  };
+  const audio=new WaitingAudio(()=>context as unknown as AudioContext);await audio.unlock();audio.setActive(true);assert.equal(started,1);
+  sources[0].onended?.();audio.setActive(true);assert.equal(started,2);
+  context.state='suspended';audio.setActive(true);await Promise.resolve();assert.equal(resumed,1);assert.equal(context.state,'running');assert.equal(started,2);
+  audio.setActive(false);audio.setActive(false);assert.equal(started,2);audio.dispose();
+});
+
 test('waiting universe: opaque enclosing geometry, stable room transform, animation and cleanup',()=>{
   const view=waitingTunnel(),start=view.group.matrix.clone();
   view.animate(10);view.animate(20);

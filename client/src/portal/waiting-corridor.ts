@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { vortexSign } from './vortex-sign';
 import { PortalGhosts } from './portal-ghosts';
+import { entryWindow } from './entry-window';
 import type { PortalPublic,Vec3 } from '../../../server/src/portal/portal-types.js';
 
 /** Opaque enclosure: no camera movement, no dependency on native scene APIs. */
@@ -33,9 +34,10 @@ export function waitingTunnel(){
 
 export function waitingCorridor(){
   const view=waitingTunnel(),group=new THREE.Group(),board=vortexSign(),ghosts=new PortalGhosts();
-  group.add(view.group,view.shell,board.group,ghosts.group);group.visible=false;
+  const window=entryWindow();group.add(view.group,view.shell,board.group,ghosts.group,window);group.visible=false;
   return {group,update(state:PortalPublic,slot:number,head:Vec3,seconds:number){
     const p=state.config.portal;
+    window.position.set(p.x,p.height/2,p.z);window.rotation.y=p.yaw;window.scale.set(p.width,p.height,1);
     // Alpha-blend WebXR clears to transparent regardless of scene.background.
     // An opaque enclosure covers both eyes in every direction; only this flat
     // background follows the head. The tunnel and sign remain room anchored.

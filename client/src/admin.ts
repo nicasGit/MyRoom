@@ -21,7 +21,7 @@ let loading = false;
 let session = 0;
 let previousPlayers = '';
 const notice = el('notice');
-const portalAdmin=new PortalAdmin(el('dashboard'),body=>api('portal',body),text=>{notice.textContent=text;});
+const portalAdmin=new PortalAdmin(el('dashboard'),async body=>{const command=body as Record<string,unknown>;if(command.action==='reset'){const latest=await api<State>('state');return api('portal',{...command,revision:latest.portal.revision});}return api('portal',body);},text=>{notice.textContent=text;});
 let library:RoomLibrary|undefined;
 let libraryRevision=-1;
 const roomEditor=roomObjectEditor(el('admin-room-preview'),body=>api('rooms/objects',body),refresh);
