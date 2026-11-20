@@ -11,7 +11,12 @@ avec contrôle de révision. Aucune modification de progression.
 Noms toujours conservés uniquement pendant ce démarrage du serveur.
 Cette livraison concerne les noms ; bibliothèque et créateur restent à implémenter.
 Validation : npm run typecheck, npm run build et npm test réussis
-(142 tests). Aucun essai physique Quest. Publication en cours.
+(142 tests). Aucun essai physique Quest.
+Publication vérifiée sur origin/main : commit `bf8e1a5`, workflow
+[44693110204](https://github.com/nicasGit/MyRoom/actions/runs/44693110204) réussi.
+Image `ghcr.io/nicasgit/myroom:0.13.3` disponible, configuration linux/arm64
+et version 0.13.3 vérifiées directement dans le registre. Digest :
+`sha256:3bea77fcf1434d0e1c91852a33dc1cc61b2d1be9c991e3c514ec803c86db68c2`.
 
 ### 19 novembre 2026 — révélation individuelle du vortex, 0.13.2 publiée
 
