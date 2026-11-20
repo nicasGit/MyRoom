@@ -25,7 +25,11 @@ multiple native de deux GLB, inspection, aperçu interactif, import du lot,
 modification de fiche en v2 et ajout de v2 dans une pièce de test isolée.
 Pas HTML de saisie numérique corrigé pour accepter les dimensions GLB précises.
 Documentation : [import GLB](glb-import.md). Avertissement de taille Three.js
-connu conservé. Aucun essai physique Quest/iPad. Publication en cours.
+connu conservé. Aucun essai physique Quest/iPad. Publication vérifiée sur `main`
+(commit `5bcd5ba`, fonctionnalité `b9195fb`) : [workflow 44705985246](https://github.com/nicasGit/MyRoom/actions/runs/44705985246)
+réussi, image `ghcr.io/nicasgit/myroom:0.15.0` disponible avec plateforme
+`linux/arm64` et label de version `0.15.0`. Digest vérifié :
+`sha256:557c8e0b59927ee2fcf5c31102e57fd9d086ab2793c528a5a62319f1a5380c00`.
 Le guide initial de bibliothèque renvoie désormais vers l’import GLB disponible.
 
 ### 20 novembre 2026 - Aperçus catalogue admin, 0.14.1
