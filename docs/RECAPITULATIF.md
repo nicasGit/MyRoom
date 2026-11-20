@@ -25,7 +25,11 @@ npm test (158 réussis), git diff --check. Tests de passage près du plan,
 retour après accusé serveur, reprise de suivi, entrée sans attendre les autres,
 planéité animée, enveloppe opaque et tests Web Audio existants réussis.
 Avertissement habituel de taille du bundle Three.js. Aucun essai physique Quest.
-Publication en cours.
+Publication vérifiée : commit `d3ee160` sur main,
+[workflow 44750032156](https://github.com/nicasGit/MyRoom/actions/runs/44750032156)
+réussi. Image `ghcr.io/nicasgit/myroom:0.15.3`, plateforme `linux/arm64`, label
+`0.15.3`, digest
+`sha256:b55a6471237aa8394c1db49ca6be22ce87a40124b6bb35b4f483e9efc334759b`.
 
 ### 20 novembre 2026 - Placement bibliothèque casque et admin PC, 0.15.2
 
