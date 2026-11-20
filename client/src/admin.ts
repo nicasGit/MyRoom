@@ -1,3 +1,4 @@
+import { setImportedCatalog } from '../../server/src/object-library.js';
 import { LibraryAdmin } from './library/library-admin';
 import { addLibraryObjects } from './library/object-view';
 import { modelGroup } from './model-view';
@@ -13,7 +14,7 @@ import { AdventureEditor } from './adventure-editor';
 import type { AdventureState } from '../../server/src/adventure.js';
 import type { AdventureManifest } from '../../server/src/engine/puzzle-types.js';
 type Player = { id: string; slot: number; name:string;address?: string; userAgent?: string; connectedAt: string };
-type State = { displayPolicy?:ModePolicy;displayClients?:DisplayClient[]; portal:PortalPublic;players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
+type State = { objectCatalog?:unknown; displayPolicy?:ModePolicy;displayClients?:DisplayClient[]; portal:PortalPublic;players: Player[];playerNames:string[];playerNamesRevision:number;adventures:AdventureManifest[];puzzle: { solved: boolean; revision: number }; uptimeSeconds: number; publicOrigin: string; logs: Record<string, unknown>[];library:RoomLibrary;adventure:AdventureState };
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let token = '';let debug=false;
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -84,6 +85,7 @@ function node(tag: string, text: string, className?: string) {
 }
 const displayAdmin=new DisplayAdmin(el('dashboard'),policy=>api('display-modes',policy));
 function render(state: State) {
+  if(state.objectCatalog)setImportedCatalog(state.objectCatalog);
   displayAdmin.receive(state.displayPolicy,state.displayClients);
   portalAdmin.receive(state.portal);
   latestAdventureRevision=state.adventure.revision;catalog=state.adventures;

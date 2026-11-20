@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, renameSync, writeFileSync, statSync, existsSync } from 'node:fs';
+import { atomicRename } from './atomic-file.js';
+import { mkdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseLibrary, parseRoom, type RoomLibrary } from './scene-schema.js';
 
@@ -36,7 +37,7 @@ export class RoomStore {
     next.revision++;
     // Commit in memory only after a successful atomic filesystem replacement.
     writeFileSync(`${this.file}.tmp`,JSON.stringify(next,null,2),{mode:0o600});
-    renameSync(`${this.file}.tmp`,this.file);
+    atomicRename(`${this.file}.tmp`,this.file);
     this.library=next;
     return this.snapshot();
   }

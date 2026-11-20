@@ -1,5 +1,8 @@
 # MyRoom
 
+[Import GLB par lot 0.15.0](docs/glb-import.md) : page Bibliothèque dédiée,
+aperçu 3D interactif et configuration des modèles importés sur HAOS.
+
 [Bibliothèque d’objets 0.14.0](docs/object-library.md) : huit modèles Kenney CC0,
 ajout et sauvegarde par pièce depuis l’admin ou le menu mural, fixe/manipulable
 et taille ajustable à deux mains.

@@ -8,7 +8,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
-    "test": "tsx --test src/room.test.ts src/network.test.ts src/calibration.test.ts src/xr-events.test.ts src/room-store.test.ts src/quest-scan.test.ts src/adventure.test.ts src/engine/engine.test.ts src/puzzles/blackjack-hybrid.test.ts src/hybrid-network.test.ts src/object-manipulation.test.ts src/objects-network.test.ts src/portal/team-portal.test.ts src/portal/portal-network.test.ts src/display-modes.test.ts src/admin-access.test.ts src/obstacle-editor.test.ts src/object-library.test.ts"
+    "test": "tsx --test src/room.test.ts src/network.test.ts src/calibration.test.ts src/xr-events.test.ts src/room-store.test.ts src/quest-scan.test.ts src/adventure.test.ts src/engine/engine.test.ts src/puzzles/blackjack-hybrid.test.ts src/hybrid-network.test.ts src/object-manipulation.test.ts src/objects-network.test.ts src/portal/team-portal.test.ts src/portal/portal-network.test.ts src/display-modes.test.ts src/admin-access.test.ts src/obstacle-editor.test.ts src/object-library.test.ts src/model-store.test.ts"
   },
   "dependencies": {
     "ws": "^8.18.3"

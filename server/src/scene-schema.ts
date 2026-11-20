@@ -113,7 +113,7 @@ export function parseRoom(value: unknown): RoomModel {
   return room;
 }
 export function validateObjectPlacement(room:Pick<RoomModel,'floor'|'height'>,item:RoomObject,pose:LibraryPose=item.pose){
-  if(pose.y+libraryAsset(item.asset)!.size.height*pose.scale>room.height+1e-8)throw Error('L’objet dépasse du plafond.');
+  if(pose.y+libraryAsset(item.asset,item.assetVersion??1)!.size.height*pose.scale>room.height+1e-8)throw Error('L’objet dépasse du plafond.');
   const corners=objectFootprint(item,pose);
   for(let i=0;i<4;i++){
     const a=corners[i],b=corners[(i+1)%4];

@@ -1,3 +1,6 @@
+import { ModelStore } from './model-store.js';
+import { importedCatalog } from './object-library.js';
+import { readFileSync } from 'node:fs';
 import { DisplayModes,parseModeCommand } from './display-modes.js';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -16,6 +19,7 @@ import { parseObjectCommand } from './object-manipulation.js';
 
 const registry=createRegistry();
 const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
+const models = new ModelStore(process.env.DATA_DIR??'data');
 const room = new Room(new Adventure(registry,catalog));
 room.display=new DisplayModes(process.env.DATA_DIR??'data');
 const store = new RoomStore(process.env.DATA_DIR ?? 'data');
@@ -23,8 +27,13 @@ room.portalStore=new PortalPlacementStore(process.env.DATA_DIR??'data');
 room.model = store.active(); room.libraryRevision = store.snapshot().revision;
 const connections = new Map<string, Connection>();
 const http = createServer((req, res) => {
+  if(req.method==='GET'&&req.url==='/api/library/catalog'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(importedCatalog()));return;}
+  if(req.method==='GET'&&req.url?.startsWith('/api/library/models/')){
+    const path=models.publicPath(req.url.slice('/api/library/models/'.length));
+    try{if(!path)throw Error('not found');const bytes=readFileSync(path);res.writeHead(200,{'Content-Type':'model/gltf-binary','Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'});res.end(bytes);}catch{res.writeHead(404);res.end();}return;
+  }
   if (req.url?.startsWith('/api/admin/')) {
-    void admin(req, res, room, connections, broadcast, store).catch(error => {
+    void admin(req, res, room, connections, broadcast, store, models).catch(error => {
       log('admin_error', { message: String(error) });
       if (!res.headersSent) { res.writeHead(500); res.end(); }
     });

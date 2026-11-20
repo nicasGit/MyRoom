@@ -1,3 +1,12 @@
+## 0.15.0
+
+- Reprises bornées des verrouillages transitoires Windows pendant les sauvegardes atomiques.
+
+- Page Bibliothèque : import de plusieurs GLB, prévisualisation et bilan par fichier.
+- Modal de configuration des modèles importés, recherche et catégories.
+- Catalogue et fichiers persistants sur HAOS ; versions des objets placés conservées.
+- Validation GLB statiques autonomes, limites de poids/géométrie/textures et licence déclarée.
+
 ## 0.14.1
 
 - Vignettes 3D des huit objets dans le catalogue admin PC, avant ajout.

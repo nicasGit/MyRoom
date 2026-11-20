@@ -4,9 +4,9 @@ import { disposeGroup } from '../model-view';
 
 /** Render static catalogue images with one temporary context, not one per card. */
 export function catalogPreviews(container:HTMLElement,entries:{asset:string;image:HTMLImageElement;status:HTMLElement}[]){
-  let stopped=false;
+  let stopped=false;let observer:IntersectionObserver|undefined;
   let renderer:THREE.WebGLRenderer|undefined;
-  const cleanup=()=>{stopped=true;renderer?.dispose();renderer=undefined;};
+  const cleanup=()=>{stopped=true;observer?.disconnect();renderer?.dispose();renderer=undefined;window.removeEventListener('pagehide',cleanup);};
   const render=async()=>{
     if(stopped)return;
     try{renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});renderer.setSize(360,240);renderer.setPixelRatio(1);}
@@ -22,7 +22,7 @@ export function catalogPreviews(container:HTMLElement,entries:{asset:string;imag
         if(stopped)break;
         model.traverse(node=>{
           const mesh=node as THREE.Mesh;if(!mesh.isMesh)return;
-          const lit=(material:THREE.Material)=>{const source=material as THREE.MeshBasicMaterial;const next=new THREE.MeshStandardMaterial({color:source.color,map:source.map,side:source.side,transparent:source.transparent,opacity:source.opacity,alphaTest:source.alphaTest,roughness:.85});material.dispose();return next;};
+          const lit=(material:THREE.Material)=>{const source=material as THREE.MeshBasicMaterial;const next=new THREE.MeshStandardMaterial({color:source.color,vertexColors:source.vertexColors,map:source.map,side:source.side,transparent:source.transparent,opacity:source.opacity,alphaTest:source.alphaTest,roughness:.85});material.dispose();return next;};
           mesh.material=Array.isArray(mesh.material)?mesh.material.map(lit):lit(mesh.material);
         });
         scene.add(model);model.updateMatrixWorld(true);
@@ -39,8 +39,8 @@ export function catalogPreviews(container:HTMLElement,entries:{asset:string;imag
     window.removeEventListener('pagehide',cleanup);
   };
   window.addEventListener('pagehide',cleanup,{once:true});
-  if(typeof IntersectionObserver==='undefined'){void render();return;}
-  const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();void render();}});
+  if(typeof IntersectionObserver==='undefined'){void render();return cleanup;}
+  observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer?.disconnect();void render();}});
   observer.observe(container);
-  window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
+  return cleanup;
 }

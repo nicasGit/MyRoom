@@ -18,22 +18,22 @@ export function editRoomObjects(model:RoomModel,body:unknown,objects:ObjectSnaps
   if(command.action==='add'){
     const asset=libraryAsset(identifier(command.asset));if(!asset)throw Error('Objet inconnu.');
     if(next.objects.items.length>=32)throw Error('Maximum 32 objets par pièce.');
-    const item:RoomObject={id:randomUUID(),asset:asset.id,name:asset.name,movable:true,pose:{x:0,y:0,z:0,yaw:0,scale:1}};
+    const item:RoomObject={id:randomUUID(),asset:asset.id,...(asset.version?{assetVersion:asset.version}:{}),name:asset.name,movable:asset.defaultMovable??true,pose:{x:0,y:0,z:0,yaw:asset.defaultYaw??0,scale:1}};
     const xs=model.floor.map(p=>p.x),zs=model.floor.map(p=>p.z),cx=(Math.min(...xs)+Math.max(...xs))/2,cz=(Math.min(...zs)+Math.max(...zs))/2;
     const candidates:{x:number;z:number;score:number}[]=[];
     for(let x=Math.min(...xs);x<=Math.max(...xs);x+=.25)for(let z=Math.min(...zs);z<=Math.max(...zs);z+=.25){
       const pose={...item.pose,x,z};try{validateObjectPlacement(model,item,pose);}catch{continue;}
       if(model.obstacles.some(o=>Math.abs(x-o.x)<(o.width+asset.size.width)/2&&Math.abs(z-o.z)<(o.depth+asset.size.depth)/2))continue;
-      if(next.objects.items.some(other=>{const size=libraryAsset(other.asset)!.size;return Math.abs(x-other.pose.x)<(asset.size.width+size.width*other.pose.scale)/2+.05&&Math.abs(z-other.pose.z)<(asset.size.depth+size.depth*other.pose.scale)/2+.05;}))continue;
+      if(next.objects.items.some(other=>{const size=libraryAsset(other.asset,other.assetVersion??1)!.size;return Math.abs(x-other.pose.x)<(asset.size.width+size.width*other.pose.scale)/2+.05&&Math.abs(z-other.pose.z)<(asset.size.depth+size.depth*other.pose.scale)/2+.05;}))continue;
       candidates.push({x,z,score:Math.hypot(x-cx,z-cz)});
     }
     const point=candidates.sort((a,b)=>a.score-b.score)[0];
     if(!point)throw Error('Aucun emplacement libre assez grand pour cet objet.');
     item.pose.x=point.x;item.pose.z=point.z;next.objects.items.push(item);
   }else if(command.action==='update'){
-    const raw=record(command.object,['id','asset','name','movable','pose']);
+    const raw=record(command.object,['id','asset','assetVersion','name','movable','pose']);
     const index=next.objects.items.findIndex(item=>item.id===raw.id);
-    if(index<0||raw.asset!==next.objects.items[index].asset)throw Error('Objet absent ou modèle différent.');
+    if(index<0||raw.asset!==next.objects.items[index].asset||raw.assetVersion!==next.objects.items[index].assetVersion)throw Error('Objet absent ou modèle différent.');
     next.objects.items[index]=raw as unknown as RoomObject;
   }else if(command.action==='remove'){
     const id=identifier(command.id),index=next.objects.items.findIndex(item=>item.id===id);

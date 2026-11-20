@@ -1,4 +1,4 @@
-import { OBJECT_CATALOG } from '../../../server/src/object-library.js';
+import { libraryAssets,importedCatalog } from '../../../server/src/object-library.js';
 import type { RoomLibrary } from '../../../server/src/scene-schema.js';
 import { TEAM_LEON, randomPlayerNames } from '../../../server/src/player-name-presets.js';
 import * as THREE from 'three';
@@ -51,7 +51,7 @@ export class WallLobby {
   pick(origin:THREE.Vector3,direction:THREE.Vector3){if(!this.view.group.visible)return false;const id=this.view.pick(origin,direction);if(!id)return false;void this.act(id);return true;}
   private draw(force=false){
     const p=this.portal,a=this.adventure,l=this.lobby;if(!p||!a||!l)return;
-    const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode,this.debug,this.model?.objects,this.objectId]);if(!force&&key===this.key)return;this.key=key;
+    const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode,this.debug,this.model?.objects,this.objectId,importedCatalog().revision]);if(!force&&key===this.key)return;this.key=key;
     const selected=l.adventures.find(item=>item.id===a.engine.adventureId&&item.version===a.engine.adventureVersion);
     const lines=[selected?.title??a.engine.adventureId,`${p.players.filter(x=>x.present).length}/${p.config.playerCount??4} présents · ${p.players.filter(x=>x.crossed).length} passages · ${p.phase}`,this.debug?'DEBUG : droits administrateur pour tous':this.token?'Organisateur connecté':'Lecture seule · déverrouiller pour modifier',this.notice||(!p.active?'Démarrez le rituel avant de prendre votre bâton.':'Approchez votre bâton : poignée, pince ou gâchette.')];
     const buttons:MenuButton[]=[{id:'home',title:'Accueil'},{id:'adventures',title:'Aventures'},{id:'settings',title:'Paramètres'},{id:'rooms',title:this.roomMode?'Mode pièces actif':'Mode création de pièces'}];
@@ -71,8 +71,8 @@ export class WallLobby {
     }
     if(this.tab==='library'){
       lines[0]='Bibliothèque CC0 - préparation hors partie';
-      for(const asset of OBJECT_CATALOG.assets)buttons.push({id:'library-add:'+asset.id,title:'Ajouter '+asset.name});
-      buttons.push({id:'library-placed',title:'Objets de la pièce'},{id:'library-save',title:'Enregistrer les placements'});
+      for(const asset of libraryAssets().slice(this.page*6,this.page*6+6))buttons.push({id:'library-add:'+asset.id,title:'Ajouter '+asset.name});
+      buttons.push({id:'library-catalog-prev',title:'Modèles précédents'},{id:'library-catalog-next',title:'Modèles suivants'},{id:'library-placed',title:'Objets de la pièce'},{id:'library-save',title:'Enregistrer les placements'});
     }
     if(this.tab==='library-placed'){
       const items=this.model?.objects?.items??[];lines[0]=items.length+'/32 objets dans la pièce';
@@ -109,6 +109,7 @@ export class WallLobby {
       document.getElementById(target[id])?.click();return;
     }
     if(!this.token&&!this.debug){this.notice='Menu verrouillé : utilisez Déverrouiller organisateur avant AR.';this.draw(true);return;}
+    if(id==='library-catalog-prev'||id==='library-catalog-next'){this.page=Math.max(0,Math.min(Math.ceil(libraryAssets().length/6)-1,this.page+(id.endsWith('next')?1:-1)));this.draw(true);return;}
     if(id==='library-prev'||id==='library-next'){this.page=Math.max(0,Math.min(Math.max(0,Math.ceil((this.model?.objects?.items.length??0)/4)-1),this.page+(id==='library-next'?1:-1)));this.draw(true);return;}
     if(id.startsWith('library-select:')){this.objectId=id.slice(15);this.tab='library-object';this.draw(true);return;}
     if(id==='library-delete'){this.tab='library-delete';this.draw(true);return;}

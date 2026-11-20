@@ -1,3 +1,4 @@
+import { setImportedCatalog } from '../../server/src/object-library.js';
 import { addLibraryObjects } from './library/object-view';
 import { ObstacleEditor } from './obstacle-editor';
 import { MenuMover,MenuPointers,type MenuHand } from './xr-menu-interactions';
@@ -45,7 +46,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.14.1');
+diagnostic('Version client', '0.15.0');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -512,6 +513,7 @@ function connect() {
       if(message.type==='object_result'&&!message.changed)grabber.reject(message.message);
       if (message.type === 'xr_ack') logStatus.textContent = `Journal serveur : ${message.event} reçu.`;
       if (message.type === 'state') {
+        if(message.objectCatalog)setImportedCatalog(message.objectCatalog);
         const debug=!!message.adminAccess?.debug;wallLobby.setDebug(debug);survey.setDebug(debug);survey.setSaveAccess(!!message.adminAccess?.roomSaveWithoutToken);adventure.setDebug(debug);
         ownSlot=message.players.find((p:{id:string;slot:number})=>p.id===ownId)?.slot??0;if(message.portal)portal.receive(message.portal,ownSlot,message.model??null,!!message.adventure?.engine.testStartStepId);
         showPlayers(message.players); revision = message.puzzle.revision;

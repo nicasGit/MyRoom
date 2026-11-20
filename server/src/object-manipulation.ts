@@ -28,7 +28,7 @@ export class ObjectManipulation {
   private held=new Map<ObjectId,{owner:string;lease:string;expiresAt:number;seq:number;original:ObjectPose}>();
   private key='';private libraryKey='';
   configure(model:RoomModel|null,epoch:number,extra:Partial<Record<ObjectId,ObjectPose>>={}){const key=JSON.stringify([model?{...model,name:undefined}:null,epoch,extra]);if(key===this.key)return;this.key=key;const libraryKey=JSON.stringify(model?[model.id,model.floor,model.height,model.obstacles,model.objects]:null),previous=this.libraryKey===libraryKey?this.poses:{};this.libraryKey=libraryKey;this.held.clear();this.poses=structuredClone(extra);this.revision++;
-    this.rules={};for(const item of model?.objects?.items??[]){const id=`prop:${item.id}` as ObjectId;this.poses[id]=structuredClone(previous[id]??item.pose);this.rules[id]={hands:libraryAsset(item.asset)!.hands,movable:item.movable};}
+    this.rules={};for(const item of model?.objects?.items??[]){const id=`prop:${item.id}` as ObjectId;this.poses[id]=structuredClone(previous[id]??item.pose);this.rules[id]={hands:libraryAsset(item.asset,item.assetVersion??1)!.hands,movable:item.movable};}
     if(!model?.puzzles)return;for(const id of PUZZLE_ITEMS)this.poses[id]={...model.puzzles.points[id],y:model.puzzles.poses?.[id]?.y??0,yaw:model.puzzles.poses?.[id]?.yaw??0};
     const panel=puzzlePanel(model);if(panel)this.poses.panel={...panel.position,y:panel.height,yaw:panel.yaw};
   }

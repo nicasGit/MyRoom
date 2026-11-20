@@ -1,3 +1,6 @@
+import { importedCatalog } from './object-library.js';
+import { modelAdmin } from './model-api.js';
+import type { ModelStore } from './model-store.js';
 import { editRoomObjects } from './object-library-commands.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
@@ -18,7 +21,7 @@ function reply(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
   res.end(JSON.stringify(body));
 }
-export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore) {
+export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore, models?:ModelStore) {
   const preparePlacements=()=>{
     if(!room.model||room.model.puzzles)return;
     const model=parseRoom({...room.model,puzzles:suggestPuzzleLayout(room.model)});
@@ -43,7 +46,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       uptimeSeconds: Math.floor((Date.now() - started) / 1000),
       publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
       puzzle: room.snapshot().puzzle,
-      library:store.snapshot(),
+      library:store.snapshot(),objectCatalog:importedCatalog(),
       adventure:room.snapshot().adventure,
       adventures:room.adventure.listAdventures(),
       playerNames:room.playerNames,playerNamesRevision:room.playerNamesRevision,
@@ -54,13 +57,14 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/models/import','/api/admin/models/inspect','/api/admin/models/update','/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
   if (!req.headers.origin || (allowed ? req.headers.origin !== allowed : !['http://localhost:5173', 'http://127.0.0.1:5173'].includes(req.headers.origin))) {
     reply(res, 403, { error: 'Origine non autorisée : vérifier public_origin.' }); return;
   }
+  if(req.url?.startsWith('/api/admin/models/')){if(!models){reply(res,503,{error:'Model store unavailable'});return;}await modelAdmin(req,res,models,broadcast);return;}
   if (req.headers['content-type']?.split(';')[0] !== 'application/json') {
     reply(res, 415, { error: 'JSON attendu.' }); return;
   }

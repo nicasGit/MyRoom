@@ -1,5 +1,15 @@
 # Architecture MyRoom
 
+## Catalogue importé 0.15.0
+
+ModelStore charge les versions du catalogue avant RoomStore. Les GLB binaires
+sont validés et publiés sous un SHA-256, puis référencés par un index atomique
+indépendant des pièces. Les instances RoomObject portent un assetVersion
+facultatif (1 pour les anciens modèles). Les nouvelles fiches ne modifient pas
+les instances existantes. Le catalogue est synchronisé avant traitement des
+modèles côté client. Import et modal ont une page dédiée ; rendus et règles
+de jeu restent communs. Voir [import GLB](docs/glb-import.md).
+
 ## Bibliothèque 0.14.0
 
 Catalogue local versionné, huit GLB CC0 Kenney et instances facultatives

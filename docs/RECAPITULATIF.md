@@ -1,5 +1,32 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Bibliothèque GLB et import par lot, 0.15.0
+
+Branche `feat/glb-library-import`. Page dédiée Bibliothèque, import de dix GLB
+en une sélection, inspection avant prévisualisation et confirmation, compte rendu
+par fichier. Aperçu 3D interactif, recherche/catégories, ajout dans la pièce active
+et modal de configuration nom/dimensions/mains/orientation Y/fixe/source/licence.
+Fichiers et catalogue versionnés enregistrés atomiquement dans DATA_DIR/models.
+Modèles visibles par les joueurs et le casque via le catalogue synchronisé.
+Les instances conservent leur version : une fiche modifiée ne transforme pas les
+objets déjà placés. Auth admin et contrôles d’origine conservés ; fichiers
+servis sur la même origine HTTPS. Limites : statique/autonome, 8 Mio, 100 000
+sommets, 200 000 triangles, PNG/JPEG 2048 px/4 mégapixels, 64 fichiers/128 Mio.
+Pas d’import externe, de compression nécessitant un décodeur, de skin ou animation.
+Source/licence et confirmation de droits fournies par l’admin, sans attribution
+automatique de licence libre. Pas de suppression des anciens fichiers/versions.
+Vérifications : npm run typecheck, npm run build et npm test réussis (154 tests).
+Des passages ont rencontré le verrouillage Windows EPERM connu dans RoomStore.
+Une relance sans changement a réussi, puis le blocage s’est reproduit. Ajout
+d’une reprise bornée du renommage atomique sous Windows (cinq tentatives, 80 ms
+maximum d’attente), dans RoomStore et ModelStore ; aucune suppression de cible
+ni reprise des autres erreurs. Test des erreurs persistantes et hors Windows. Chrome : sélection
+multiple native de deux GLB, inspection, aperçu interactif, import du lot,
+modification de fiche en v2 et ajout de v2 dans une pièce de test isolée.
+Pas HTML de saisie numérique corrigé pour accepter les dimensions GLB précises.
+Documentation : [import GLB](glb-import.md). Avertissement de taille Three.js
+connu conservé. Aucun essai physique Quest/iPad. Publication en cours.
+
 ### 20 novembre 2026 - Aperçus catalogue admin, 0.14.1
 
 Branche `feat/admin-object-previews`. Les huit cartes du catalogue admin PC

@@ -73,7 +73,7 @@ export class SimulatorScene {
     if(hit){let node:THREE.Object3D|null=hit.object;while(node&&!node.userData.libraryObject)node=node.parent;
       const item=this.state.model?.objects?.items.find(item=>item.id===node?.userData.libraryObject);
       if(item&&!item.movable){this.hooks.notify('Cet objet est fixe.');return;}
-      if(item&&node){const pose=this.state.adventure.objects?.poses[`prop:${item.id}`],asset=libraryAsset(item.asset)!;
+      if(item&&node){const pose=this.state.adventure.objects?.poses[`prop:${item.id}`],asset=libraryAsset(item.asset,item.assetVersion??1)!;
         if(!pose||Math.hypot(pose.x-this.camera.position.x,pose.z-this.camera.position.z)>1.3){this.hooks.notify('Approchez l’objet au joystick avant de le prendre.');return;}
         this.synthetic=undefined;this.grabOrigin.copy(this.camera.position);this.dropping=false;
         this.libraryHands=(asset.hands===2?[-.25,.25]:[0]).map((dx,index)=>({side:asset.hands===1||index===1?'right':'left',pressed:true,yaw:0,position:new THREE.Vector3(pose.x+dx,pose.y+asset.size.height*(pose.scale??1)/2,pose.z)}));

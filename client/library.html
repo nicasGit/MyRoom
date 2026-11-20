@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MyRoom — Bibliothèque GLB</title></head>
+<body>
+  <header><a class="brand" href="/">M<span>MyRoom</span></a><span class="tag">BIBLIOTHÈQUE</span><a href="/admin.html">Retour à l’administration →</a></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">MODÈLES ET OBJETS</p><h1>Votre bibliothèque 3D.</h1><p class="muted">Importez plusieurs GLB, prévisualisez-les et réglez leurs prochaines utilisations.</p></div><span id="connection" class="badge">Non connecté</span></div>
+    <section id="login-panel" class="panel"><form id="login"><label>Jeton administrateur <input id="token" type="password" required minlength="16" autocomplete="off"></label><button>Se connecter</button></form></section>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <div id="workspace" hidden>
+      <section class="panel"><div class="section-head"><h2>Importer des modèles</h2><button id="logout" class="secondary">Se déconnecter</button></div>
+        <p class="muted">Jusqu’à 10 GLB autonomes par lot, 8 Mio par fichier. Modèles statiques, textures PNG/JPEG intégrées (2048 px, 4 mégapixels au total). Les fichiers sont vérifiés avant prévisualisation et enregistrement.</p>
+        <label>Fichiers GLB <input id="files" type="file" accept=".glb,model/gltf-binary" multiple></label>
+        <div class="library-fields"><label>Source des modèles du lot <input id="source" type="text" maxlength="512" placeholder="URL d’origine ou création personnelle"></label><label>Licence du lot <input id="license" type="text" maxlength="128" placeholder="Ex. CC0-1.0, CC-BY-4.0 ou licence personnelle"></label></div>
+        <label><input id="rights" type="checkbox"> Je dispose des droits pour utiliser et redistribuer ces modèles et leurs textures dans MyRoom.</label>
+        <div id="queue" class="import-queue" aria-live="polite"></div>
+        <button id="import" disabled>Confirmer l’import du lot</button>
+        <p class="muted">La source et la licence s’appliquent au lot ; importez séparément les groupes soumis à des licences différentes. Vous pourrez ensuite modifier chaque fiche.</p>
+      </section>
+      <section class="panel"><div class="section-head"><h2>Catalogue</h2><button id="refresh" class="secondary">Actualiser</button></div>
+        <div class="library-fields"><label>Rechercher <input id="search" type="search" placeholder="Nom d’un modèle"></label><label>Catégorie <select id="category"><option value="">Toutes</option><option value="mobilier">Mobilier</option><option value="accessoires">Accessoires</option><option value="decoration">Décoration</option></select></label></div>
+        <p id="count" class="muted"></p><div id="catalogue" class="players"></div>
+      </section>
+    </div>
+    <dialog id="model-dialog" aria-labelledby="model-title"><div class="section-head"><h2 id="model-title">Modèle 3D</h2><button id="close-dialog" class="secondary" type="button">Fermer</button></div><div id="model-preview"></div><p id="model-status" role="status"></p>
+      <form id="model-form"><div id="model-fields" class="library-fields"></div><p id="model-info" class="muted"></p><p class="muted">Les réglages s’appliquent aux prochains ajouts. Les exemplaires déjà placés conservent leur version et leur position.</p><button id="save-model">Enregistrer une nouvelle version</button></form>
+    </dialog>
+  </main><script type="module" src="/src/library/library-page.ts"></script>
+</body></html>
