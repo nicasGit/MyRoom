@@ -1,5 +1,21 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Aperçus catalogue admin, 0.14.1
+
+Branche `feat/admin-object-previews`. Les huit cartes du catalogue admin PC
+affichent une image 3D de leur vrai modèle GLB avant ajout. Cadrage automatique
+et éclairage pour distinguer les volumes. Un seul contexte WebGL temporaire
+produit les images statiques à l’apparition du catalogue ; aucune animation
+continue ni contexte par carte. Les clones et ressources sont libérés après
+rendu. En cas d’échec, indication explicite sans bloquer l’ajout.
+Chargement commun avec la vue en jeu, sans modification serveur ou sauvegardes.
+Lien d’accès rapide ajouté dans le tableau de bord.
+Validation : npm run typecheck, npm run build et npm test réussis (149 tests),
+git diff --check. Chrome : huit vignettes 360×240 chargées, cadrage visuel
+vérifié, affichage disponible même sans pièce active. Avertissement Vite connu
+sur la taille du chunk Three.js. Aucun essai physique Quest/iPad.
+Publication en cours.
+
 ### 20 novembre 2026 - Bibliothèque initiale, 0.14.0
 
 Branche `feat/object-library`. Huit modèles GLB Kenney Furniture Kit 2.0 sous

@@ -1,6 +1,7 @@
 import { OBJECT_CATALOG,type RoomObject } from '../../../server/src/object-library.js';
 import type { RoomModel } from '../../../server/src/scene-schema.js';
 import type { ObjectSnapshot } from '../../../server/src/object-manipulation.js';
+import { catalogPreviews } from './catalog-previews';
 
 const button=(title:string,click:()=>void)=>{const node=document.createElement('button');node.type='button';node.textContent=title;node.onclick=click;return node;};
 export class LibraryAdmin {
@@ -14,12 +15,16 @@ export class LibraryAdmin {
     const help=document.createElement('p');help.textContent='Préparation hors partie. Ajoutez un objet, réglez sa position, sa taille et le mode fixe/manipulable. En jeu, les meubles se prennent à deux mains ; écartez-les pour ajuster la taille. Enregistrez les déplacements avant de quitter.';
     const credit=document.createElement('a');credit.href=OBJECT_CATALOG.source;credit.target='_blank';credit.rel='noopener';credit.textContent='Modèles Kenney — Furniture Kit 2.0 — CC0';
     this.catalogue.className='players';
+    const previews:{asset:string;image:HTMLImageElement;status:HTMLElement}[]=[];
     for(const asset of OBJECT_CATALOG.assets){const card=document.createElement('article');card.className='player';const name=document.createElement('h3');name.textContent=asset.name;const info=document.createElement('p');info.textContent=`${asset.category} · ${asset.hands} main(s) · hauteur ${asset.size.height} m`;
+      const image=document.createElement('img'),status=document.createElement('p');image.className='library-thumbnail';image.alt=`Aperçu 3D : ${asset.name}`;image.width=360;image.height=240;image.hidden=true;status.textContent='Chargement de l’aperçu…';card.append(image,status);previews.push({asset:asset.id,image,status});
       const add=button('Ajouter',()=>void this.command({action:'add',asset:asset.id}));add.dataset.asset=asset.id;this.buttons.push(add);card.append(name,info,add);this.catalogue.append(card);}
+    catalogPreviews(this.catalogue,previews);
     this.select.setAttribute('aria-label','Objet à modifier');this.select.onchange=()=>{this.dirty=false;this.drawForm();};this.form.oninput=()=>{this.dirty=true;};
     const save=button('Enregistrer les objets déplacés',()=>void this.command({action:'save'}));save.id='library-save-placements';this.buttons.push(save);
     const reload=button('Recharger les réglages',()=>{this.dirty=false;this.key='';this.receive(this.model,this.revision,this.objects,this.blocked);});
     this.message.setAttribute('role','status');this.root.append(title,help,credit,this.summary,this.catalogue,this.select,this.form,save,reload,this.message);parent.append(this.root);
+    const shortcut=document.createElement('a');shortcut.className='library-shortcut';shortcut.href='#object-library';shortcut.textContent='Voir la bibliothèque d’objets ↓';parent.prepend(shortcut);
   }
   receive(model:RoomModel|null,revision:number,objects:ObjectSnapshot|undefined,blocked:boolean){
     this.model=model;this.revision=revision;this.objects=objects;this.blocked=blocked||!objects||objects.held.length>0||!model;

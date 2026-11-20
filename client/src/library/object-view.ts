@@ -6,7 +6,7 @@ import type { ObjectId } from '../../../server/src/object-manipulation.js';
 import { disposeGroup } from '../model-view';
 
 const templates=new Map<string,Promise<THREE.Group>>();
-async function modelFor(item:RoomObject){
+export async function loadLibraryModel(item:Pick<RoomObject,'asset'>){
   const asset=libraryAsset(item.asset)!;
   let pending=templates.get(asset.model);
   if(!pending){pending=new GLTFLoader().loadAsync(asset.model).then(gltf=>gltf.scene);templates.set(asset.model,pending);pending.catch(()=>templates.delete(asset.model));}
@@ -38,7 +38,7 @@ export function addLibraryObjects(group:THREE.Group,room:RoomModel){
     node.position.set(item.pose.x,item.pose.y,item.pose.z);node.rotation.y=item.pose.yaw;node.scale.setScalar(item.pose.scale);
     const placeholder=new THREE.Mesh(new THREE.BoxGeometry(asset.size.width,asset.size.height,asset.size.depth),new THREE.MeshBasicMaterial({color:0x94a3b8,wireframe:true}));placeholder.position.y=asset.size.height/2;node.add(placeholder);
     roots[`prop:${item.id}`]=node;group.add(node);
-    void modelFor(item).then(model=>{
+    void loadLibraryModel(item).then(model=>{
       if(node.userData.disposed||group.userData.disposed){disposeGroup(model);return;}
       disposeGroup(placeholder);node.add(model);
     }).catch(()=>{if(!node.userData.disposed){placeholder.material.color.set(0xef4444);node.userData.modelError=true;}});

@@ -1,3 +1,9 @@
+## 0.14.1
+
+- Vignettes 3D des huit objets dans le catalogue admin PC, avant ajout.
+- Cadrage automatique, éclairage et images statiques générées localement avec un seul contexte temporaire.
+- Erreur d’aperçu non bloquante ; aucun changement des sauvegardes ou des énigmes.
+
 ## 0.14.0
 
 - Bibliothèque de huit objets Kenney CC0 locaux : table, chaise, bureau, lit, armoire, lampe, livres et plante.

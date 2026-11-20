@@ -3,7 +3,12 @@
 ## Utilisation
 
 Dans l’administration, activer une pièce, arrêter la partie puis ouvrir
-**Bibliothèque d’objets**. Huit modèles Kenney sont disponibles : table, chaise,
+**Bibliothèque d’objets**. Depuis 0.14.1, chaque carte du catalogue affiche un aperçu 3D du modèle avant
+ajout. Les images sont calculées localement une seule fois quand le catalogue
+devient visible, avec un seul contexte WebGL temporaire puis libéré ; pas de
+caméra ni de WebXR requis. En cas d’échec, les commandes restent disponibles.
+
+Huit modèles Kenney sont disponibles : table, chaise,
 bureau, lit, armoire, lampe, livres et plante. **Ajouter** choisit une position
 libre au sol dans la pièce et enregistre immédiatement l’objet sur le serveur.
 Si aucun emplacement ne convient, l’ajout est refusé sans modifier la pièce.
