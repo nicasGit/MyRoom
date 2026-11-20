@@ -1,5 +1,9 @@
 # MyRoom
 
+[Bibliothèque d’objets 0.14.0](docs/object-library.md) : huit modèles Kenney CC0,
+ajout et sauvegarde par pièce depuis l’admin ou le menu mural, fixe/manipulable
+et taille ajustable à deux mains.
+
 Depuis 0.8.1, le vortex est l’accueil global, visible avant les objets d’aventure après calibrage. Il ne dépend plus de l’aventure choisie. Configurer et confirmer le passage une fois pour la pièce dans Team Portal.
 
 Version 0.8.0 publiée : [Team Portal](docs/team-portal.md) ajoute quatre bâtons nominatifs et un rituel d’entrée coopératif à Menthe 27 0.3.0. Les quatre passages déclenchent une seule fois le coffre existant. Configurer et confirmer le passage depuis l’administration avant les essais ; la simulation PC reste explicitement distincte d’un essai Quest.

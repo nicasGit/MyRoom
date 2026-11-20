@@ -98,7 +98,7 @@ wss.on('connection', (ws, req) => {
         if(++objectCount>80){ws.close(1008,'Trop de déplacements');return;}
         room.snapshot();const command=parseObjectCommand(message);
         const staff=STAFF_IDS.includes(command.target as any);
-        if(room.portal.active&&(!staff||!room.portal.canGrab(slot!,command.target))&&command.action!=='cancel'){ws.send(JSON.stringify({type:'object_result',changed:false,message:'Baton reserve a sa place ; introduction active.'}));return;}
+        if(room.portal.active&&(staff?!room.portal.canGrab(slot!,command.target):!command.target.startsWith('prop:'))&&command.action!=='cancel'){ws.send(JSON.stringify({type:'object_result',changed:false,message:'Baton reserve a sa place ; introduction active.'}));return;}
         if(staff&&!room.portal.active){ws.send(JSON.stringify({type:'object_result',changed:false,message:'Introduction inactive.'}));return;}
         const result=room.objects.act(command,id,room.model,Date.now(),randomUUID());
         if(result.changed&&staff&&command.action==='grab'&&!room.portal.snapshot().players[slot!-1].claimed)room.portal.claim(slot!,command.target);

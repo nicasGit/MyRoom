@@ -1,5 +1,16 @@
 # Architecture MyRoom
 
+## Bibliothèque 0.14.0
+
+Catalogue local versionné, huit GLB CC0 Kenney et instances facultatives
+`RoomModel.objects` indépendantes des neuf points d’énigmes. Les placements
+sont conservés par RoomStore ; les poses de session et baux vivent dans
+ObjectManipulation sous `prop:<id>`, avec règles de mains et échelle validées
+côté serveur. Les changements de mobilier sont exclus des clés de réinitialisation
+de l’aventure et du portail. Le chargement GLB est commun aux modes d’affichage
+et prévisualisations. Aucun comportement de puzzle dupliqué.
+Voir [la bibliothèque et ses limites](docs/object-library.md).
+
 ## Révélation personnelle 0.13.2
 
 La vue du vortex utilise l'attribution `claimed` de la place courante, confirmée

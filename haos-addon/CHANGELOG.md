@@ -1,3 +1,11 @@
+## 0.14.0
+
+- Bibliothèque de huit objets Kenney CC0 locaux : table, chaise, bureau, lit, armoire, lampe, livres et plante.
+- Ajout, réglages, fixe/manipulable et sauvegarde depuis l’admin et le menu mural.
+- Prises partagées et taille ajustable avec deux mains ; prise au clic dans le simulateur.
+- Placements persistants, anciens modèles conservés, progression des énigmes préservée.
+- Objets incassables ; lampe et portes d’armoire décoratives. Aucun essai physique Quest/iPad.
+
 ## 0.13.3
 
 - Boutons Team Léon et Noms aléatoires dans l’administration et le menu du casque.

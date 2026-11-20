@@ -1,5 +1,39 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Bibliothèque initiale, 0.14.0
+
+Branche `feat/object-library`. Huit modèles GLB Kenney Furniture Kit 2.0 sous
+CC0 : table, chaise, bureau, lit, armoire, lampe, livres et plante. Archive
+récupérée sur miroir, empreinte SHA-256 et licence originale vérifiées ;
+fichiers locaux inchangés, source et empreintes individuelles conservées.
+
+Bibliothèque dans l’admin PC et le menu mural : ajout, sélection, suppression
+confirmée, mode fixe/manipulable, rotation horizontale, taille et sauvegarde.
+L’admin propose aussi le nom et X/Y/Z. Prises partagées : deux mains pour les
+meubles, une ou deux pour les petits objets ; écartement pour redimensionner.
+Simulateur : prendre au clic/toucher, transporter au joystick, bouton Poser.
+
+Instances versionnées et validées dans la pièce, sauvegarde atomique existante,
+32 objets maximum, tailles ×0,1 à ×3, vérification murs et plafond. Anciennes
+pièces et neuf points conservés. Baux, refus concurrents, révisions et nettoyage
+sur déconnexion réutilisés. Les placements de mobilier survivent aux transitions
+portail/énigmes. Les changements d’objets ne réinitialisent pas la progression.
+L’édition et la sauvegarde sont protégées par l’admin existante, hors session.
+
+Limites : objets incassables et décoratifs, lampe sans éclairage commandé, pas
+d’ouverture d’armoire, de physique ou de déclencheurs d’indices ; importateur
+de packs et rattachement par puzzle à venir. Pas de test physique Quest/iPad.
+Un test a détecté le mauvais nombre de mains client pour les meubles ; corrigé
+et couvert par un test client/serveur de redimensionnement. Les objets masqués
+dans le couloir ou le mode relevé ne peuvent plus être pris invisiblement.
+Documentation : [Bibliothèque](object-library.md).
+Validation : npm run typecheck, npm run build et npm test réussis (149 tests),
+git diff --check. Avertissement Vite connu : chunk Three.js 575 Ko.
+Chrome logiciel : huit modèles chargés, 1 238 triangles, shaders valides ; ajout
+et modification taille/fixe par le formulaire admin vérifiés sur une pièce de
+test isolée. Contrôles automatisés via événements DOM, pas de test casque.
+Publication en cours.
+
 ### 20 novembre 2026 - Presets des noms, 0.13.3
 
 Branche `feat/team-name-presets`. Deux boutons distincts dans l’administration

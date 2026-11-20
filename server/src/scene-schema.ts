@@ -1,4 +1,5 @@
 // Pure geometry/schema module shared with the browser. All dimensions are metres.
+import { parseRoomObjects,libraryAsset,objectFootprint,type RoomObjects,type RoomObject,type LibraryPose } from './object-library.js';
 export type Point2 = { x: number; z: number };
 export type Obstacle = { name: string; x: number; z: number; width: number; depth: number; height: number };
 export type Opening = { name:string; kind:'door'|'window'; wall:number; offset:number; width:number; height:number; sill:number };
@@ -6,7 +7,7 @@ export const PUZZLE_ITEMS=['chest','sun','tree','moon','star','table','four','ei
 export type PuzzleItem=typeof PUZZLE_ITEMS[number];
 export type WallPanel={wall:number;offset:number};
 export type PuzzleLayout={points:Record<PuzzleItem,Point2>;panel?:WallPanel;poses?:Partial<Record<PuzzleItem,{y:number;yaw:number}>>};
-export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[]; puzzles?:PuzzleLayout };
+export type RoomModel = { id: string; name: string; floor: Point2[]; height: number; obstacles: Obstacle[]; openings:Opening[]; puzzles?:PuzzleLayout; objects?:RoomObjects };
 export type RoomLibrary = { version: 1; revision: number; activeId: string | null; rooms: RoomModel[] };
 const number = (n: unknown, min: number, max: number): n is number => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
 const text = (n: unknown): n is string => typeof n === 'string' && n.trim().length > 0 && n.length <= 64;
@@ -87,6 +88,7 @@ export function parseRoom(value: unknown): RoomModel {
     if(a.wall===b.wall&&Math.min(a.offset+a.width,b.offset+b.width)-Math.max(a.offset,b.offset)>1e-8&&Math.min(a.sill+a.height,b.sill+b.height)-Math.max(a.sill,b.sill)>1e-8)throw new Error('Deux ouvertures se chevauchent sur le même mur.');
   }
   const room:RoomModel={id:r.id,name:r.name.trim(),floor,height:r.height,obstacles,openings};
+  if(r.objects!==undefined){room.objects=parseRoomObjects(r.objects);for(const item of room.objects.items)validateObjectPlacement(room,item);}
   if(r.puzzles!==undefined){
     const layout=object(r.puzzles),raw=object(layout.points);
     if(Object.keys(layout).some(key=>!['points','panel','poses'].includes(key))||Object.keys(raw).length!==PUZZLE_ITEMS.length)throw new Error('Placer les neuf éléments des énigmes.');
@@ -109,6 +111,18 @@ export function parseRoom(value: unknown): RoomModel {
     }else{const proposed=findPuzzlePanel(room);if(proposed)room.puzzles.panel=proposed;}
   }
   return room;
+}
+export function validateObjectPlacement(room:Pick<RoomModel,'floor'|'height'>,item:RoomObject,pose:LibraryPose=item.pose){
+  if(pose.y+libraryAsset(item.asset)!.size.height*pose.scale>room.height+1e-8)throw Error('L’objet dépasse du plafond.');
+  const corners=objectFootprint(item,pose);
+  for(let i=0;i<4;i++){
+    const a=corners[i],b=corners[(i+1)%4];
+    if(!inside(a,room.floor)||!inside({x:(a.x+b.x)/2,z:(a.z+b.z)/2},room.floor))throw Error('L’objet dépasse des murs.');
+    for(let j=0;j<room.floor.length;j++){
+      const c=room.floor[j],d=room.floor[(j+1)%room.floor.length];
+      if(cross(a,b,c)*cross(a,b,d)<-1e-8&&cross(c,d,a)*cross(c,d,b)<-1e-8)throw Error('L’objet traverse un mur.');
+    }
+  }
 }
 export function canPlacePuzzlePoint(p:Point2,room:Pick<RoomModel,'floor'|'obstacles'>){
   return [-0.2,0.2].every(x=>[-0.2,0.2].every(z=>inside({x:p.x+x,z:p.z+z},room.floor)))&&inside(p,room.floor)&&!room.obstacles.some(o=>Math.abs(p.x-o.x)<o.width/2+0.2&&Math.abs(p.z-o.z)<o.depth/2+0.2);

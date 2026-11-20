@@ -1,3 +1,4 @@
+import { addLibraryObjects } from './library/object-view';
 import { ObstacleEditor } from './obstacle-editor';
 import { MenuMover,MenuPointers,type MenuHand } from './xr-menu-interactions';
 import { WallMenuView } from './portal/wall-menu-view';
@@ -44,7 +45,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.13.3');
+diagnostic('Version client', '0.14.0');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -184,6 +185,7 @@ enter.onclick = async () => {
       if(gameGroup){disposeGroup(gameGroup);gameGroup=undefined;}
       if(!calibration||!view||survey.hasDraft()){gameKey='';return;}gameKey=key;
       gameGroup=portal.visible()&&portal.state?portalView(portal.state,ownSlot):adventureGroup(view.model,view.state,ownId);
+      addLibraryObjects(gameGroup,view.model);
       applyObjectPoses(gameGroup,view.state.objects);
       const lid=gameGroup.userData.lid as THREE.Group|undefined;
       if(lid&&previousAngle!==undefined&&previousTarget===lid.userData.targetAngle)lid.rotation.x=previousAngle;
@@ -383,7 +385,7 @@ enter.onclick = async () => {
       if(inCorridor&&roomHead&&calibration&&portal.state){
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);
-        if(gameGroup){const staffs=Object.values(gameGroup.userData.grabbables??{});for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
+        if(gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
       }else corridor.group.visible=false;
       scene.background=inCorridor?corridorBackground:null;
       const screenInput=session!.interactionMode==='screen-space';
@@ -413,8 +415,8 @@ enter.onclick = async () => {
       obstacleEditor.update(wallLobby.roomMode&&pose&&!menuMover.holding?survey.editableObstacles:undefined,hands.map(h=>({...h,pressed:menuHands.some(m=>m.side===h.side&&m.pressed)})));
       surveyGroup?.traverse(node=>{if(Number.isInteger(node.userData.obstacleIndex))node.visible=node.userData.obstacleIndex!==obstacleEditor.index;});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding);
-      if(portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed))wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
-      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect()&&(!portal.visible()||!!portal.state?.active));
+      if(portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed)&&!hands.some(hand=>nearGrabbable(gameGroup,hand.position))&&!grabber.blocksSelect())wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect());
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);

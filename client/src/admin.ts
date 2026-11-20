@@ -1,3 +1,6 @@
+import { LibraryAdmin } from './library/library-admin';
+import { addLibraryObjects } from './library/object-view';
+import { modelGroup } from './model-view';
 import { TEAM_LEON, randomPlayerNames } from '../../server/src/player-name-presets.js';
 import { DisplayAdmin,type DisplayClient } from './display-admin';
 import type { ModePolicy } from '../../server/src/display-modes.js';
@@ -22,7 +25,8 @@ const notice = el('notice');
 const portalAdmin=new PortalAdmin(el('dashboard'),body=>api('portal',body),text=>{notice.textContent=text;});
 let library:RoomLibrary|undefined;
 let libraryRevision=-1;
-const preview=createPreview(el('admin-room-preview'));
+const preview=createPreview(el('admin-room-preview'),model=>addLibraryObjects(modelGroup(model),model));
+const objectLibrary=new LibraryAdmin(el('dashboard'),body=>api('rooms/objects',body),refresh);
 const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)=>api('rooms/save',{room,revision}),()=>{void refresh();});
 const startAdventure=document.createElement('button');startAdventure.textContent='Commencer les énigmes';startAdventure.id='adventure-start';el('adventure-reset').after(startAdventure);
 startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de commencer.';return;}void action('adventure/start',{});};
@@ -118,6 +122,7 @@ function render(state: State) {
   startAdventure.textContent=state.portal.config.enabled?'Commencer avec l’intro Vortex':'Commencer les enigmes';
   startAdventure.disabled=state.portal.active||state.adventure.running||['unconfigured','pending','complete'].includes(state.adventure.phase);
   library=state.library;
+  objectLibrary.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision,state.adventure.objects,state.adventure.running||state.portal.active);
   adventureEditor.receive(library.rooms.find(room=>room.id===library!.activeId)??null,library.revision);
   el('adventure-overview').textContent=`${state.adventure.running?'Partie en cours':'Préparation'} · ${state.adventure.phase} · ${state.adventure.message}`;
   el<HTMLInputElement>('adventure-test').checked=state.adventure.testMode;

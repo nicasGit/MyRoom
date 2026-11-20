@@ -1,3 +1,4 @@
+import { editRoomObjects } from './object-library-commands.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { WebSocket } from 'ws';
@@ -53,7 +54,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -143,6 +144,16 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       else if(req.url.endsWith('/reset')){if(Object.keys(body).length)throw new Error('Objet vide attendu');room.portal.cancel();room.adventure.reset();}
       else {if(Object.keys(body).length!==1||!('enabled' in body)||typeof body.enabled!=='boolean')throw new Error('Booléen attendu');room.adventure.setTestMode(body.enabled);}
       log('adventure_admin',{action:req.url.split('/').at(-1),testMode:room.adventure.snapshot().testMode});broadcast();reply(res,200,{ok:true});return;
+    }
+    if(req.url==='/api/admin/rooms/objects'){
+      try{
+        if(!room.model||room.adventure.snapshot().running)throw Error('Arrêtez la partie avant de modifier la bibliothèque.');
+        const command=body as Record<string,unknown>;
+        if(command.revision!==room.libraryRevision)throw Error('Bibliothèque modifiée. Actualisez.');
+        const model=editRoomObjects(room.model,body,room.snapshot().adventure.objects);
+        const library=store.change('save',command.revision,model);room.model=store.active();room.libraryRevision=library.revision;
+        log('room_objects_saved',{roomId:model.id,count:model.objects!.items.length,revision:library.revision});broadcast();reply(res,200,{library});
+      }catch(error){reply(res,400,{error:error instanceof Error?error.message:'Bibliothèque refusée.'});}return;
     }
     if(req.url?.startsWith('/api/admin/rooms/')) {
       const command=body as Record<string,unknown>;
