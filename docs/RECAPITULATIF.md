@@ -26,6 +26,7 @@ modification de fiche en v2 et ajout de v2 dans une pièce de test isolée.
 Pas HTML de saisie numérique corrigé pour accepter les dimensions GLB précises.
 Documentation : [import GLB](glb-import.md). Avertissement de taille Three.js
 connu conservé. Aucun essai physique Quest/iPad. Publication en cours.
+Le guide initial de bibliothèque renvoie désormais vers l’import GLB disponible.
 
 ### 20 novembre 2026 - Aperçus catalogue admin, 0.14.1
 

@@ -52,8 +52,9 @@ des définitions indépendantes des énigmes : ID stable, catégorie, chemin GLB
 local, dimensions en mètres et nombre de mains. Ajouter un modèle consiste à
 ajouter sa définition et son fichier local, conserver sa licence et vérifier
 les dimensions. Les huit entrées initiales sont rendues avec le même chargeur.
-Il n’y a pas encore d’importateur de packs depuis l’interface : les prochains
-packs s’ajouteront au catalogue livré avec l’application.
+Depuis 0.15.0, une [page dédiée permet l’import de plusieurs GLB](glb-import.md)
+et la configuration des modèles sans modifier le code. Les imports rejoignent
+le catalogue synchronisé ; les exemplaires déjà placés gardent leur version.
 
 Chaque pièce possède facultativement `objects: { version: 1, items: [...] }`.
 Une instance contient `id`, `asset`, `name`, `movable` et une `pose` composée de
