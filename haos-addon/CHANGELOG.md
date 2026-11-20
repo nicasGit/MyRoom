@@ -1,3 +1,9 @@
+## 0.13.3
+
+- Boutons Team Léon et Noms aléatoires dans l’administration et le menu du casque.
+- Quatre noms distincts parmi 40 personnages ; validation serveur existante conservée.
+- Aucun essai physique Quest.
+
 ## 0.13.2
 
 - Vortex, panneau en bois, faisceaux et flèche révélés individuellement après la prise de son propre bâton.

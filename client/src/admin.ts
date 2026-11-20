@@ -1,3 +1,4 @@
+import { TEAM_LEON, randomPlayerNames } from '../../server/src/player-name-presets.js';
 import { DisplayAdmin,type DisplayClient } from './display-admin';
 import type { ModePolicy } from '../../server/src/display-modes.js';
 import './admin.css';
@@ -26,7 +27,7 @@ const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)
 const startAdventure=document.createElement('button');startAdventure.textContent='Commencer les énigmes';startAdventure.id='adventure-start';el('adventure-reset').after(startAdventure);
 startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de commencer.';return;}void action('adventure/start',{});};
 const catalogPanel=document.createElement('section');catalogPanel.className='panel';
-catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Utiliser les noms suggérés</button></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
+catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Team Léon</button><button id="random-names" type="button" class="secondary">Noms aléatoires</button><p>Choisissez les noms puis cliquez sur Enregistrer les noms.</p></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
 el('dashboard').prepend(catalogPanel);
 const puzzleAdmin=document.createElement('div');puzzleAdmin.innerHTML='<p id="adventure-captain"></p><button id="adventure-hint">Partager l’indice suivant</button><button id="adventure-reset-puzzle" class="secondary">Réinitialiser l’énigme active</button><p id="adventure-hints"></p>';catalogPanel.append(puzzleAdmin,el('adventure-reset'));el('adventure-reset').textContent='Réinitialiser l’aventure';
 const saveObjects=document.createElement('button');saveObjects.textContent='Enregistrer les objets déplacés dans la pièce';puzzleAdmin.append(saveObjects);let objectRevision=0;
@@ -44,7 +45,9 @@ let latestAdventureRevision=0,namesRevision=0,namesDirty=false,catalogKey='';
 let catalog:AdventureManifest[]=[];
 const nameFields=Array.from({length:4},(_,index)=>{const label=document.createElement('label');label.textContent=`Place ${index+1} `;const input=document.createElement('input');input.id=`player-name-${index+1}`;input.maxLength=40;input.required=true;input.oninput=()=>{namesDirty=true;};label.append(input);el('player-name-fields').append(label);return input;});
 el('player-names').onsubmit=event=>{event.preventDefault();void (async()=>{try{await api('players/names',{names:nameFields.map(input=>input.value),revision:namesRevision});namesDirty=false;await refresh();}catch(error){notice.textContent=String(error);}})();};
-el('suggest-names').onclick=()=>{const manifest=catalog.find(m=>`${m.id}@${m.version}`===el<HTMLSelectElement>('adventure-catalog').value);nameFields.forEach((input,index)=>{input.value=manifest?.players.suggestedNames[index]??`Joueur ${index+1}`;});namesDirty=true;};
+const fillNames=(names:readonly string[])=>{nameFields.forEach((input,index)=>{input.value=names[index]!;});namesDirty=true;};
+el('suggest-names').onclick=()=>fillNames(TEAM_LEON);
+el('random-names').onclick=()=>fillNames(randomPlayerNames());
 el('adventure-select').onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de changer d’aventure.';return;}const manifest=catalog.find(m=>`${m.id}@${m.version}`===el<HTMLSelectElement>('adventure-catalog').value);if(manifest&&confirm('Changer d’aventure et réinitialiser sa progression ?'))void action('adventure/select',{id:manifest.id,version:manifest.version,revision:latestAdventureRevision});};
 el('adventure-stop').onclick=()=>{void action('adventure/stop',{});};
 function logout() {

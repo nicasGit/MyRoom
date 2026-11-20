@@ -1,3 +1,4 @@
+import { TEAM_LEON, randomPlayerNames } from '../../../server/src/player-name-presets.js';
 import * as THREE from 'three';
 import type { PortalPublic } from '../../../server/src/portal/portal-types.js';
 import type { AdventureState } from '../../../server/src/adventure.js';
@@ -61,6 +62,7 @@ export class WallLobby {
     if(this.tab==='settings'){
       lines[0]=`Groupe : ${p.config.playerCount??4} joueur(s)`;
       buttons.push({id:'less',title:'Moins de joueurs'},{id:'more',title:'Plus de joueurs'});
+      buttons.push({id:'team-leon',title:'Team Léon'},{id:'random-names',title:'Noms aléatoires'});
       l.names.forEach((name,i)=>buttons.push({id:`name:${i}`,title:`${i+1}. ${name}`}));
       buttons.push({id:'fit-portal',title:'Centrer le vortex'},{id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
     }
@@ -100,6 +102,7 @@ export class WallLobby {
         else config.playerCount=Math.max(1,Math.min(4,(config.playerCount??4)+(id==='more'?1:-1)));
         await this.request('portal',{action:'configure',revision:state.portal.revision,config});
       }else if(id.startsWith('adventure:')){const item=this.lobby!.adventures[Number(id.slice(10))];await this.request('adventure/select',{id:item.id,version:item.version,revision:state.adventure.revision});}
+      else if(id==='team-leon'||id==='random-names'){await this.request('players/names',{names:id==='team-leon'?[...TEAM_LEON]:randomPlayerNames(),revision:state.playerNamesRevision});}
       else if(id==='save-name'){const names=[...state.playerNames];names[this.editing]=this.name;await this.request('players/names',{names,revision:state.playerNamesRevision});this.tab='settings';}
       this.notice='Réglage appliqué.';this.nextPoll=0;
     }catch(error){this.notice=String(error);this.notify(this.notice);}finally{this.busy=false;this.draw(true);}

@@ -1,5 +1,18 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Presets des noms, 0.13.3
+
+Branche `feat/team-name-presets`. Deux boutons distincts dans l’administration
+et le menu mural : Team Léon (Léon, Reno, Fabien, Nico) et Noms aléatoires
+(quatre personnages différents, sans doublons, parmi 40 personnages).
+Sur PC les boutons remplissent les champs puis Enregistrer les noms valide ;
+dans le casque ils appliquent les noms via la commande protégée existante,
+avec contrôle de révision. Aucune modification de progression.
+Noms toujours conservés uniquement pendant ce démarrage du serveur.
+Cette livraison concerne les noms ; bibliothèque et créateur restent à implémenter.
+Validation : npm run typecheck, npm run build et npm test réussis
+(142 tests). Aucun essai physique Quest. Publication en cours.
+
 ### 19 novembre 2026 — révélation individuelle du vortex, 0.13.2 publiée
 
 Branche `fix/personal-vortex-unlock`. Chaque joueur voit le vortex et son panneau
