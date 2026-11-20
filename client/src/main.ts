@@ -47,7 +47,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.15.2');
+diagnostic('Version client', '0.15.3');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -196,8 +196,8 @@ enter.onclick = async () => {
     };
     const camera = new THREE.PerspectiveCamera();
     const grabInputs=new GrabInputs();
-    const squeezeStart=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,true),squeezeEnd=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,false);
-    const selectStart=(event:XRInputSourceEvent)=>grabInputs.select(event.inputSource,true),selectEnd=(event:XRInputSourceEvent)=>grabInputs.select(event.inputSource,false);
+    const squeezeStart=(event:XRInputSourceEvent)=>{void waitingSound.unlock();grabInputs.squeeze(event.inputSource,true);},squeezeEnd=(event:XRInputSourceEvent)=>grabInputs.squeeze(event.inputSource,false);
+    const selectStart=(event:XRInputSourceEvent)=>{void waitingSound.unlock();grabInputs.select(event.inputSource,true);},selectEnd=(event:XRInputSourceEvent)=>grabInputs.select(event.inputSource,false);
     session.addEventListener('selectstart',selectStart);session.addEventListener('selectend',selectEnd);
     session.addEventListener('squeezestart',squeezeStart);session.addEventListener('squeezeend',squeezeEnd);
     const rays:THREE.Line[]=[];
@@ -397,7 +397,7 @@ enter.onclick = async () => {
       gameGroup?.userData.animatePortal?.(Date.now());
       const roomHead=pose&&calibration&&!survey.hasDraft()&&!wallLobby.roomMode&&portal.visible()?toRoom(new THREE.Vector3().copy(pose.transform.position),calibration):undefined;
       const inCorridor=waiting.update(portal.state,ownSlot,roomHead,_time);
-      waitingSound.setActive(inCorridor&&socket?.readyState===WebSocket.OPEN&&!!portal.state?.players.find(player=>player.slot===ownSlot)?.crossed&&session!.visibilityState==='visible');
+      waitingSound.setActive(inCorridor&&socket?.readyState===WebSocket.OPEN&&session!.visibilityState==='visible');
       if(inCorridor&&roomHead&&calibration&&portal.state){
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);

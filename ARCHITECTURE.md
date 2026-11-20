@@ -1,5 +1,15 @@
 # Architecture MyRoom
 
+## Univers du vortex 0.15.3
+
+L'ouverture extérieure est plane. PortalWaiting choisit localement l'univers
+d'après le franchissement de tête et permet le retour MR après validation,
+sans modifier la progression serveur. Le couloir est masqué hors de cet état.
+Une enveloppe opaque centrée sur la tête couvre le passthrough alpha-blend ;
+le tunnel, le panneau et les fantômes restent dans le repère calibré de pièce.
+Le son synthétisé suit la même immersion locale, avec déverrouillage AudioContext
+sur gestes DOM et sélections/poignées XR. Les affichages système restent externes.
+
 ## Placement bibliothèque 0.15.2
 
 L'ajout d'objet accepte une pose facultative validée par le schéma existant et
@@ -73,7 +83,8 @@ le décor opaque. Voir [Team Portal](docs/team-portal.md#centrage-panneau-et-fan
 
 `WaitingAudio` synthétise une boucle locale de huit secondes via Web Audio,
 déverrouillée par un geste utilisateur. Elle suit l'affichage personnel du couloir
-et la validation serveur du passage, sans nouveau message ou règle d'aventure.
+et, depuis 0.15.3, commence dès le passage visuel de tête sans attendre la
+validation serveur du passage, sans nouveau message ou règle d'aventure.
 Une seule source active, fondus d'entrée/sortie et nettoyage des nœuds ; son refusé
 ou suspendu ne bloque pas le jeu. Le contexte est fermé à la sortie de la page.
 

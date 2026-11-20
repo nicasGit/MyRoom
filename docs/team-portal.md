@@ -1,5 +1,20 @@
 # Team Portal — préparation coopérative de session
 
+## Univers personnel — 0.15.3
+
+Après prise de son bâton et ouverture du portail, faire passer la tête par le
+disque suffit pour afficher un couloir virtuel entièrement opaque, avec les
+fantômes approximatifs des autres participants. Reculer la tête devant le plan
+revient en MR, même après confirmation du passage. Cela change le rendu local,
+sans annuler la validation serveur. Le décor reste ancré au repère manuel A/B.
+L'ouverture extérieure est plate de profil ; la profondeur est un effet du shader.
+Le son temporel synthétisé accompagne l'entrée visuelle ; une sélection/pince
+ou poignée XR permet aussi de réactiver l'audio si le navigateur l'a suspendu.
+Ce son n'est pas l'enregistrement original du TARDIS. Les écrans Guardian ou
+système restent sous le contrôle du casque. Aucun test physique Quest annoncé.
+
+Les sections suivantes retracent les versions précédentes.
+
 Version 0.8.0 publiée depuis `feature/team-portal`. Aucun essai physique Quest effectué par l’agent. Le rituel ne constitue pas une énigme et n’ajoute aucune condition de victoire.
 
 **Version 0.8.0 publiée.** Le blocage initial de traversée a été corrigé : l’ouverture initialise le détecteur avec la dernière pose validée récente, pour reconnaître un premier pas immédiat. TypeScript, compilation et les 85 tests réussissent, dont le scénario réseau complet. Publication GitHub réussie et manifeste ARM64 vérifié ; détails dans [le récapitulatif](RECAPITULATIF.md). Aucun essai matériel n’est annoncé.

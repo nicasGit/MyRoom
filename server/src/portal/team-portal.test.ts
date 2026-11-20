@@ -14,6 +14,9 @@ import { createRegistry,createCatalog } from '../adventures/catalog.js';
 import { suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
 import { suggestPortalPlacement,configurePortalPlacement } from './portal-placement.js';
 import { PortalWaiting } from '../../../client/src/portal/portal-waiting.js';
+import { vortexView } from '../../../client/src/portal/vortex-view.js';
+import { waitingTunnel } from '../../../client/src/portal/waiting-corridor.js';
+import * as THREE from 'three';
 import { hasStaffAccess } from '../../../client/src/portal/portal-access.js';
 import { roomCenter } from './portal-placement.js';
 const model:RoomModel={id:'portal',name:'Portal',floor:[{x:0,z:0},{x:8,z:0},{x:8,z:8},{x:0,z:8}],height:2.5,obstacles:[],openings:[]};model.puzzles=suggestPuzzleLayout(model,()=>0.4);
@@ -148,6 +151,24 @@ test('head passage: physical XR validates at four centimetres; other players and
   p.clearTracking(1);assert.equal(p.snapshot().players[0].crossed,true);
 });
 
+test('portal aperture stays planar from either side throughout animation; waiting cover is opaque',()=>{
+  const vortex=vortexView(1.4,2.2);
+  for(const seconds of [0,1,15,100]){
+    vortex.animate(seconds);vortex.group.updateMatrixWorld(true);
+    const bounds=new THREE.Box3().setFromObject(vortex.group);assert.equal(bounds.min.z,0);assert.equal(bounds.max.z,0);
+  }
+  const {shell}=waitingTunnel();assert.equal(shell.material.transparent,false);assert.equal(shell.material.opacity,1);
+  assert.equal(shell.material.side,THREE.BackSide);assert.equal(shell.material.depthTest,false);assert.equal(shell.material.depthWrite,false);assert.ok(shell.renderOrder<0);assert.equal(shell.frustumCulled,false);
+});
+
+test('head peek triggers at the plane with no full-body approach and returns after server confirmation',()=>{
+  const s=open().snapshot(),waiting=new PortalWaiting();let now=1000;
+  const sample=(d:number)=>waiting.update(s,1,{x:4,y:1.6,z:3+d},now+=16);
+  assert.equal(sample(.01),false);assert.equal(sample(.002),false);assert.equal(sample(-.001),true);assert.equal(sample(-.006),true);
+  s.players[0].crossed=true;assert.equal(sample(.006),false);assert.equal(sample(-.001),true);
+  assert.equal(s.players[0].crossed,true); // Rendering never rolls back progression.
+});
+
 test('head visual transition: local peek, acknowledgement, loss of tracking and session reset',()=>{
   const s=open().snapshot(),waiting=new PortalWaiting();let now=1000;
   const sample=(d:number,state=s,head=true)=>waiting.update(state,1,head?{x:4,y:1.6,z:3+d}:undefined,now+=300);
@@ -157,6 +178,8 @@ test('head visual transition: local peek, acknowledgement, loss of tracking and 
   assert.equal(sample(.4),false); // A second entry must approach again.
   assert.equal(sample(-.02),true);
   s.players[0].crossed=true;assert.equal(sample(-.1),true);
+  assert.equal(sample(.01),false); // Back to MR even after acknowledgement.
+  assert.equal(sample(-.01),true); // Immediate reversible re-entry.
   assert.equal(sample(-.1,s,false),false);
   assert.equal(sample(-.1),true); // Recovered confirmed seat.
   assert.equal(sample(-.1,{...s,sessionId:'new',players:s.players.map(p=>({...p,crossed:false}))}),false);
@@ -171,7 +194,7 @@ test('head visual transition: rotated reverse portal, aperture, readiness and di
   waiting.reset();for(const d of [.5,.1,-.02])assert.equal(sample(d,4),false);
   waiting.reset();sample(.5);now+=1500;assert.equal(sample(-.02),false);
   waiting.reset();sample(.5);assert.equal(sample(-1),false);
-  waiting.reset();s.players[3].ready=false;for(const d of [.5,.1,-.02])assert.equal(sample(d),false);
+  waiting.reset();s.players[3].ready=false;assert.equal(sample(.1),false);assert.equal(sample(-.02),true); // Local view does not wait for other clients.
 });
 
 test('portal modes: camera never auto-crosses; virtual and physical crossings remain distinct',()=>{

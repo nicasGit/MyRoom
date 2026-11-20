@@ -6,7 +6,8 @@ import type { PortalPublic,Vec3 } from '../../../server/src/portal/portal-types.
 /** Opaque enclosure: no camera movement, no dependency on native scene APIs. */
 export function waitingTunnel(){
   const group=new THREE.Group();
-  const shell=new THREE.Mesh(new THREE.SphereGeometry(100,24,16),new THREE.MeshBasicMaterial({color:0x030614,side:THREE.BackSide}));
+  const shell=new THREE.Mesh(new THREE.SphereGeometry(20,24,16),new THREE.MeshBasicMaterial({color:0x030614,side:THREE.BackSide,depthTest:false,depthWrite:false}));
+  shell.name='opaque-passthrough-cover';shell.renderOrder=-10000;shell.frustumCulled=false;
   group.add(shell);
   const material=new THREE.ShaderMaterial({
     side:THREE.BackSide,
@@ -27,14 +28,18 @@ export function waitingTunnel(){
   });
   const tunnel=new THREE.Mesh(new THREE.CylinderGeometry(5,5,60,64,1,true),material);
   tunnel.rotation.x=Math.PI/2;tunnel.position.set(0,1.5,-16);group.add(tunnel);
-  return {group,animate:(seconds:number)=>{material.uniforms.time.value=seconds;}};
+  return {group,shell,animate:(seconds:number)=>{material.uniforms.time.value=seconds;}};
 }
 
 export function waitingCorridor(){
   const view=waitingTunnel(),group=new THREE.Group(),board=vortexSign(),ghosts=new PortalGhosts();
-  group.add(view.group,board.group,ghosts.group);group.visible=false;
+  group.add(view.group,view.shell,board.group,ghosts.group);group.visible=false;
   return {group,update(state:PortalPublic,slot:number,head:Vec3,seconds:number){
     const p=state.config.portal;
+    // Alpha-blend WebXR clears to transparent regardless of scene.background.
+    // An opaque enclosure covers both eyes in every direction; only this flat
+    // background follows the head. The tunnel and sign remain room anchored.
+    view.shell.position.set(head.x,head.y,head.z);
     view.group.position.set(p.x,0,p.z);view.group.rotation.y=p.yaw+(p.direction===-1?Math.PI:0);
     if(!group.visible){
       // Position once on entry in the calibrated room, never follow the head.

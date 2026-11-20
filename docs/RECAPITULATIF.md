@@ -1,5 +1,32 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Vortex plat et univers réversible, 0.15.3
+
+Branche `fix/reversible-vortex-universe`. L'immersion visuelle suit le passage
+de la tête au plan du vortex, sans attendre l'approche complète ni le suivi
+des autres joueurs. Retour MR en repassant devant le plan, y compris après
+validation du passage serveur. Hystérésis de sortie 5 mm et validation de la
+fenêtre du portail ; rejets de sauts/pertes de suivi conservés. La progression
+autoritaire et les méthodes de validation restent inchangées. Une enveloppe
+opaque autour de la tête couvre tout le champ de vue : le fond Three.js seul
+est forcé transparent par le mode WebXR alpha-blend. Tunnel, panneau et fantômes
+restent dans le repère de pièce. Guardian et les affichages du système Quest
+ne sont pas contrôlés par l'application.
+
+L'ouverture extérieure est un disque plat avec anneau et particules coplanaires,
+sans les anciennes spirales géométriques coniques. L'illusion de profondeur
+provient du shader ; le vrai couloir virtuel n'apparaît qu'une fois la tête
+passée. Son temporel synthétisé déclenché dès l'immersion locale, sans attendre
+le drapeau crossed du serveur ; déverrouillage/reprise AudioContext aussi depuis
+selectstart et squeezestart XR, en plus des gestes DOM. Arrêt au recul en MR,
+perte de suivi, fin de session ou masquage de l'application. Aucun enregistrement
+original du TARDIS ajouté. Vérifications : npm run typecheck, npm run build,
+npm test (158 réussis), git diff --check. Tests de passage près du plan,
+retour après accusé serveur, reprise de suivi, entrée sans attendre les autres,
+planéité animée, enveloppe opaque et tests Web Audio existants réussis.
+Avertissement habituel de taille du bundle Three.js. Aucun essai physique Quest.
+Publication en cours.
+
 ### 20 novembre 2026 - Placement bibliothèque casque et admin PC, 0.15.2
 
 Branche `feat/headset-library-placement`. Dans le menu mural, choisir un modèle
@@ -28,7 +55,10 @@ Le test initial a révélé une hauteur négative via glissement dans un plan du
 gizmo : corrigé par bornage vertical sol/plafond, puis sauvegarde vérifiée.
 Tests de rayon/hauteur, validation des poses, droits API, commandes périmées,
 objets tenus et restauration disque. Avertissement habituel de bundle Three.js.
-Aucun test matériel Quest. Publication en cours.
+Aucun test matériel Quest. Publication 0.15.2 vérifiée : commit `0353f40`,
+[workflow 44748663393](https://github.com/nicasGit/MyRoom/actions/runs/44748663393)
+réussi, image `ghcr.io/nicasgit/myroom:0.15.2`, `linux/arm64`, label `0.15.2`,
+digest `sha256:5684550c17087ef7a17337ecddb3afc3a31dc5d8a78990d911d9f0ef9c2801a4`.
 
 ### 20 novembre 2026 - Coffre importé, 0.15.1
 

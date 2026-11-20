@@ -1,3 +1,10 @@
+## 0.15.3
+
+- Vortex plat : disque, contour et particules coplanaires, sans volume conique visible en faisant le tour.
+- Passage de tête : univers opaque à l'entrée et retour MR en reculant, même après validation serveur.
+- L'immersion locale n'attend plus que tous les autres joueurs aient leur suivi prêt ; progression serveur inchangée.
+- Son temporel dès l'entrée visuelle, sans attendre l'accusé serveur ; déverrouillage audio également par gâchette/poignée XR.
+
 ## 0.15.2
 
 - Casque : choisir un objet dans la bibliothèque, aperçu au rayon, hauteur/rotation/taille puis pose enregistrée dans la pièce.
