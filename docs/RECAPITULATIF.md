@@ -1,5 +1,20 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 20 novembre 2026 - Coffre importé, 0.15.1
+
+Branche `feat/imported-puzzle-chest`. Le coffre d'énigme utilise le GLB
+`treasure_chest_1k` déjà importé sur le serveur, identifié par son empreinte
+de contenu (indépendamment du nom éditable). Aucun binaire ajouté au dépôt.
+Le modèle doit rester dans le catalogue du serveur ; coffre procédural conservé
+si absent ou chargement impossible. Couvercle séparé animé autour du pivot
+du GLB et verrou masqué après ouverture. Dimensions de jeu 0,9 × 0,66 × 0,58 m,
+placements existants, panneau mural, manipulation à deux mains, proximité,
+indice sous le coffre et règles serveur conservés. Aucun changement du calibrage.
+Vérifications : npm run typecheck, npm run build et npm test réussis (154 tests),
+git diff --check réussi. Avertissement habituel de taille du bundle Three.js.
+Structure du GLB vérifiée sur le serveur : corps, couvercle avec pivot arrière,
+poignées et verrou séparés. Rendu en casque non testé. Publication en cours.
+
 ### 20 novembre 2026 - Bibliothèque GLB et import par lot, 0.15.0
 
 Branche `feat/glb-library-import`. Page dédiée Bibliothèque, import de dix GLB

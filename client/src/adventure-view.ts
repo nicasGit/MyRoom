@@ -91,6 +91,6 @@ export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:str
 }
 export function animateAdventure(group:THREE.Group,time:number){
   const under=group.userData.underChest as {chest:THREE.Group;clue:THREE.Mesh;base:THREE.Vector3}|undefined;if(under)under.clue.visible=under.chest.position.y-under.base.y>0.25||Math.hypot(under.chest.position.x-under.base.x,under.chest.position.z-under.base.z)>0.45;
-  const lid=group.userData.lid as THREE.Group|undefined;if(lid)lid.rotation.x+=(Number(lid.userData.targetAngle)-lid.rotation.x)*0.08;
+  const lid=group.userData.lid as THREE.Group|undefined;if(lid){lid.rotation.x+=(Number(lid.userData.targetAngle)-lid.rotation.x)*0.08;const imported=lid.userData.importedLid as THREE.Group|undefined;if(imported)imported.rotation.x=lid.rotation.x;}
   const key=group.userData.key as THREE.Group|undefined;if(key)key.rotation.y=time/1200;
 }

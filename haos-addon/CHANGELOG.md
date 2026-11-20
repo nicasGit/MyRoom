@@ -1,3 +1,8 @@
+## 0.15.1
+
+- Coffre de l'énigme : modèle importé treasure_chest_1k, couvercle animé et verrou masqué après réussite.
+- Dimensions de jeu conservées et coffre procédural de secours si le modèle est absent.
+
 ## 0.15.0
 
 - Reprises bornées des verrouillages transitoires Windows pendant les sauvegardes atomiques.

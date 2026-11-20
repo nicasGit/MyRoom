@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { libraryAssets } from '../../server/src/object-library.js';
+import { loadLibraryModel } from './library/object-view';
+import { disposeGroup } from './model-view';
 
 function woodTexture(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
@@ -50,5 +53,21 @@ export function createChest(open:boolean){
   // Local lights keep the materials legible without relying on environmental AR lighting.
   chest.add(new THREE.HemisphereLight(0xe6f2ff,0x4f3020,2));
   const light=new THREE.DirectionalLight(0xffe0ad,2.5);light.position.set(1,3,2);chest.add(light);
-  return {chest,hinge};
+  const root=new THREE.Group();root.name='puzzle-chest';root.add(chest);
+  // Resolve the uploaded binary by content, independently of its editable name.
+  const asset=libraryAssets().find(item=>item.model.endsWith('/8d1b7d71df9ed0a3feb17c1817709df2bb11cfadd3ddb61da2a40b26b8df6fc9.glb'));
+  if(asset)void loadLibraryModel({asset:asset.id,assetVersion:asset.version}).then(model=>{
+    if(root.userData.disposed){disposeGroup(model);return;}
+    const lid=model.getObjectByName('treasure_chest_lid');
+    if(!lid?.parent){disposeGroup(model);return;}
+    // The GLB lid origin is its rear hinge. Preserve that authored pivot.
+    const pivot=new THREE.Group();pivot.position.copy(lid.position);pivot.quaternion.copy(lid.quaternion);
+    lid.parent.add(pivot);pivot.add(lid);lid.position.set(0,0,0);lid.quaternion.identity();
+    pivot.rotation.x=hinge.rotation.x;hinge.userData.importedLid=pivot;
+    const lock=model.getObjectByName('treasure_chest_lock');if(lock)lock.visible=!open;
+    // Keep the original puzzle bounds and manipulation/proximity rules.
+    model.scale.multiply(new THREE.Vector3(.9/asset.size.width,.66/asset.size.height,.58/asset.size.depth));
+    chest.visible=false;root.add(model);root.userData.chestModel=asset.model;
+  }).catch(()=>{/* Keep the procedural chest when the uploaded model is unavailable. */});
+  return {chest:root,hinge};
 }
