@@ -32,7 +32,11 @@ git diff --check. Avertissement Vite connu : chunk Three.js 575 Ko.
 Chrome logiciel : huit modèles chargés, 1 238 triangles, shaders valides ; ajout
 et modification taille/fixe par le formulaire admin vérifiés sur une pièce de
 test isolée. Contrôles automatisés via événements DOM, pas de test casque.
-Publication en cours.
+Publication vérifiée sur origin/main : commit `fe99d75`, workflow
+[44697864429](https://github.com/nicasGit/MyRoom/actions/runs/44697864429) réussi.
+Image `ghcr.io/nicasgit/myroom:0.14.0` disponible ; configuration linux/arm64
+et label version 0.14.0 vérifiés directement dans le registre. Digest :
+`sha256:07133017a8e84a662d09dbd528fe50e9ad73f4a66e0e9e1ff091006e54f967d8`.
 
 ### 20 novembre 2026 - Presets des noms, 0.13.3
 
