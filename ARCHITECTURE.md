@@ -1,5 +1,15 @@
 # Architecture MyRoom
 
+## Fenêtre MR et reprise du rituel 0.15.4
+
+Un disque alpha zéro en NoBlending, rendu après le décor, révèle le passthrough
+dans l'ellipse d'entrée en WebXR alpha-blend. PortalWaiting conserve l'univers
+jusqu'à un franchissement inverse de cette ellipse, indépendamment de la
+progression serveur. Les interruptions brèves de pose ne basculent plus l'état.
+L'audio suit cet état et reprend après suspension/source terminée.
+Room.restartRitual crée une nouvelle session et réinitialise les bâtons et baux
+sans supprimer l'avancement d'aventure. Le panneau intérieur reste inchangé.
+
 ## Univers du vortex 0.15.3
 
 L'ouverture extérieure est plane. PortalWaiting choisit localement l'univers

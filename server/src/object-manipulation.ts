@@ -33,6 +33,12 @@ export class ObjectManipulation {
     const panel=puzzlePanel(model);if(panel)this.poses.panel={...panel.position,y:panel.height,yaw:panel.yaw};
   }
   snapshot():ObjectSnapshot{return {rules:structuredClone(this.rules),revision:this.revision,poses:structuredClone(this.poses),held:[...this.held].map(([target,l])=>({target,owner:l.owner,lease:l.lease,expiresAt:l.expiresAt}))};}
+  resetPortal(extra:Partial<Record<ObjectId,ObjectPose>>){
+    for(const [id,lease] of this.held)this.poses[id]=lease.original;
+    this.held.clear();
+    for(const id of ['staff1','staff2','staff3','staff4'] as const){if(extra[id])this.poses[id]=structuredClone(extra[id]);else delete this.poses[id];}
+    this.revision++;
+  }
   maintain(players:readonly string[],now:number){let changed=false;for(const [id,lease] of this.held)if(!players.includes(lease.owner)||lease.expiresAt<=now){this.poses[id]=lease.original;this.held.delete(id);changed=true;}if(changed)this.revision++;return changed;}
   act(c:ObjectCommand,owner:string,model:RoomModel|null,now:number,leaseId:string){
     const reject=(message:string)=>({changed:false,message});if(!model||(!model.puzzles&&!c.target.startsWith('staff')&&!isLibraryObjectId(c.target))||!this.poses[c.target])return reject('Objet indisponible.');

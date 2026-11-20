@@ -88,7 +88,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
         if(integer(c.revision)!==room.portal.snapshot().revision)throw Error('Le portail a change. Actualisez.');
         if(action==='configure'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arretez la session avant de placer le portail.');const config=configurePortalPlacement(room.portal.snapshot().config,c.config,room.model);if([...room.players.values()].some(slot=>slot>(config.playerCount??4)))throw Error("Deconnectez les places au-dessus du nombre choisi avant de reduire le groupe.");room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
         else if(action==='auto-place'){if(room.adventure.snapshot().running||room.portal.active)throw Error('Arrêtez la session avant de replacer le portail.');const config=suggestPortalPlacement(room.model,room.portal.snapshot().config);room.portalStore?.save(room.placementKey(),config);room.portal.configure(config);}
-        else if(action==='reset'){room.portal.cancel();preparePlacements();room.startSession();}
+        else if(action==='reset'){preparePlacements();room.restartRitual();}
         else if(action==='stop')room.portal.cancel();
         else if(action==='skip')room.portal.skip();
         else if(action==='cross')room.portal.adminCross(integer(c.slot,1,4));

@@ -16,6 +16,7 @@ import { suggestPortalPlacement,configurePortalPlacement } from './portal-placem
 import { PortalWaiting } from '../../../client/src/portal/portal-waiting.js';
 import { vortexView } from '../../../client/src/portal/vortex-view.js';
 import { waitingTunnel } from '../../../client/src/portal/waiting-corridor.js';
+import { crossesEntry,entryWindow } from '../../../client/src/portal/entry-window.js';
 import * as THREE from 'three';
 import { hasStaffAccess } from '../../../client/src/portal/portal-access.js';
 import { roomCenter } from './portal-placement.js';
@@ -180,7 +181,7 @@ test('head visual transition: local peek, acknowledgement, loss of tracking and 
   s.players[0].crossed=true;assert.equal(sample(-.1),true);
   assert.equal(sample(.01),false); // Back to MR even after acknowledgement.
   assert.equal(sample(-.01),true); // Immediate reversible re-entry.
-  assert.equal(sample(-.1,s,false),false);
+  assert.equal(sample(-.1,s,false),true); // Brief tracking loss preserves the universe and audio.
   assert.equal(sample(-.1),true); // Recovered confirmed seat.
   assert.equal(sample(-.1,{...s,sessionId:'new',players:s.players.map(p=>({...p,crossed:false}))}),false);
   assert.equal(sample(-.1,{...s,active:false}),false);
@@ -195,6 +196,37 @@ test('head visual transition: rotated reverse portal, aperture, readiness and di
   waiting.reset();sample(.5);now+=1500;assert.equal(sample(-.02),false);
   waiting.reset();sample(.5);assert.equal(sample(-1),false);
   waiting.reset();s.players[3].ready=false;assert.equal(sample(.1),false);assert.equal(sample(-.02),true); // Local view does not wait for other clients.
+});
+
+test('entry window: alpha punch is planar and crossing uses its ellipse, not the entire plane',()=>{
+  const p=config.portal;
+  assert.equal(crossesEntry({x:4,y:1.6,z:3.1},{x:4,y:1.6,z:2.9},p),true);
+  assert.equal(crossesEntry({x:4.6,y:2.1,z:3.1},{x:4.6,y:2.1,z:2.9},p),false);
+  assert.equal(crossesEntry({x:5,y:1.6,z:3.1},{x:5,y:1.6,z:2.9},p),false);
+  const window=entryWindow();assert.equal(window.material.blending,THREE.NoBlending);assert.equal(window.material.opacity,0);assert.equal(window.material.depthWrite,false);assert.equal(window.material.depthTest,false);assert.equal(window.material.side,THREE.DoubleSide);assert.ok(window.renderOrder>1800);
+});
+
+test('waiting universe: walking around the entry stays virtual; only exiting the hole returns MR',()=>{
+  const s=open().snapshot(),waiting=new PortalWaiting();let now=1000;
+  const sample=(x:number,z:number,head=true)=>waiting.update(s,1,head?{x,y:1.6,z}:undefined,now+=300);
+  assert.equal(sample(4,3.2),false);assert.equal(sample(4,2.8),true);
+  s.players[0].crossed=true;
+  for(const [x,z] of [[4.5,2.8],[5,2.8],[5,3.3],[4.5,3.3],[4,3.3]])assert.equal(sample(x,z),true);
+  assert.equal(sample(4,3.3,false),true);s.players[0].ready=false;assert.equal(sample(4,3.3),true);
+  assert.equal(sample(4,2.8),true);assert.equal(sample(4,3.2),false);assert.equal(s.players[0].crossed,true);
+});
+
+test('ritual restart resets claims, passages, session and leases while preserving room and puzzle progression',()=>{
+  const room=new Room();room.model=structuredClone(model);room.snapshot();room.portal.configure(config);room.startSession(true);
+  room.players.set('unit',1);room.maintain();room.portal.simulate(1,false);room.snapshot();
+  const before=room.snapshot(),pose=before.adventure.objects.poses.staff1!;
+  assert.equal(room.objects.act({type:'object_action',action:'grab',target:'staff1',revision:before.adventure.objects.revision,lease:'request',seq:1,hands:[{x:pose.x,y:pose.y+.2,z:pose.z}],pose},'unit',room.model,Date.now(),'lease').changed,true);
+  room.restartRitual();const after=room.snapshot();
+  assert.notEqual(after.portal.sessionId,before.portal.sessionId);assert.equal(after.portal.active,true);
+  assert.ok(after.portal.players.every(p=>!p.claimed&&!p.crossed));assert.equal(after.adventure.objects.held.length,0);
+  assert.deepEqual(after.adventure.objects.poses.staff1,{...after.portal.staffPositions!.staff1,yaw:0});
+  assert.deepEqual(after.model,before.model);assert.deepEqual(after.adventure.engine.instances,before.adventure.engine.instances);
+  room.portal.cancel();room.adventure.start();room.restartRitual();assert.equal(room.snapshot().adventure.running,false);
 });
 
 test('portal modes: camera never auto-crosses; virtual and physical crossings remain distinct',()=>{
