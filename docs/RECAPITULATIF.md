@@ -14,7 +14,11 @@ Validation : npm run typecheck, npm run build et npm test réussis (149 tests),
 git diff --check. Chrome : huit vignettes 360×240 chargées, cadrage visuel
 vérifié, affichage disponible même sans pièce active. Avertissement Vite connu
 sur la taille du chunk Three.js. Aucun essai physique Quest/iPad.
-Publication en cours.
+Publication vérifiée : commit `462729e` sur origin/main, workflow
+[44699430522](https://github.com/nicasGit/MyRoom/actions/runs/44699430522) réussi.
+Image `ghcr.io/nicasgit/myroom:0.14.1`, linux/arm64 et label version 0.14.1
+vérifiés dans le registre. Digest :
+`sha256:16f0df949c701ec970e045f040a7f272b39ef442e281b4b7768de08471e8096f`.
 
 ### 20 novembre 2026 - Bibliothèque initiale, 0.14.0
 
