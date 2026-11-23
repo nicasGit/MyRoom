@@ -2,6 +2,10 @@
 
 ### 20 novembre 2026 - Fenêtre MR, continuité et réinitialisation, 0.15.4
 
+Correctif de continuité : le bâton du joueur reste visible dans le couloir et
+s'attache à sa ceinture pendant l'attente. Sa prise est désactivée pendant
+cette phase pour éviter de le perdre.
+
 Branche `fix/portal-entry-window`. Depuis le couloir, un disque coplanaire écrit
 des pixels alpha zéro après le décor pour révéler le passthrough natif dans
 l'ouverture, en WebXR alpha-blend. Aucune capture vidéo ou texture de caméra.

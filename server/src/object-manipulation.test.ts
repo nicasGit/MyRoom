@@ -5,6 +5,7 @@ import { ObjectManipulation,parseObjectCommand,type ObjectCommand } from './obje
 import { parseRoom,suggestPuzzleLayout,type RoomModel } from './scene-schema.js';
 import { gripTransform,GrabInputs,ObjectGrabber,nearGrabbable,type GrabHand } from '../../client/src/object-grab.js';
 import { fitStaff,STAFF_MODELS } from '../../client/src/portal/staff-models.js';
+import { attachStaffToBelt } from '../../client/src/portal/staff-view.js';
 import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
@@ -128,6 +129,13 @@ test('staff orientation: full wrist rotation follows its grip pivot without chan
   const group=new THREE.Group(),staff=new THREE.Group();group.userData.grabbables={staff1:staff};group.add(staff);
   applyObjectPoses(group,{revision:1,poses:{staff1:pose},held:[]});assert.ok(staff.quaternion.angleTo(orientation)<1e-7);
   applyObjectPoses(group,{revision:2,poses:{staff1:{x:1,y:.7,z:1,yaw:0}},held:[]});assert.ok(staff.quaternion.angleTo(new THREE.Quaternion())<1e-7);
+});
+
+test('staff belt attachment: claimed staff follows the local head inside the vortex corridor',()=>{
+  const staff=new THREE.Group();attachStaffToBelt(staff,new THREE.Vector3(2,1.7,3),'right');
+  assert.ok(staff.position.distanceTo(new THREE.Vector3(2.18,.92,3.04))<1e-8);
+  assert.equal(staff.userData.beltAttached,true);
+  assert.ok(Math.abs(staff.rotation.z-.58)<1e-8);
 });
 
 test('staff quaternion protocol: rejects malformed, non-unit and non-staff rotations; accepts legacy yaw',()=>{

@@ -25,3 +25,10 @@ export function staffView(name:string,config:PortalConfig['staffs'][number],clai
   };
   return group;
 }
+
+/** Place a claimed staff on the local player's belt while inside the portal corridor. */
+export function attachStaffToBelt(staff:THREE.Object3D,head:THREE.Vector3,side:'left'|'right'='right'){
+  staff.position.set(head.x+(side==='left'?-0.18:0.18),Math.max(0.25,head.y-0.78),head.z+0.04);
+  staff.rotation.set(0,side==='left'?-0.2:0.2,side==='left'?-0.58:0.58);
+  staff.userData.beltAttached=true;
+}

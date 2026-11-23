@@ -24,6 +24,7 @@ import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
 import { PortalClient } from './portal/portal-client';
 import { portalView } from './portal/portal-view';
+import { attachStaffToBelt } from './portal/staff-view';
 import { XRHandsView } from './xr-hands-view';
 import { phoneHand,usePhoneHand } from './phone-hand';
 import { WallLobby } from './portal/wall-lobby';
@@ -402,7 +403,7 @@ enter.onclick = async () => {
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);
       }else if(!inCorridor)corridor.group.visible=false;
-      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
+      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;const ownStaff=gameGroup.userData.grabbables?.[`staff${ownSlot}`] as THREE.Object3D|undefined;if(ownStaff&&roomHead)attachStaffToBelt(ownStaff,roomHead,ownSlot%2?'right':'left');}
       scene.background=inCorridor?corridorBackground:null;
       const screenInput=session!.interactionMode==='screen-space';
       const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration,portal.visible()&&!!portal.state?.active):[];
@@ -432,7 +433,7 @@ enter.onclick = async () => {
       surveyGroup?.traverse(node=>{if(Number.isInteger(node.userData.obstacleIndex))node.visible=node.userData.obstacleIndex!==obstacleEditor.index;});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding&&!wallLobby.placement);
       if(!wallLobby.placement&&portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed)&&!hands.some(hand=>nearGrabbable(gameGroup,hand.position))&&!grabber.blocksSelect())wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
-      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect()&&!wallLobby.placement);
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!inCorridor&&!menuMover.holding&&!handCards.blocksSelect()&&!wallLobby.placement);
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);
