@@ -34,6 +34,7 @@ import { PortalWaiting } from './portal/portal-waiting';
 import { waitingCorridor } from './portal/waiting-corridor';
 import { WaitingAudio } from './portal/waiting-audio';
 import { RoomNameEditor } from './room-name';
+import { createSpatialAnchorHandles,restoreSpatialAnchors,writeSpatialAnchors } from './spatial-anchors';
 
 const waitingSound=new WaitingAudio();
 document.addEventListener('pointerdown',()=>{void waitingSound.unlock();});
@@ -142,7 +143,7 @@ enter.onclick = async () => {
     if (!renderer.domElement.isConnected) document.body.append(renderer.domElement);
     overlay.hidden = false;
     session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['local-floor'], optionalFeatures: ['dom-overlay','plane-detection','mesh-detection','hand-tracking'], domOverlay: { root: overlay },
+      requiredFeatures: ['local-floor'], optionalFeatures: ['anchors','dom-overlay','plane-detection','mesh-detection','hand-tracking'], domOverlay: { root: overlay },
     });
     currentXRSession=session;
     session.addEventListener('visibilitychange',()=>{if(session?.visibilityState!=='visible')waitingSound.setActive(false);});
@@ -173,6 +174,9 @@ enter.onclick = async () => {
     await renderer.xr.setSession(session);
     const reference = renderer.xr.getReferenceSpace();
     if (!reference) throw new Error('Référentiel XR indisponible');
+    const anchorRoomId=adventure.viewState()?.model?.id??'active';
+    const savedAnchors=await restoreSpatialAnchors(session,anchorRoomId);
+    let restoredAnchors:{a:XRAnchor;b:XRAnchor}|undefined=savedAnchors?{a:savedAnchors[0],b:savedAnchors[1]}:undefined;
     const scene = new THREE.Scene();
     const waiting=new PortalWaiting(),corridor=waitingCorridor();
     scene.add(corridor.group);
@@ -304,6 +308,7 @@ enter.onclick = async () => {
     let lastPlacementPress = -Infinity;
     let lastTrackingReason = 'Aucune position XR reçue.';
     let frameReceived = false;
+    let latestFrame:XRFrame|undefined;
     let placementTimer: ReturnType<typeof setTimeout> | undefined;
     let unbindPlace = () => {};
     resetScene = () => { wallLobby.placement=undefined;libraryPlacement.clear();roomNameEditor=undefined;waitingSound.setActive(false);waiting.reset();corridor.group.visible=false;scene.background=null;obstacleEditor.reset();hudAnchor.reset();surveyAnchor.reset();menuMover.reset();wallLobby.view.resetPlacement();surveyMenu.resetPlacement();markerA.visible = markerB.visible = target.visible = false; placement.cancel(); clearTimeout(placementTimer);importRequested=false;clearTimeout(importTimeout); };
@@ -328,6 +333,7 @@ enter.onclick = async () => {
           feedback.textContent = '✓ B placé. Calibrage terminé.';
           xrEvent('placement_accepted', { step: 'B', x: point.x, y: point.y, z: point.z });
           xrEvent('calibration_completed', { distance: calibration.distance });
+          const anchorA=firstPoint;if(latestFrame&&anchorA){void createSpatialAnchorHandles(latestFrame,reference!,anchorA,point).then(handles=>{if(handles)writeSpatialAnchors(anchorRoomId,handles);}).catch(()=>{});}
           survey.refresh();if(!survey.current())wallLobby.setRoomMode(true);
           calibrationMessage(`Calibré : A → B = ${calibration.distance.toFixed(2)} m ; B dans la pièce = (${roomPoint.x.toFixed(2)}, ${roomPoint.z.toFixed(2)}). Recommencez pour changer les repères.`);
         } catch (error) { rejectPlacement(`${String(error)} Visez B plus loin de A.`); }
@@ -383,6 +389,8 @@ enter.onclick = async () => {
       else rejectPlacement('Visez un repère au sol, à moins de 10 mètres.');
     });
     renderer.setAnimationLoop((_time, frame) => {
+      latestFrame=frame??undefined;
+      if(!calibration&&restoredAnchors&&frame){const a=frame.getPose(restoredAnchors.a.anchorSpace,reference)?.transform.position,b=frame.getPose(restoredAnchors.b.anchorSpace,reference)?.transform.position;if(a&&b){try{calibration=makeCalibration(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z));baseCalibration={...calibration,origin:calibration.origin.clone()};restoredAnchors=undefined;place.textContent='Calibrage restauré';place.disabled=true;calibrationMessage('Ancres spatiales Quest restaurées : les repères A/B ne sont pas à replacer.');xrEvent('calibration_restored',{source:'webxr-anchor'});}catch{}}}
       const pose = frame?.getViewerPose(reference);
       if(calibration){libraryPlacement.group.position.copy(calibration.origin);libraryPlacement.group.rotation.y=-calibration.yaw;}
       const placementSource=Array.from(session!.inputSources).filter(source=>source.targetRayMode==='tracked-pointer').sort((a,b)=>Number(b.handedness==='right')-Number(a.handedness==='right'))[0];
@@ -436,7 +444,7 @@ enter.onclick = async () => {
       menuMover.update([wallLobby.view,surveyMenu],menuMover.holding||(!obstacleEditor.holding&&!grabber.blocksSelect()&&!handCards.blocksSelect())?menuHands:[]);
       if(calibration){obstacleEditor.group.position.copy(calibration.origin);obstacleEditor.group.rotation.y=-calibration.yaw;}
       obstacleEditor.update(wallLobby.roomMode&&pose&&!menuMover.holding?survey.editableObstacles:undefined,hands.map(h=>({...h,pressed:menuHands.some(m=>m.side===h.side&&m.pressed)})));
-      surveyGroup?.traverse(node=>{if(Number.isInteger(node.userData.obstacleIndex))node.visible=node.userData.obstacleIndex!==obstacleEditor.index;});
+      surveyGroup?.traverse(node=>{if(Number.isInteger(node.userData.obstacleIndex)){const near=roomHead&&Math.hypot(node.position.x-roomHead.x,node.position.z-roomHead.z)<1.15;node.visible=node.userData.obstacleIndex===obstacleEditor.index||!!near;}});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding&&!wallLobby.placement);
       if(!wallLobby.placement&&portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed)&&!hands.some(hand=>nearGrabbable(gameGroup,hand.position))&&!grabber.blocksSelect())wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
       grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!inCorridor&&!menuMover.holding&&!handCards.blocksSelect()&&!wallLobby.placement);

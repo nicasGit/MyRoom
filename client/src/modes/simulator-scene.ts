@@ -83,7 +83,7 @@ export class SimulatorScene {
     if(this.hooks.intro()){
 
       const id=`staff${this.state.slot}`,node=this.game.userData.grabbables?.[id] as THREE.Object3D|undefined;
-      if(node&&ray.intersectObject(node,true).length){const pose=this.state.adventure.objects?.poses[id as 'staff1'];if(!pose||Math.hypot(pose.x-this.camera.position.x,pose.z-this.camera.position.z)>1.3){this.hooks.notify('Approchez votre bâton au joystick avant de le prendre.');return;}
+      if(node&&ray.intersectObject(node,true).length){const pose=this.state.portal.staffPositions?.[id as 'staff1'];if(!pose||Math.hypot(pose.x-this.camera.position.x,pose.z-this.camera.position.z)>1.3){this.hooks.notify('Approchez votre bâton au joystick avant de le prendre.');return;}
         this.synthetic={side:'right',pressed:true,position:new THREE.Vector3(pose.x,pose.y+.3,pose.z),yaw:0};this.firstGrip=true;return;}
     }
     this.hooks.select(this.game,ray.ray.origin,ray.ray.direction,this.camera);

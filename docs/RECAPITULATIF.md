@@ -19,6 +19,12 @@ main virtuelle se place sur l'objet visé au centre de l'image avant d'envoyer
 la prise. Le téléphone peut donc sélectionner un bâton dispersé dans la pièce
 sans disposer de contrôleurs XR.
 
+La simulation 3D utilise désormais les positions publiques des bâtons du portail
+(et non les poses d'énigmes), ce qui permet leur prise au joystick. Le menu mural
+administrateur expose quatre déplacements de 10 cm du vortex pour un casque ou
+un écran tactile/PC. Les obstacles du mode de création sont masqués au-delà de
+1,15 m et réapparaissent à proximité ; les collisions restent toujours actives.
+
 Branche `fix/portal-entry-window`. Depuis le couloir, un disque coplanaire écrit
 des pixels alpha zéro après le décor pour révéler le passthrough natif dans
 l'ouverture, en WebXR alpha-blend. Aucune capture vidéo ou texture de caméra.
