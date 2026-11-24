@@ -1,3 +1,8 @@
+## 0.15.5
+
+- Correction de la prise tactile Android : la main virtuelle vise le bâton au centre de l'image.
+- Le bâton reste attaché à la ceinture dans le couloir du vortex.
+
 ## 0.15.4
 
 - Fenêtre transparente vers le passthrough dans le trou d'entrée depuis le couloir.

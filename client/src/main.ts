@@ -24,8 +24,9 @@ import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
 import { PortalClient } from './portal/portal-client';
 import { portalView } from './portal/portal-view';
+import { attachStaffToBelt } from './portal/staff-view';
 import { XRHandsView } from './xr-hands-view';
-import { phoneHand,usePhoneHand } from './phone-hand';
+import { phoneHand,phoneHandAt,usePhoneHand } from './phone-hand';
 import { WallLobby } from './portal/wall-lobby';
 import { handPreview } from './hand-preview';
 import { PhoneControls } from './phone-controls';
@@ -47,7 +48,7 @@ function diagnostic(label: string, value: string) {
 }
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
-diagnostic('Version client', '0.15.4');
+diagnostic('Version client', '0.15.5');
 handPreview(document.querySelector('main')!);
 async function checkXR() {
   try {
@@ -402,7 +403,7 @@ enter.onclick = async () => {
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);
       }else if(!inCorridor)corridor.group.visible=false;
-      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;}
+      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;const ownStaff=gameGroup.userData.grabbables?.[`staff${ownSlot}`] as THREE.Object3D|undefined;if(ownStaff&&roomHead)attachStaffToBelt(ownStaff,roomHead,ownSlot%2?'right':'left');}
       scene.background=inCorridor?corridorBackground:null;
       const screenInput=session!.interactionMode==='screen-space';
       const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration,portal.visible()&&!!portal.state?.active):[];
@@ -419,7 +420,13 @@ enter.onclick = async () => {
       handsView.update(frame,reference,session!.inputSources,hands.filter(h=>h.pressed).map(h=>h.side));
       if(phoneEnabled&&pose&&calibration){
         const orientation=new THREE.Quaternion().copy(pose.transform.orientation);
-        const simulated=phoneHand(new THREE.Vector3().copy(pose.transform.position),orientation,calibration,phoneControls.pressed);
+        const cameraPosition=new THREE.Vector3().copy(pose.transform.position),forward=new THREE.Vector3(0,0,-1).applyQuaternion(orientation),ray=new THREE.Raycaster(cameraPosition,forward,0,8);
+        let handPosition=cameraPosition.clone().addScaledVector(forward,.55);
+        if(portal.visible()&&gameGroup){
+          gameGroup.updateMatrixWorld(true);const candidates=Object.values(gameGroup.userData.grabbables??{}).filter((node:any)=>node?.visible&&!node.userData.grabDisabled) as THREE.Object3D[];
+          const hit=candidates.flatMap(node=>ray.intersectObject(node,true)).sort((a,b)=>a.distance-b.distance)[0];if(hit)handPosition.copy(hit.point);
+        }
+        const simulated=phoneControls.pressed?phoneHandAt(handPosition,orientation,calibration,true):phoneHand(cameraPosition,orientation,calibration,false);
         hands.push(simulated.hand);handsView.simulateRight(simulated.local,orientation,phoneControls.pressed);
       }
       handStatus=calibration?`Prises : ${hands.length}/2 suivies, ${hands.filter(h=>h.pressed).length} fermées. Pince ou poignée latérale.`:'';
@@ -432,7 +439,7 @@ enter.onclick = async () => {
       surveyGroup?.traverse(node=>{if(Number.isInteger(node.userData.obstacleIndex))node.visible=node.userData.obstacleIndex!==obstacleEditor.index;});
       handCards.update(gameGroup,hands,adventure.viewState()?.state.hybrid,!!calibration&&!survey.hasDraft()&&!!pose&&!grabber.blocksSelect()&&!menuMover.holding&&!wallLobby.placement);
       if(!wallLobby.placement&&portal.visible()&&!portal.state?.active&&hands.some(hand=>hand.pressed)&&!hands.some(hand=>nearGrabbable(gameGroup,hand.position))&&!grabber.blocksSelect())wallLobby.interactionNotice('Rituel arrêté : Accueil > Commencer le rituel, puis prenez votre bâton.');
-      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!menuMover.holding&&!handCards.blocksSelect()&&!wallLobby.placement);
+      grabber.update(gameGroup,hands,!!calibration&&!survey.hasDraft()&&!!pose&&!inCorridor&&!menuMover.holding&&!handCards.blocksSelect()&&!wallLobby.placement);
       adventure.updatePosition(pose&&!survey.hasDraft()?new THREE.Vector3().copy(pose.transform.position):undefined);
       if(gameGroup)animateAdventure(gameGroup,_time);
       if(frame)updateScan(frame,pose??null);

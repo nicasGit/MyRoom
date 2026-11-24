@@ -1,6 +1,20 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 24 novembre 2026 - Prise tactile Android et bâton à la ceinture, 0.15.5
+
+Version client et add-on portés à 0.15.5 pour publier la correction Android.
+Les contrôles de typecheck, build et 164 tests sont passés avant publication.
+
 ### 20 novembre 2026 - Fenêtre MR, continuité et réinitialisation, 0.15.4
+
+Correctif de continuité : le bâton du joueur reste visible dans le couloir et
+s'attache à sa ceinture pendant l'attente. Sa prise est désactivée pendant
+cette phase pour éviter de le perdre.
+
+Correctif Android : lorsque la commande tactile « Prendre » est maintenue, la
+main virtuelle se place sur l'objet visé au centre de l'image avant d'envoyer
+la prise. Le téléphone peut donc sélectionner un bâton dispersé dans la pièce
+sans disposer de contrôleurs XR.
 
 Branche `fix/portal-entry-window`. Depuis le couloir, un disque coplanaire écrit
 des pixels alpha zéro après le décor pour révéler le passthrough natif dans
