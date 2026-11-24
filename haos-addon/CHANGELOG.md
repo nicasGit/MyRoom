@@ -1,3 +1,10 @@
+## 0.15.6
+
+- Correction de la prise du bâton dans la simulation 3D.
+- Déplacement du vortex depuis le menu d'administration sur casque ou PC.
+- Ancres WebXR persistantes optionnelles pour restaurer les repères A/B.
+- Obstacles de création visibles uniquement à proximité immédiate.
+
 ## 0.15.5
 
 - Correction de la prise tactile Android : la main virtuelle vise le bâton au centre de l'image.

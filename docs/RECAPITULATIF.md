@@ -1,5 +1,18 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 24 novembre 2026 - Simulation, ancres Quest et déplacement du vortex, 0.15.6
+
+Version client et add-on portés à 0.15.6. La simulation 3D utilise les positions
+du portail pour permettre la prise du bâton. Le menu mural d'administration permet
+de déplacer le vortex par pas de 10 cm, et l'administration PC conserve le réglage
+fin des coordonnées. Les ancres WebXR persistantes sont utilisées lorsqu'elles
+sont exposées par le navigateur ; le calibrage manuel A/B reste le repli.
+Pendant la création, les obstacles sont masqués au-delà de 1,15 m tout en restant
+actifs pour les collisions. Les contrôles de typecheck, build et tests sont à
+rejouer avant publication.
+
+Publication en préparation.
+
 ### 24 novembre 2026 - Prise tactile Android et bâton à la ceinture, 0.15.5
 
 Version client et add-on portés à 0.15.5 pour publier la correction Android.
@@ -18,6 +31,12 @@ Correctif Android : lorsque la commande tactile « Prendre » est maintenue, la
 main virtuelle se place sur l'objet visé au centre de l'image avant d'envoyer
 la prise. Le téléphone peut donc sélectionner un bâton dispersé dans la pièce
 sans disposer de contrôleurs XR.
+
+La simulation 3D utilise désormais les positions publiques des bâtons du portail
+(et non les poses d'énigmes), ce qui permet leur prise au joystick. Le menu mural
+administrateur expose quatre déplacements de 10 cm du vortex pour un casque ou
+un écran tactile/PC. Les obstacles du mode de création sont masqués au-delà de
+1,15 m et réapparaissent à proximité ; les collisions restent toujours actives.
 
 Branche `fix/portal-entry-window`. Depuis le couloir, un disque coplanaire écrit
 des pixels alpha zéro après le décor pour révéler le passthrough natif dans

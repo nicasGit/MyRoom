@@ -83,6 +83,7 @@ export class WallLobby {
       buttons.push({id:'team-leon',title:'Team Léon'},{id:'random-names',title:'Noms aléatoires'});
       l.names.forEach((name,i)=>buttons.push({id:`name:${i}`,title:`${i+1}. ${name}`}));
       buttons.push({id:'fit-portal',title:'Centrer le vortex'},{id:'verify-space',title:p.config.confirmed?'Passage vérifié : oui':'Confirmer espace physique'});
+      buttons.push({id:'portal-left',title:'Vortex ←'},{id:'portal-right',title:'Vortex →'},{id:'portal-forward',title:'Vortex ↑'},{id:'portal-back',title:'Vortex ↓'});
     }
     if(this.tab==='library'){
       lines[0]='Bibliothèque - choisir puis viser pour poser';
@@ -176,6 +177,7 @@ export class WallLobby {
       }
       else if(id==='start'){if(this.roomMode)throw Error('Quittez le mode pièces avant de démarrer.');await this.request('adventure/start',{});}
       else if(id==='fit-portal')await this.request('portal',{action:'auto-place',revision:state.portal.revision});
+      else if(id.startsWith('portal-')){const config=structuredClone(state.portal.config),step=.1;if(id==='portal-left')config.portal.x-=step;else if(id==='portal-right')config.portal.x+=step;else if(id==='portal-forward')config.portal.z-=step;else config.portal.z+=step;await this.request('portal',{action:'configure',revision:state.portal.revision,config});}
       else if(id==='stop')await this.request('adventure/stop',{});
       else if(id==='confirm-reset'){await this.request('adventure/reset',{});this.tab='home';}
       else if(id==='less'||id==='more'||id==='verify-space'){
