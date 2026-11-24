@@ -1,3 +1,9 @@
+## 0.15.8
+
+- Ajout du puzzle Videoclub retro : decouverte, montage de trois cassettes, erreurs et ordre gagnant.
+- Nouvelle aventure Menthe 27 version 0.4.0, avec progression coffre, blackjack puis videoclub.
+- Compatible avec les versions d aventure existantes et les pieces deja enregistrees.
+
 ## 0.15.7
 
 - Coffre enrichi avec fragments d’indices cachés et fausse piste.
