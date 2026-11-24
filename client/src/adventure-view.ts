@@ -13,7 +13,7 @@ export function applyObjectPoses(group:THREE.Group,objects:ObjectSnapshot|undefi
 export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'};
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};
 export const CARD_CLUES={four:'Mes quatre coins gardent quatre saisons.',eight:'Deux fois les saisons de l’année.',king:'Je porte une couronne ; ma valeur est dix.'};
-type Action={action:'discover_symbol'|'press_symbol'|'discover_clue'|'discover_card'|'choose_card';target:string};
+type Action={action:'discover_symbol'|'press_symbol'|'discover_clue'|'discover_card'|'choose_card';target:string}|{action:'discover_tape';tape:string};
 export function pickAdventureAction(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera):Action|undefined{
   group.updateMatrixWorld(true);
   const ray=new THREE.Raycaster(origin,direction.clone().normalize(),0,8);ray.camera=camera;
@@ -74,6 +74,7 @@ export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:str
     const sign=actionLabel(found?SYMBOL_NAMES[id]:`Balise ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_symbol',target:id});sign.position.y=0.85;node.add(sign);
     const fragmentId=CLUES[i],fragment=actionLabel(state.symbols.cluesFound.includes(fragmentId)?'Fragment lu':'Inspecter fragment','#ffd27a',{action:'discover_clue',target:fragmentId});fragment.position.y=0.62;fragment.visible=found&&!state.symbols.cluesFound.includes(fragmentId);node.add(fragment);
   }
+  if(state.videoclub){for(const [i,id] of (['tape-red','tape-blue','tape-gold'] as const).entries()){const point=([ 'four','eight','king'] as const)[i];const node=at(point);const tape=actionLabel(state.videoclub.found.includes(id)?`Cassette ${i+1}`:`Cassette ${i+1} ?`,'#d8b4fe',{action:'discover_tape',tape:id});tape.position.y=0.75;node.add(tape);}const table=at('table'),title=label('VIDÉOCLUB RÉTRO','#ffe082');title.position.y=1.2;table.add(title);return group;}
   if(state.hybrid){at('table').add(blackjackTable(state.hybrid,actorId,state.captainId));return group;}
   const hybridInstance=state.engine.instances.find(i=>i.type==='blackjack-hybrid');
   if(hybridInstance){if(!state.running)at('table').add(blackjackTable(hybridInstance.state as HybridPublicState,actorId,state.captainId));return group;}

@@ -3,6 +3,7 @@ import { toRoom,type makeCalibration } from './calibration';
 import type { AdventureCommand,PuzzleCommand,AdventureState,SymbolId,CardId } from '../../server/src/adventure.js';
 import { CLUES } from '../../server/src/puzzles/symbol-chest.js';
 import type { HybridAction } from '../../server/src/puzzles/blackjack-hybrid.js';
+import type { RetroState } from '../../server/src/puzzles/retro-videoclub.js';
 import { hybridOptions,hybridSummary } from './puzzles/blackjack-controls';
 import { BlackjackPreview,pickHybridAction } from './puzzles/blackjack-view';
 import { PUZZLE_ITEMS,parseRoom,parseLibrary,puzzlePanel,findPuzzlePanel,type Point2,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
@@ -15,6 +16,7 @@ export class AdventureClient {
   handAction(action:HybridAction){this.performHybrid(action);}
   private actorId:string|undefined;
   private hybridButtons:{button:HTMLButtonElement;ready:boolean}[]=[];
+  private retroButtons:{button:HTMLButtonElement;ready:boolean;target:string}[]=[];
   private hybridPreview:BlackjackPreview|undefined;
   private hybridHost:HTMLElement;
   setIdentity(id:string){this.actorId=id;}
@@ -76,14 +78,14 @@ export class AdventureClient {
       parseLibrary(data.library);this.result('Élément déplacé et enregistré. Vérifiez sa position avant le départ.');
     }catch(error){this.result(`Déplacement non enregistré : ${String(error)}`);}finally{this.moving=false;}
   }
-  story(){if(this.state?.phase==='pending')return this.state.message;if(this.state?.hybrid)return hybridSummary(this.state.hybrid);return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Retrouvez les balises, examinez les fragments cachés et reconstituez l’ordre au panneau mural.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
+  story(){if(this.state?.phase==='pending')return this.state.message;if(this.state?.hybrid)return hybridSummary(this.state.hybrid);if(this.state?.videoclub)return 'Vidéoclub rétro : retrouvez les trois cassettes et remettez-les dans l’ordre des années.';return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Retrouvez les balises, examinez les fragments cachés et reconstituez l’ordre au panneau mural.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
   result(message:string){this.pending=false;clearTimeout(this.requestTimer);for(const panel of this.panels)panel.status.textContent=message;this.notify(message);this.updateButtons();}
   updatePosition(local:THREE.Vector3|undefined){
     const calibration=this.calibration();this.position=local&&calibration?toRoom(local,calibration):undefined;
     if(performance.now()-this.lastPositionUpdate>200){this.lastPositionUpdate=performance.now();this.updateButtons();this.map();}
   }
   private currentPosition(){return this.simulation&&!this.xrActive?this.virtual:this.position;}
-  private closeTo(target:InteractionTarget){const p=this.currentPosition(),q=this.state?.objects?.poses[target]??(target==='panel'&&this.model?puzzlePanel(this.model)?.position:this.model?.puzzles?.points[target as PuzzleItem]);return !!p&&!!q&&Math.hypot(p.x-q.x,p.z-q.z)<=1.3;}
+  private closeTo(target:InteractionTarget|string){const p=this.currentPosition(),q=this.state?.objects?.poses[target as keyof NonNullable<AdventureState['objects']>['poses']]??(target==='panel'&&this.model?puzzlePanel(this.model)?.position:this.model?.puzzles?.points[target as PuzzleItem]);return !!p&&!!q&&Math.hypot(p.x-q.x,p.z-q.z)<=1.3;}
   private perform(action:AdventureCommand['action'],id:string,target:InteractionTarget){
     const position=this.currentPosition();if(!position||!this.state?.running||!this.model?.puzzles||this.pending||!this.connected||!this.closeTo(target))return;
     this.unlockSound();this.pending=true;this.updateButtons();
@@ -98,17 +100,27 @@ export class AdventureClient {
     if(!this.send({type:'puzzle_action',revision:this.state.revision,libraryRevision:this.libraryRevision,instanceId:step.instanceId,action,position:{x:position.x,z:position.z},simulation:this.simulation&&!this.xrActive})){this.result('Connexion serveur indisponible.');return;}
     this.requestTimer=setTimeout(()=>{if(this.pending)this.result('Pas de réponse du serveur.');},5000);
   }
+  private retroTarget(tape:string){return tape==='table'?'table':tape==='tape-red'?'four':tape==='tape-blue'?'eight':'king';}
+  private performRetro(action:unknown,tape:string){
+    const position=this.currentPosition(),step=this.state?.engine.step;
+    if(!position||!this.state?.running||!step||step.kind!=='puzzle'||this.pending||!this.connected||!this.closeTo(this.retroTarget(tape)))return;
+    this.unlockSound();this.pending=true;this.updateButtons();
+    if(!this.send({type:'puzzle_action',revision:this.state.revision,libraryRevision:this.libraryRevision,instanceId:step.instanceId,action,position:{x:position.x,z:position.z},simulation:this.simulation&&!this.xrActive})){this.result('Connexion serveur indisponible.');return;}
+    this.requestTimer=setTimeout(()=>{if(this.pending)this.result('Pas de réponse du serveur.');},5000);
+  }
   private unlockSound(){try{this.audio??=new AudioContext();void this.audio.resume().catch(()=>{});}catch{/* Audio is optional. */}}
   private chime(){try{if(!this.audio||this.audio.state!=='running')return;const oscillator=this.audio.createOscillator(),gain=this.audio.createGain();oscillator.connect(gain);gain.connect(this.audio.destination);gain.gain.setValueAtTime(0.06,this.audio.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,this.audio.currentTime+0.6);oscillator.frequency.setValueAtTime(523,this.audio.currentTime);oscillator.frequency.setValueAtTime(784,this.audio.currentTime+0.2);oscillator.start();oscillator.stop(this.audio.currentTime+0.6);}catch{/* No audio must never block the puzzle. */}}
-  hint(){return this.state?.phase==='symbols'?'Indice : chaque balise révèle un fragment ; inspectez aussi ce qui est caché sous le coffre.':this.state?.phase==='blackjack'?'Énigme : trouvez les trois cartes, puis choisissez à la table avec la gâchette.':this.state?.phase==='complete'?'Les deux énigmes sont réussies. Clé obtenue : 7.':'';}
+  hint(){return this.state?.phase==='symbols'?'Indice : chaque balise révèle un fragment ; inspectez aussi ce qui est caché sous le coffre.':this.state?.phase==='blackjack'?'Énigme : trouvez les trois cartes, puis choisissez à la table avec la gâchette.':this.state?.phase==='videoclub'?'Indice : les jaquettes indiquent les années de sortie.':'Les énigmes disponibles sont réussies.';}
   raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera){
     if(this.state?.hybrid){const action=pickHybridAction(group,origin,direction,camera);if(action)this.performHybrid(action);return;}
+    if(this.state?.videoclub){const action=pickAdventureAction(group,origin,direction,camera);if(action?.action==='discover_tape'&&action.tape)this.performRetro({action:'discover_tape',tape:action.tape},action.tape);return;}
     const command=pickAdventureAction(group,origin,direction,camera);if(!command)return;
     const button=this.buttons.find(item=>item.action===command.action&&item.id===command.target&&item.ready);
     if(button)this.perform(button.action,button.id,button.target);
   }
   private updateButtons(){
     for(const item of this.hybridButtons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo('table');
+    for(const item of this.retroButtons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo(item.target);
     for(const item of this.buttons)item.button.disabled=!this.connected||!this.state?.running||this.pending||!item.ready||!this.closeTo(item.target);
     const toggle=document.getElementById('adventure-simulation') as HTMLInputElement;toggle.disabled=!this.state?.testMode||this.xrActive||this.externalActive;toggle.checked=this.simulation;
   }
@@ -119,7 +131,7 @@ export class AdventureClient {
     panel.body.append(row);
   }
   private render(force=false){
-    const key=JSON.stringify([this.state,this.model?.id,this.simulation,this.xrActive]);if(!force&&key===this.key)return;this.key=key;this.buttons=[];this.hybridButtons=[];
+    const key=JSON.stringify([this.state,this.model?.id,this.simulation,this.xrActive]);if(!force&&key===this.key)return;this.key=key;this.buttons=[];this.hybridButtons=[];this.retroButtons=[];
     this.hybridHost.hidden=!this.state?.hybrid||this.xrActive||this.externalActive;
     if(this.state?.hybrid&&!this.xrActive&&!this.externalActive){try{this.hybridPreview??=new BlackjackPreview(this.hybridHost,action=>this.performHybrid(action));this.hybridPreview.update(this.state.hybrid,this.actorId,this.state.captainId);}catch{/* Text and touch controls remain usable if WebGL is unavailable. */}}
     for(const panel of this.panels){
@@ -141,7 +153,12 @@ export class AdventureClient {
         }
       }
       if(state.engine.testStartStepId)text('MODE TEST — session temporaire, sans progression pour l’aventure normale.');
-      if(state.hybrid){
+      if(state.videoclub){
+        const retro=state.videoclub as RetroState;text('Le vidéoclub rétro');text('Retrouvez les trois cassettes, puis insérez-les dans l’ordre des années indiqué sur les jaquettes.');text(`Cassettes découvertes : ${retro.found.length}/3 · erreurs : ${retro.attempts}`);
+        for(const tape of ['tape-red','tape-blue','tape-gold']){const target=this.retroTarget(tape),found=retro.found.includes(tape as never);const row=document.createElement('div');row.className='xr-actions';const discover=document.createElement('button');discover.textContent=found?`${tape} découverte`:`Découvrir ${tape}`;discover.disabled=!this.connected||this.pending||found||!this.closeTo(target);discover.onclick=()=>this.performRetro({action:'discover_tape',tape},tape);row.append(discover);
+          if(found)for(let slot=0;slot<3;slot++){const button=document.createElement('button');button.textContent=`Logement ${slot+1}`;button.disabled=!this.connected||this.pending||!this.closeTo(target);button.onclick=()=>this.performRetro({action:'place_tape',tape,slot},tape);row.append(button);this.retroButtons.push({button,ready:true,target});}panel.body.append(row);}
+        const reset=document.createElement('button');reset.textContent='Éjecter les cassettes';reset.disabled=!this.connected||this.pending||!this.closeTo('table');reset.onclick=()=>this.performRetro({action:'reset_tapes'},'table');panel.body.append(reset);
+      }else if(state.hybrid){
         if(state.phase==='pending'){text(state.engine.step.title);text(state.message);}
         text(hybridSummary(state.hybrid));text(this.actorId===state.captainId?'Vous êtes le capitaine : Tirer/Rester sont vos décisions.':'Le capitaine décide de Tirer/Rester. Tout le monde peut placer les cartes des manches suivantes.');
         if(this.simulation&&!this.xrActive&&panel===this.panels[0]){const move=document.createElement('button');move.textContent='Aller à la table (test PC)';move.dataset.move='table';move.onclick=()=>{this.virtual={...(this.state?.objects?.poses.table??this.model!.puzzles!.points.table)};this.updateButtons();this.map();};panel.body.append(move);}

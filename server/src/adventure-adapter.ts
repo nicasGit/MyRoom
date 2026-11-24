@@ -7,13 +7,14 @@ import type { AdventureCatalog } from './engine/adventure-manifest.js';
 import { SYMBOLS,CLUES,type SymbolId,type SymbolState } from './puzzles/symbol-chest.js';
 import { CARDS,type CardId,type LegacyBlackjackState,blackjackScore } from './puzzles/blackjack-legacy.js';
 import type { HybridPublicState } from './puzzles/blackjack-hybrid.js';
+import type { RetroState } from './puzzles/retro-videoclub.js';
 import type { PuzzleContext } from './engine/puzzle-types.js';
 import type { ObjectSnapshot } from './object-manipulation.js';
 export { SYMBOLS,CARDS,blackjackScore };
 export type { SymbolId,CardId };
 export type AdventureCommand={type:'adventure_action';revision:number;libraryRevision:number;action:'discover_symbol'|'press_symbol'|'discover_clue'|'discover_card'|'choose_card';target:string;position:Point2;simulation:boolean};
 export type PuzzleCommand={type:'puzzle_action';revision:number;libraryRevision:number;instanceId:string;action:unknown;position:Point2;simulation:boolean};
-export type AdventureState={objects?:ObjectSnapshot;running:boolean;revision:number;phase:'unconfigured'|'symbols'|'blackjack'|'hybrid'|'pending'|'complete';testMode:boolean;symbols:SymbolState;blackjack:LegacyBlackjackState;hybrid?:HybridPublicState;captainId?:string;message:string;engine:ReturnType<AdventureEngine['publicState']>};
+export type AdventureState={objects?:ObjectSnapshot;running:boolean;revision:number;phase:'unconfigured'|'symbols'|'blackjack'|'hybrid'|'videoclub'|'pending'|'complete';testMode:boolean;symbols:SymbolState;blackjack:LegacyBlackjackState;hybrid?:HybridPublicState;videoclub?:RetroState;captainId?:string;message:string;engine:ReturnType<AdventureEngine['publicState']>};
 function envelope(value:unknown,type:'adventure_action'|'puzzle_action'){
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Action attendue.');
   const v=value as Record<string,unknown>,p=v.position as Record<string,unknown>|null;
@@ -58,8 +59,9 @@ export class Adventure {
     const engine=this.engine.publicState(),active=this.engine.activeInstance();
     const symbols=active?.type==='symbol-chest'?active:engine.instances.find(i=>i.type==='symbol-chest'),blackjack=active?.type==='blackjack-legacy'?active:engine.instances.find(i=>i.type==='blackjack-legacy');
     const phase:AdventureState['phase']=!this.configured?'unconfigured':engine.status==='pending'?'pending':engine.status==='complete'?'complete':active?.type==='blackjack-hybrid'?'hybrid':active?.type==='blackjack-legacy'?'blackjack':'symbols';
-    const hybrid=engine.instances.find(i=>i.type==='blackjack-hybrid'&&(active?.id===i.id||engine.status==='pending'&&i.solved))?.state as HybridPublicState|undefined;
-    return {running:engine.running,revision:this.revision,phase,testMode:this.testMode,symbols:structuredClone(symbols?.state??{found:[],entered:[],cluesFound:[],attempts:0}) as SymbolState,blackjack:structuredClone(blackjack?.state??{found:[],chosen:null,total:17,ace:11,attempts:0}) as LegacyBlackjackState,hybrid,captainId:this.context.captainId,message:this.message,engine};
+    const hybrid=engine.instances.find(i=>i.type==='blackjack-hybrid'&&active?.id===i.id)?.state as HybridPublicState|undefined;
+    const videoclub=engine.instances.find(i=>i.type==='retro-videoclub'&&active?.id===i.id)?.state as RetroState|undefined;
+    return {running:engine.running,revision:this.revision,phase:active?.type==='retro-videoclub'?'videoclub':phase,testMode:this.testMode,symbols:structuredClone(symbols?.state??{found:[],entered:[],cluesFound:[],attempts:0}) as SymbolState,blackjack:structuredClone(blackjack?.state??{found:[],chosen:null,total:17,ace:11,attempts:0}) as LegacyBlackjackState,hybrid,videoclub,captainId:this.context.captainId,message:this.message,engine};
   }
   act(command:AdventureCommand,model:RoomModel|null,libraryRevision:number,objects?:ObjectSnapshot){
     const instanceId=this.engine.activeInstance()?.id??'';
@@ -73,9 +75,9 @@ export class Adventure {
     if(command.simulation&&!this.testMode)return reject('Le test PC doit être autorisé par l’administrateur.');
     if(!inside(command.position,model.floor))return reject('Position déclarée hors de la pièce. Refaites le calibrage A/B.');
     const active=this.engine.activeInstance();if(!active||active.id!==command.instanceId)return reject('Cette instance n’est pas active.');
-    const action=command.action as {action?:unknown;target?:unknown}|null;
+    const action=command.action as {action?:unknown;target?:unknown;tape?:unknown}|null;
     if(!action||typeof action!=='object')return reject('Action d’énigme invalide.');
-    const objectId=active.type==='blackjack-hybrid'?'table':action.action==='press_symbol'?'panel':action.action==='choose_card'?'table':action.action==='discover_clue'?((action.target as string)==='clue-false'?'chest':(action.target as string).replace('clue-','')):action.target;
+    const objectId=active.type==='blackjack-hybrid'?'table':action.action==='press_symbol'?'panel':action.action==='choose_card'?'table':action.action==='reset_tapes'?'table':action.action==='discover_clue'?((action.target as string)==='clue-false'?'chest':(action.target as string).replace('clue-','')):typeof action.target==='string'?action.target:typeof action.tape==='string'?action.tape:'';
     const binding=this.engine.definition().objects.find(o=>o.instanceId===active.id&&o.objectId===objectId);
     const position=objects?.poses[binding?.placementKey as keyof ObjectSnapshot['poses']]??(binding?.placementKey==='panel'?puzzlePanel(model)?.position:model.puzzles.points[binding?.placementKey as keyof typeof model.puzzles.points]);
     if(!position)return reject('Objet sans placement compatible.');
