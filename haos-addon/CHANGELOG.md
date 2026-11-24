@@ -1,3 +1,9 @@
+## 0.15.7
+
+- Coffre enrichi avec fragments d’indices cachés et fausse piste.
+- Validation serveur des indices avant la combinaison.
+- Interface 3D et tactile mise à jour pour examiner les fragments.
+
 ## 0.15.6
 
 - Correction de la prise du bâton dans la simulation 3D.

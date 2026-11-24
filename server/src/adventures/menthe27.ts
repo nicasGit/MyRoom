@@ -11,7 +11,7 @@ export const menthe27={
 };
 export const menthe27Hybrid={
   ...structuredClone(menthe27),version:'0.2.0',description:'Le coffre puis trois manches de blackjack coopératif. La suite de l’opération reste en préparation.',
-  instances:[...structuredClone(menthe27.instances),{id:'menthe-blackjack',type:'blackjack-hybrid',schemaVersion:1,config:{
+  instances:[{...structuredClone(menthe27.instances[0]),config:{...structuredClone(menthe27.instances[0].config),clues:[{id:'clue-sun',text:'Le fragment dore indique le premier symbole.',truth:true},{id:'clue-tree',text:'Le fragment grave indique le deuxieme symbole.',truth:true},{id:'clue-moon',text:'Le fragment argente indique le troisieme symbole.',truth:true},{id:'clue-star',text:'Le fragment brillant indique le dernier symbole.',truth:true},{id:'clue-false',text:'Fausse piste : commencez par la derniere lumiere.',truth:false}]}},{id:'menthe-blackjack',type:'blackjack-hybrid',schemaVersion:1,config:{
     rewards:[{id:'casino-club',label:'♣'},{id:'casino-heart',label:'♥'},{id:'casino-spade',label:'♠'}],
     hints:['Casino : l’As vaut 1 ou 11 ; le croupier reste à 17, même souple.','Après trois échecs, la main de rattrapage se gagne en restant à 19.','Double as : les trois cartes doivent occuper les trois logements.','Les deux As doivent avoir des valeurs différentes : 11 et 1.','Croupier impossible : trois cartes exactement, le croupier a 20.','Associez 10♥, 8♣ et 3♠ pour obtenir 21.'],
   }}],

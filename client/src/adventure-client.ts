@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { toRoom,type makeCalibration } from './calibration';
 import type { AdventureCommand,PuzzleCommand,AdventureState,SymbolId,CardId } from '../../server/src/adventure.js';
+import { CLUES } from '../../server/src/puzzles/symbol-chest.js';
 import type { HybridAction } from '../../server/src/puzzles/blackjack-hybrid.js';
 import { hybridOptions,hybridSummary } from './puzzles/blackjack-controls';
 import { BlackjackPreview,pickHybridAction } from './puzzles/blackjack-view';
@@ -75,7 +76,7 @@ export class AdventureClient {
       parseLibrary(data.library);this.result('Élément déplacé et enregistré. Vérifiez sa position avant le départ.');
     }catch(error){this.result(`Déplacement non enregistré : ${String(error)}`);}finally{this.moving=false;}
   }
-  story(){if(this.state?.phase==='pending')return this.state.message;if(this.state?.hybrid)return hybridSummary(this.state.hybrid);return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. Retrouvez les 4 balises, puis entrez les symboles au panneau mural avec la gâchette.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
+  story(){if(this.state?.phase==='pending')return this.state.message;if(this.state?.hybrid)return hybridSummary(this.state.hybrid);return this.state&&!this.state.running?'Préparation : ajustez les placements depuis le plan administrateur ou le panneau tactile AR, puis commencez les énigmes dans l’administration.':this.state?.phase==='symbols'?'Retrouvez les balises, examinez les fragments cachés et reconstituez l’ordre au panneau mural.':this.state?.phase==='blackjack'?'As + 6. Retrouvez les 3 cartes, puis jouez une seule carte à la table pour obtenir exactement 21. Visez le panneau et appuyez sur la gâchette.':this.hint();}
   result(message:string){this.pending=false;clearTimeout(this.requestTimer);for(const panel of this.panels)panel.status.textContent=message;this.notify(message);this.updateButtons();}
   updatePosition(local:THREE.Vector3|undefined){
     const calibration=this.calibration();this.position=local&&calibration?toRoom(local,calibration):undefined;
@@ -99,7 +100,7 @@ export class AdventureClient {
   }
   private unlockSound(){try{this.audio??=new AudioContext();void this.audio.resume().catch(()=>{});}catch{/* Audio is optional. */}}
   private chime(){try{if(!this.audio||this.audio.state!=='running')return;const oscillator=this.audio.createOscillator(),gain=this.audio.createGain();oscillator.connect(gain);gain.connect(this.audio.destination);gain.gain.setValueAtTime(0.06,this.audio.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,this.audio.currentTime+0.6);oscillator.frequency.setValueAtTime(523,this.audio.currentTime);oscillator.frequency.setValueAtTime(784,this.audio.currentTime+0.2);oscillator.start();oscillator.stop(this.audio.currentTime+0.6);}catch{/* No audio must never block the puzzle. */}}
-  hint(){return this.state?.phase==='symbols'?'Énigme : trouvez les balises, puis visez les symboles du coffre et utilisez la gâchette.':this.state?.phase==='blackjack'?'Énigme : trouvez les trois cartes, puis choisissez à la table avec la gâchette.':this.state?.phase==='complete'?'Les deux énigmes sont réussies. Clé obtenue : 7.':'';}
+  hint(){return this.state?.phase==='symbols'?'Indice : chaque balise révèle un fragment ; inspectez aussi ce qui est caché sous le coffre.':this.state?.phase==='blackjack'?'Énigme : trouvez les trois cartes, puis choisissez à la table avec la gâchette.':this.state?.phase==='complete'?'Les deux énigmes sont réussies. Clé obtenue : 7.':'';}
   raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera){
     if(this.state?.hybrid){const action=pickHybridAction(group,origin,direction,camera);if(action)this.performHybrid(action);return;}
     const command=pickAdventureAction(group,origin,direction,camera);if(!command)return;
@@ -147,10 +148,11 @@ export class AdventureClient {
         if(state.hybrid.round>1)text('Choisissez une carte puis un logement (gâchette ou boutons). Réservation 15 s ; remettre en réserve permet de corriger un choix.');
         for(const option of hybridOptions(state.hybrid,this.actorId,state.captainId)){const button=document.createElement('button');button.textContent=option.label;button.dataset.hybridAction=option.action.action;if('card' in option.action)button.dataset.card=option.action.card;if('slot' in option.action)button.dataset.slot=String(option.action.slot);if('value' in option.action)button.dataset.value=String(option.action.value);button.onclick=()=>this.performHybrid(option.action);panel.body.append(button);this.hybridButtons.push({button,ready:option.enabled});}
       }else if(state.phase==='symbols'){
-        text('Le coffre des quatre symboles');text('« Le jour nourrit la forêt. Puis vient la nuit, et ses premières lumières. »');
-        text(`Balises découvertes : ${state.symbols.found.length}/4 · combinaison : ${state.symbols.entered.map(id=>SYMBOL_NAMES[id]).join(' → ')||'vide'} · erreurs : ${state.symbols.attempts}`);
+        text('Le coffre des quatre symboles');text('Les fragments caches indiquent la marche a suivre. Une fausse piste est dissimulee dans la piece.');
+        text(`Balises découvertes : ${state.symbols.found.length}/4 · fragments trouvés : ${state.symbols.cluesFound.length} · combinaison : ${state.symbols.entered.map(id=>SYMBOL_NAMES[id]).join(' → ')||'vide'} · erreurs : ${state.symbols.attempts}`);
         for(const [i,id] of (['sun','tree','moon','star'] as SymbolId[]).entries())this.addAction(panel,state.symbols.found.includes(id)?`${SYMBOL_NAMES[id]} découvert`:`Découvrir la balise ${i+1}`,'discover_symbol',id,id,!state.symbols.found.includes(id));
-        text('Au panneau mural, placer les symboles dans les quatre logements, dans l’ordre :');for(const id of ['sun','tree','moon','star'] as SymbolId[])this.addAction(panel,SYMBOL_NAMES[id],'press_symbol',id,'panel',state.symbols.found.length===4);
+        for(const [i,id] of CLUES.entries()){const symbol=id.replace('clue-','');const ready=id==='clue-false'||state.symbols.found.includes(symbol as SymbolId);if(ready)this.addAction(panel,state.symbols.cluesFound.includes(id)?`Fragment ${i+1} découvert`:`Examiner le fragment ${i+1}`,'discover_clue',id,id==='clue-false'?'chest':symbol as InteractionTarget,!state.symbols.cluesFound.includes(id));}
+        text('Au panneau mural, reconstituer l’ordre à partir des fragments.');for(const id of ['sun','tree','moon','star'] as SymbolId[])this.addAction(panel,SYMBOL_NAMES[id],'press_symbol',id,'panel',state.symbols.found.length===4&&state.symbols.cluesFound.filter(clue=>clue!=='clue-false').length===4);
       }else if(state.phase==='blackjack'){
         text('La table du dernier As');text('« Mon coffre ne s’ouvre ni à vingt, ni à vingt-deux. Faites vingt-et-un… ensemble. »');text('Main de départ : As + 6. Retrouvez les trois cartes ; ajoutez ensuite une seule carte pour faire exactement 21. L’As vaut 11 ou 1.');
         for(const [i,id] of (['four','eight','king'] as CardId[]).entries()){this.addAction(panel,state.blackjack.found.includes(id)?`Carte ${CARD_NAMES[id]} découverte`:`Découvrir l’indice de la carte ${i+1}`,'discover_card',id,id,!state.blackjack.found.includes(id));if(state.blackjack.found.includes(id))text(`${CARD_NAMES[id]} : ${CARD_CLUES[id]}`);}

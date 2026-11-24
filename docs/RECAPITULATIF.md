@@ -1,5 +1,16 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 24 novembre 2026 - Coffre à indices cachés, 0.15.7
+
+Le coffre conserve ses quatre balises et son panneau mural, mais l’ordre n’est
+plus donné directement dans l’interface. Chaque balise révèle un fragment à
+examiner ; une feuille cachée sous le coffre contient une fausse piste. Les
+quatre fragments utiles sont requis côté serveur avant toute saisie de symbole,
+et les actions d’indice sont protégées par la proximité, la révision et la
+progression partagée. Les anciennes configurations sans fragments restent
+compatibles. Vérifications réussies : `npm run typecheck`, `npm run build` et
+`npm test` (**165 tests**). Publication en préparation.
+
 ### 24 novembre 2026 - Simulation, ancres Quest et déplacement du vortex, 0.15.6
 
 Version client et add-on portés à 0.15.6. La simulation 3D utilise les positions

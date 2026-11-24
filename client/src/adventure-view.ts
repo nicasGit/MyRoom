@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { AdventureState,SymbolId } from '../../server/src/adventure.js';
+import { CLUES } from '../../server/src/puzzles/symbol-chest.js';
 import { puzzlePanel,type PuzzleItem,type RoomModel } from '../../server/src/scene-schema.js';
 import { createChest } from './chest-view';
 import { blackjackTable } from './puzzles/blackjack-view';
@@ -12,7 +13,7 @@ export function applyObjectPoses(group:THREE.Group,objects:ObjectSnapshot|undefi
 export const SYMBOL_NAMES={sun:'Soleil',tree:'Arbre',moon:'Lune',star:'Étoile'};
 export const CARD_NAMES={four:'4',eight:'8',king:'Roi'};
 export const CARD_CLUES={four:'Mes quatre coins gardent quatre saisons.',eight:'Deux fois les saisons de l’année.',king:'Je porte une couronne ; ma valeur est dix.'};
-type Action={action:'discover_symbol'|'press_symbol'|'discover_card'|'choose_card';target:string};
+type Action={action:'discover_symbol'|'press_symbol'|'discover_clue'|'discover_card'|'choose_card';target:string};
 export function pickAdventureAction(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera):Action|undefined{
   group.updateMatrixWorld(true);
   const ray=new THREE.Raycaster(origin,direction.clone().normalize(),0,8);ray.camera=camera;
@@ -66,11 +67,12 @@ export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:str
   const at=(id:PuzzleItem)=>{const p=model.puzzles!.points[id],node=new THREE.Group();node.position.set(p.x,model.puzzles!.poses?.[id]?.y??0,p.z);node.rotation.y=model.puzzles!.poses?.[id]?.yaw??0;group.add(node);roots[id]=node;return node;};
   const chest=at('chest'),crafted=createChest(state.phase==='hybrid'||state.phase==='blackjack'||state.phase==='complete'||state.phase==='pending');chest.add(crafted.chest);group.userData.lid=crafted.hinge;
   const panel=wallConsole(model,state);if(panel){group.add(panel);roots.panel=panel;}
-  const clue=plaque('Indice : le jour précède la forêt.','#ffe082',0.48,0.2);clue.rotation.x=-Math.PI/2;clue.position.set(chest.position.x,chest.position.y+0.006,chest.position.z);clue.visible=false;group.add(clue);group.userData.underChest={chest,clue,base:chest.position.clone()};
+  const clue=actionLabel('Feuille déchirée','#ffe082',{action:'discover_clue',target:'clue-false'});clue.rotation.x=-Math.PI/2;clue.position.set(chest.position.x,chest.position.y+0.006,chest.position.z);clue.visible=false;group.add(clue);group.userData.underChest={chest,clue,base:chest.position.clone()};
   const heading=label(state.phase==='symbols'?'Le coffre':'Coffre ouvert','#ffe082');heading.position.y=1.05;chest.add(heading);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
     const found=!state.running||state.symbols.found.includes(id),node=at(id),pole=box(0.05,0.65,0.05,0x64748b);pole.position.y=0.325;node.add(pole);
     const sign=actionLabel(found?SYMBOL_NAMES[id]:`Balise ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_symbol',target:id});sign.position.y=0.85;node.add(sign);
+    const fragmentId=CLUES[i],fragment=actionLabel(state.symbols.cluesFound.includes(fragmentId)?'Fragment lu':'Inspecter fragment','#ffd27a',{action:'discover_clue',target:fragmentId});fragment.position.y=0.62;fragment.visible=found&&!state.symbols.cluesFound.includes(fragmentId);node.add(fragment);
   }
   if(state.hybrid){at('table').add(blackjackTable(state.hybrid,actorId,state.captainId));return group;}
   const hybridInstance=state.engine.instances.find(i=>i.type==='blackjack-hybrid');

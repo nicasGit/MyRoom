@@ -5,7 +5,7 @@ import { legacyAdventure } from '../adventures/legacy.js';
 import { menthe27 } from '../adventures/menthe27.js';
 import { AdventureCatalog,parseManifest } from './adventure-manifest.js';
 import { AdventureEngine } from './adventure-engine.js';
-import { symbolChest,SYMBOLS } from '../puzzles/symbol-chest.js';
+import { symbolChest,SYMBOLS,CLUES } from '../puzzles/symbol-chest.js';
 import { Adventure,parsePuzzleCommand } from '../adventure.js';
 import { Room } from '../room.js';
 import { parseRoom,suggestPuzzleLayout,type RoomModel } from '../scene-schema.js';
@@ -17,7 +17,9 @@ import { join } from 'node:path';
 function engine(id='myroom-classic',version='1.0.0'){const registry=createRegistry();return new AdventureEngine(registry,createCatalog(registry),id,version);}
 function solveChest(game:AdventureEngine){
   const id=game.activeInstance()!.id;
-  for(const action of ['discover_symbol','press_symbol'])for(const target of SYMBOLS){if(action==='discover_symbol'&&(game.activeInstance()?.state as {found:string[]}).found.includes(target))continue;const result=game.act(id,game.snapshot().revision,{action,target});assert.equal(result.changed,true,result.message);}
+  for(const target of SYMBOLS){if((game.activeInstance()?.state as {found:string[]}).found.includes(target))continue;const result=game.act(id,game.snapshot().revision,{action:'discover_symbol',target});assert.equal(result.changed,true,result.message);}
+  for(const target of ['clue-sun','clue-tree','clue-moon','clue-star'])game.act(id,game.snapshot().revision,{action:'discover_clue',target});
+  for(const target of SYMBOLS){const result=game.act(id,game.snapshot().revision,{action:'press_symbol',target});assert.equal(result.changed,true,result.message);}
 }
 
 test('accès direct : test isolé, révisions, restauration et étapes indisponibles',()=>{
@@ -86,6 +88,16 @@ test('Menthe 27 : coffre réussi puis attente explicite, sans faux succès ni bl
   assert.deepEqual(state.completedSteps,['symbols']);assert.deepEqual(state.inventory,[{id:'casino-access',label:'Accès au casino'}]);
   assert.equal(game.currentStep().kind,'planned');assert.throws(()=>game.start());
   assert.equal(game.act('menthe-chest',state.revision,{action:'press_symbol',target:'star'}).changed,false);
+});
+test('coffre : fragments requis, fausse piste insuffisante et ordre non révélé',()=>{
+  const game=engine('menthe27','0.2.0');game.start();const id='menthe-chest';
+  for(const target of SYMBOLS)assert.equal(game.act(id,game.snapshot().revision,{action:'discover_symbol',target}).changed,true);
+  assert.equal(game.act(id,game.snapshot().revision,{action:'press_symbol',target:'sun'}).changed,false);
+  assert.equal(game.act(id,game.snapshot().revision,{action:'discover_clue',target:'clue-false'}).changed,true);
+  assert.equal(game.act(id,game.snapshot().revision,{action:'press_symbol',target:'sun'}).changed,false);
+  for(const target of CLUES.slice(0,4))assert.equal(game.act(id,game.snapshot().revision,{action:'discover_clue',target}).changed,true);
+  assert.equal(game.act(id,game.snapshot().revision,{action:'press_symbol',target:'sun'}).changed,true);
+  assert.equal((game.activeInstance()!.state as {entered:string[]}).entered.length,1);
 });
 test('actions périmées et mauvaises instances ne modifient ni état ni récompenses',()=>{
   const game=engine();game.start();const snapshot=game.snapshot(),id=game.activeInstance()!.id;
