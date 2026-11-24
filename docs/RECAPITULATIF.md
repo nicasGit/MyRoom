@@ -11,7 +11,10 @@ Pendant la création, les obstacles sont masqués au-delà de 1,15 m tout en res
 actifs pour les collisions. Les contrôles de typecheck, build et tests sont à
 rejouer avant publication.
 
-Publication en préparation.
+Publication confirmée sur `main` au commit `7ad5cbe`. Le workflow GitHub Actions
+`45397193642` a terminé avec succès (validation et publication) et l'image
+`ghcr.io/nicasgit/myroom:0.15.6` expose Linux ARM64, digest
+`sha256:df1a70483739652fcfa413633f3b3af816bd873633763b5e8102ee3992e9db72`.
 
 ### 24 novembre 2026 - Prise tactile Android et bâton à la ceinture, 0.15.5
 
