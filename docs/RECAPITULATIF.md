@@ -9,7 +9,10 @@ quatre fragments utiles sont requis côté serveur avant toute saisie de symbole
 et les actions d’indice sont protégées par la proximité, la révision et la
 progression partagée. Les anciennes configurations sans fragments restent
 compatibles. Vérifications réussies : `npm run typecheck`, `npm run build` et
-`npm test` (**165 tests**). Publication en préparation.
+`npm test` (**165 tests**). Publication confirmée sur `main` au commit
+`9262154`. Le workflow GitHub Actions `45464664464` a terminé avec succès et
+l'image `ghcr.io/nicasgit/myroom:0.15.7` expose Linux ARM64, digest
+`sha256:c309a052e0a62dcd955a52e2d4030519976f2f0893c9832450ddc2b4c03571b9`.
 
 ### 24 novembre 2026 - Simulation, ancres Quest et déplacement du vortex, 0.15.6
 
