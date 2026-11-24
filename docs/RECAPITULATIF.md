@@ -1,5 +1,10 @@
 # MyRoom — Récapitulatif des réalisations
 
+### 24 novembre 2026 - Prise tactile Android et bâton à la ceinture, 0.15.5
+
+Version client et add-on portés à 0.15.5 pour publier la correction Android.
+Les contrôles de typecheck, build et 164 tests sont passés avant publication.
+
 ### 20 novembre 2026 - Fenêtre MR, continuité et réinitialisation, 0.15.4
 
 Correctif de continuité : le bâton du joueur reste visible dans le couloir et
