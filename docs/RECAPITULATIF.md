@@ -4,6 +4,9 @@
 
 Version client et add-on portés à 0.15.5 pour publier la correction Android.
 Les contrôles de typecheck, build et 164 tests sont passés avant publication.
+Publication confirmée sur `main` au commit `0e6650d`, workflow
+`45393153041` réussi. L'image `ghcr.io/nicasgit/myroom:0.15.5` expose
+Linux ARM64, digest `sha256:565a4e240a96439918974d9e8fc18b6daa3b09223a91b2f034e3e493ec34cbda`.
 
 ### 20 novembre 2026 - Fenêtre MR, continuité et réinitialisation, 0.15.4
 
