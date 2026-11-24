@@ -10,7 +10,7 @@ import { animateAdventure } from '../../client/src/adventure-view.js';
 import { HandCards } from '../../client/src/hand-cards.js';
 import { InfoPanelAnchor } from '../../client/src/xr-info-panel.js';
 import { XRHandsView } from '../../client/src/xr-hands-view.js';
-import { phoneHand,hasTrackedHands,usePhoneHand } from '../../client/src/phone-hand.js';
+import { phoneHand,phoneHandAt,hasTrackedHands,usePhoneHand } from '../../client/src/phone-hand.js';
 import { hitMenu,positionWallMenu } from '../../client/src/portal/wall-menu-view.js';
 import { makeCalibration } from '../../client/src/calibration.js';
 import { RealisticHand,controllerHandOrientation,controllerFingerPose } from '../../client/src/realistic-hand.js';
@@ -340,6 +340,10 @@ test('phone: virtual hand uses A/B, follows camera and drives grab/drop through 
   grab.update(group,[next.hand],true,400);assert.equal(sent[1].action,'move');
   grab.update(group,[{...next.hand,pressed:false}],true,500);assert.equal(sent[2].action,'drop');
   view.dispose();node.geometry.dispose();node.material.dispose();
+});
+test('phone: pressed hand can lock onto the object under the camera ray',()=>{
+  const calibration=makeCalibration(new THREE.Vector3(),new THREE.Vector3(1,0,0)),target=new THREE.Vector3(2,.8,1.5),hand=phoneHandAt(target,new THREE.Quaternion(),calibration,true);
+  assert.ok(hand.hand.position.distanceTo(target)<1e-8);assert.equal(hand.hand.pressed,true);
 });
 
 test('mains visibles : articulations suivies, perte de suivi et retrait de source',()=>{

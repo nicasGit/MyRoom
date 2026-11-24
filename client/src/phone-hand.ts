@@ -12,6 +12,10 @@ export function usePhoneHand(overlay:boolean,mode:string|undefined,sources:Itera
 }
 export function phoneHand(position:THREE.Vector3,orientation:THREE.Quaternion,calibration:ReturnType<typeof makeCalibration>,pressed:boolean):{local:THREE.Vector3;hand:GrabHand}{
   const local=new THREE.Vector3(0,-.08,-.55).applyQuaternion(orientation).add(position);
+  return phoneHandAt(local,orientation,calibration,pressed);
+}
+/** Build the simulated hand at a screen-ray target, used when the phone points at an object. */
+export function phoneHandAt(local:THREE.Vector3,orientation:THREE.Quaternion,calibration:ReturnType<typeof makeCalibration>,pressed:boolean):{local:THREE.Vector3;hand:GrabHand}{
   const forward=new THREE.Vector3(0,0,-1).applyQuaternion(orientation).applyAxisAngle(new THREE.Vector3(0,1,0),calibration.yaw);
   return {local,hand:{side:'right',position:toRoom(local,calibration),pressed,yaw:Math.atan2(forward.x,-forward.z),orientation:new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),calibration.yaw).multiply(orientation)}};
 }
