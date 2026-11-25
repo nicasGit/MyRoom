@@ -5,6 +5,7 @@ import { puzzlePanel,type PuzzleItem,type RoomModel } from '../../server/src/sce
 import { createChest } from './chest-view';
 import { blackjackTable } from './puzzles/blackjack-view';
 import type { HybridPublicState } from '../../server/src/puzzles/blackjack-hybrid.js';
+import { TAPE_INFO } from '../../server/src/puzzles/retro-videoclub.js';
 import type { ObjectSnapshot,ObjectId } from '../../server/src/object-manipulation.js';
 export function applyObjectPoses(group:THREE.Group,objects:ObjectSnapshot|undefined){
   const roots=group.userData.grabbables as Partial<Record<ObjectId,THREE.Object3D>>|undefined;if(!roots)return;
@@ -26,6 +27,7 @@ export function label(text:string,color:string){
 }
 function box(width:number,height:number,depth:number,color:number){return new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),new THREE.MeshBasicMaterial({color}));}
 function actionLabel(text:string,color:string,action:Action){const sprite=label(text,color);sprite.userData.action=action;return sprite;}
+function retroCover(info:{title:string;year:number;color:number;hide:string},action:Action){const canvas=document.createElement('canvas');canvas.width=420;canvas.height=620;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#101827';ctx.fillRect(0,0,420,620);ctx.fillStyle=`#${info.color.toString(16).padStart(6,'0')}`;ctx.fillRect(18,18,384,584);ctx.fillStyle='#111827';ctx.globalAlpha=.26;for(let y=80;y<580;y+=34)ctx.fillRect(28,y,364,10);ctx.globalAlpha=1;ctx.strokeStyle='#fff4c2';ctx.lineWidth=8;ctx.strokeRect(24,24,372,572);ctx.fillStyle='#fff4c2';ctx.textAlign='center';ctx.font='bold 30px sans-serif';ctx.fillText(String(info.year),210,78,340);ctx.font='bold 34px sans-serif';const words=info.title.split(' ');let line='';let y=300;for(const word of words){const next=line?`${line} ${word}`:word;if(ctx.measureText(next).width>340){ctx.fillText(line,210,y);line=word;y+=46;}else line=next;}if(line)ctx.fillText(line,210,y);ctx.font='20px sans-serif';ctx.fillText('JAQUETTE ORIGINALE MYROOM',210,548,340);const map=new THREE.CanvasTexture(canvas),sprite=new THREE.Mesh(new THREE.PlaneGeometry(.28,.42),new THREE.MeshBasicMaterial({map,transparent:true}));sprite.userData.action=action;return sprite;}
 function plaque(text:string,color:string,width:number,height:number){
   const sprite=label(text,color),material=new THREE.MeshBasicMaterial({map:sprite.material.map});sprite.material.dispose();
   return new THREE.Mesh(new THREE.PlaneGeometry(width,height),material);
@@ -74,7 +76,7 @@ export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:str
     const sign=actionLabel(found?SYMBOL_NAMES[id]:`Balise ${i+1} ?`,found?'#a7f3a0':'#67e8f9',{action:'discover_symbol',target:id});sign.position.y=0.85;node.add(sign);
     const fragmentId=CLUES[i],fragment=actionLabel(state.symbols.cluesFound.includes(fragmentId)?'Fragment lu':'Inspecter fragment','#ffd27a',{action:'discover_clue',target:fragmentId});fragment.position.y=0.62;fragment.visible=found&&!state.symbols.cluesFound.includes(fragmentId);node.add(fragment);
   }
-  if(state.videoclub){for(const [i,id] of (['tape-red','tape-blue','tape-gold'] as const).entries()){const point=([ 'four','eight','king'] as const)[i];const node=at(point);const tape=actionLabel(state.videoclub.found.includes(id)?`Cassette ${i+1}`:`Cassette ${i+1} ?`,'#d8b4fe',{action:'discover_tape',tape:id});tape.position.y=0.75;node.add(tape);}const table=at('table'),title=label('VIDÉOCLUB RÉTRO','#ffe082');title.position.y=1.2;table.add(title);return group;}
+  if(state.videoclub){const tapes=(state.engine.instances.find(instance=>instance.type==='retro-videoclub')?.objects??[]).map(object=>object.id as keyof typeof TAPE_INFO);for(const id of tapes){const info=TAPE_INFO[id],node=at(info.placementKey as PuzzleItem),tape=retroCover(info,{action:'discover_tape',tape:id});tape.position.y=info.placementKey==='chest'?1.35:0.85;node.add(tape);}const table=at('table'),title=label('VIDÉOCLUB RÉTRO','#ffe082');title.position.y=1.2;table.add(title);return group;}
   if(state.hybrid){at('table').add(blackjackTable(state.hybrid,actorId,state.captainId));return group;}
   const hybridInstance=state.engine.instances.find(i=>i.type==='blackjack-hybrid');
   if(hybridInstance){if(!state.running)at('table').add(blackjackTable(hybridInstance.state as HybridPublicState,actorId,state.captainId));return group;}

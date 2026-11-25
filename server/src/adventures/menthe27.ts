@@ -28,3 +28,11 @@ export const menthe27Videoclub={
 };
 
 export const menthe27Portal={...structuredClone(menthe27Hybrid),version:'0.3.0',introduction:{type:'team-portal',schemaVersion:1,config:structuredClone(DEFAULT_PORTAL)}};
+
+export const menthe27Videoclub80s={
+  ...structuredClone(menthe27Videoclub),version:'0.5.0',description:'Le coffre, le blackjack et quatre classiques du videoclub des annees 80.',
+  instances:[...structuredClone(menthe27Hybrid.instances),{id:'menthe-videoclub-80s',type:'retro-videoclub',schemaVersion:1,config:{order:['tape-indiana','tape-gremlins','tape-backfuture','tape-goonies'],hints:['Les annees sont cachees sur les jaquettes : commencez par la plus ancienne.','La boite des Gremlins contient la cassette de Gremlins. Manipulez-la avec precaution.','Les quatre films forment une chronologie 1981, 1984, 1985, 1985.','Les deux films de 1985 se departagent avec le nombre inscrit sur leur indice.'],rewards:[{id:'videoclub-access-80s',label:'Acces a la salle de projection'}]}}],
+  steps:[structuredClone(menthe27Hybrid.steps[0]),{...structuredClone(menthe27Hybrid.steps[1]),next:'videoclub'},{id:'videoclub',title:'Le Vidéoclub des années 80',narrative:'Retrouvez les quatre jaquettes dans leurs cachettes, puis classez les films par année de sortie.',kind:'puzzle',instanceId:'menthe-videoclub-80s',next:'after-videoclub'},{id:'after-videoclub',title:'Prochaine étape — en préparation',narrative:'Le vidéoclub est ouvert. La suite de l’opération attend sa préparation.',kind:'planned',puzzleType:'radio-menthe',next:null}],
+  objects:[...structuredClone(menthe27Hybrid.objects),{instanceId:'menthe-videoclub-80s',objectId:'tape-indiana',placementKey:'king'},{instanceId:'menthe-videoclub-80s',objectId:'tape-gremlins',placementKey:'chest'},{instanceId:'menthe-videoclub-80s',objectId:'tape-backfuture',placementKey:'four'},{instanceId:'menthe-videoclub-80s',objectId:'tape-goonies',placementKey:'eight'}],
+  victory:{requiredSteps:['symbols','casino','videoclub','after-videoclub']},
+};

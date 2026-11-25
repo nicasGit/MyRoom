@@ -100,7 +100,8 @@ export class AdventureClient {
     if(!this.send({type:'puzzle_action',revision:this.state.revision,libraryRevision:this.libraryRevision,instanceId:step.instanceId,action,position:{x:position.x,z:position.z},simulation:this.simulation&&!this.xrActive})){this.result('Connexion serveur indisponible.');return;}
     this.requestTimer=setTimeout(()=>{if(this.pending)this.result('Pas de réponse du serveur.');},5000);
   }
-  private retroTarget(tape:string){return tape==='table'?'table':tape==='tape-red'?'four':tape==='tape-blue'?'eight':'king';}
+  private retroTarget(tape:string){return tape==='table'?'table':tape==='tape-backfuture'||tape==='tape-red'?'four':tape==='tape-goonies'||tape==='tape-blue'?'eight':tape==='tape-gremlins'?'chest':'king';}
+  private retroTapes(){return (this.state?.engine.instances.find(instance=>instance.type==='retro-videoclub')?.objects??[]).map(object=>object.id);}
   private performRetro(action:unknown,tape:string){
     const position=this.currentPosition(),step=this.state?.engine.step;
     if(!position||!this.state?.running||!step||step.kind!=='puzzle'||this.pending||!this.connected||!this.closeTo(this.retroTarget(tape)))return;
@@ -155,8 +156,8 @@ export class AdventureClient {
       if(state.engine.testStartStepId)text('MODE TEST — session temporaire, sans progression pour l’aventure normale.');
       if(state.videoclub){
         const retro=state.videoclub as RetroState;text('Le vidéoclub rétro');text('Retrouvez les trois cassettes, puis insérez-les dans l’ordre des années indiqué sur les jaquettes.');text(`Cassettes découvertes : ${retro.found.length}/3 · erreurs : ${retro.attempts}`);
-        for(const tape of ['tape-red','tape-blue','tape-gold']){const target=this.retroTarget(tape),found=retro.found.includes(tape as never);const row=document.createElement('div');row.className='xr-actions';const discover=document.createElement('button');discover.textContent=found?`${tape} découverte`:`Découvrir ${tape}`;discover.disabled=!this.connected||this.pending||found||!this.closeTo(target);discover.onclick=()=>this.performRetro({action:'discover_tape',tape},tape);row.append(discover);
-          if(found)for(let slot=0;slot<3;slot++){const button=document.createElement('button');button.textContent=`Logement ${slot+1}`;button.disabled=!this.connected||this.pending||!this.closeTo(target);button.onclick=()=>this.performRetro({action:'place_tape',tape,slot},tape);row.append(button);this.retroButtons.push({button,ready:true,target});}panel.body.append(row);}
+        for(const tape of this.retroTapes()){const target=this.retroTarget(tape),found=retro.found.includes(tape as never);const row=document.createElement('div');row.className='xr-actions';const discover=document.createElement('button');discover.textContent=found?`${tape} découverte`:`Découvrir ${tape}`;discover.disabled=!this.connected||this.pending||found||!this.closeTo(target);discover.onclick=()=>this.performRetro({action:'discover_tape',tape},tape);row.append(discover);
+          if(found)for(let slot=0;slot<retro.slots.length;slot++){const button=document.createElement('button');button.textContent=`Logement ${slot+1}`;button.disabled=!this.connected||this.pending||!this.closeTo(target);button.onclick=()=>this.performRetro({action:'place_tape',tape,slot},tape);row.append(button);this.retroButtons.push({button,ready:true,target});}panel.body.append(row);}
         const reset=document.createElement('button');reset.textContent='Éjecter les cassettes';reset.disabled=!this.connected||this.pending||!this.closeTo('table');reset.onclick=()=>this.performRetro({action:'reset_tapes'},'table');panel.body.append(reset);
       }else if(state.hybrid){
         if(state.phase==='pending'){text(state.engine.step.title);text(state.message);}

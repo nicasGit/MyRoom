@@ -1,3 +1,9 @@
+### 25 novembre 2026 - Videoclub 80s et cachettes thematiques (preparation)
+
+Le puzzle propose quatre jaquettes originales inspirees des videoclubs des annees 80 : Indiana Jones (1981), Gremlins (1984), Retour vers le futur (1985) et Les Goonies (1985). Les annees servent de logique de classement. Chaque cassette possede une cachette thematique, dont la boite des Gremlins, et les cartes sont generees localement avec un style retro original ; aucune pochette commerciale n est embarquee. La version d aventure 0.5.0 coexiste avec la version 0.4.0 et conserve les anciennes configurations a trois cassettes.
+
+Verifications reussies : npm run typecheck, npm run build et npm test (167 tests). Aucun essai materiel Quest n est revendique.
+
 ### 24 novembre 2026 - Videoclub retro (Phase 2, preparation 0.15.8)
 
 Le module independant retro-videoclub est ajoute au registre des enigmes. Il gere la decouverte de trois cassettes, leur depot dans trois logements, les erreurs de montage et l ordre gagnant, avec etat serveur, indices, recompenses et objets interactifs. Le manifeste menthe27 0.4.0 (menthe27Videoclub) enchaine le coffre, le blackjack puis le Videoclub et laisse explicitement l etape radio en preparation. Les versions 0.1.0, 0.2.0 et 0.3.0 restent disponibles pour les pieces et sessions existantes.
