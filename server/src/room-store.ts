@@ -14,6 +14,12 @@ export class RoomStore {
     }
   }
   snapshot() { return structuredClone(this.library); }
+  replace(value: unknown, revision: unknown) {
+    if (revision !== this.library.revision) throw new Error('Bibliothèque modifiée ailleurs. Actualiser avant de recommencer.');
+    const parsed = parseLibrary(value); if (parsed.rooms.length > 20) throw new Error('Maximum 20 pièces enregistrées.');
+    const next = { ...parsed, revision: this.library.revision + 1 };
+    writeFileSync(`${this.file}.tmp`, JSON.stringify(next, null, 2), { mode: 0o600 }); atomicRename(`${this.file}.tmp`, this.file); this.library = next; return this.snapshot();
+  }
   active() { return this.snapshot().rooms.find(room=>room.id===this.library.activeId) ?? null; }
   change(action: 'save'|'activate'|'delete'|'rename', revision: unknown, input: unknown) {
     if(revision!==this.library.revision) throw new Error('Bibliothèque modifiée ailleurs. Actualiser avant de recommencer.');

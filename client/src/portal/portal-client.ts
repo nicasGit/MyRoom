@@ -38,7 +38,7 @@ export class PortalClient {
   }
   confirm(){if(!hasStaffAccess(this.state,this.slot)){this.notify('Prenez votre bâton personnel pour révéler le vortex.');return;}this.command('confirm');}
   updateVirtual(position:THREE.Vector3,now=performance.now()){
-    if(!this.state?.active||this.state.simulation)return;
+    if(!this.state?.active)return;
     if(now-this.last>=300){this.last=now;this.command('pose',position);this.wasReady=true;}
   }
   raycast(group:THREE.Group,origin:THREE.Vector3,direction:THREE.Vector3,camera:THREE.Camera){group.updateMatrixWorld(true);const ray=new THREE.Raycaster(origin,direction,0,8);ray.camera=camera;if(ray.intersectObject(group,true).some(hit=>hit.object.userData.portalConfirm))this.confirm();}

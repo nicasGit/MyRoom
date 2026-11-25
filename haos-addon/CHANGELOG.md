@@ -390,3 +390,9 @@
 - Prototype WebXR avec diagnostic immersive-ar et calibrage manuel à deux points.
 - Quatre places WebSocket et énigme de démonstration synchronisée.
 - Image ARM64 publiée via GitHub Actions, serveur Node.js et Nginx.
+## 0.15.10
+
+- Import/export JSON de la bibliothèque de pièces depuis l’administration.
+- Import et sélection persistante de jaquettes personnalisées pour le Vidéoclub.
+- Franchissement virtuel fonctionnel dans la simulation PC, avec lancement de l’aventure après validation serveur.
+

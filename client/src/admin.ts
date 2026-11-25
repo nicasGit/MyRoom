@@ -211,5 +211,6 @@ el('rooms-export').onclick=()=>{
   const url=URL.createObjectURL(new Blob([JSON.stringify(library,null,2)],{type:'application/json'}));
   const link=document.createElement('a');link.href=url;link.download='myroom-rooms.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+el<HTMLInputElement>('rooms-import').onchange=()=>{void(async()=>{const file=el<HTMLInputElement>('rooms-import').files?.[0];if(!file||!library)return;try{const imported=JSON.parse(await file.text());if(!imported||imported.version!==1||!Array.isArray(imported.rooms))throw Error('Fichier de bibliothèque invalide.');if(!confirm(`Importer ${imported.rooms.length} pièce(s) et remplacer la bibliothèque actuelle ?`))return;await action('rooms/import',{revision:libraryRevision,library:imported});notice.textContent='Bibliothèque importée.';}catch(error){notice.textContent=String(error);}finally{el<HTMLInputElement>('rooms-import').value='';}})();};
 
 void fetch('/api/admin/auth').then(response=>response.json()).then(access=>{if(access.debug){debug=true;el('logout').textContent='Mode debug sans jeton';void refresh();}}).catch(()=>{});

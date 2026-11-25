@@ -59,7 +59,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/models/import','/api/admin/models/inspect','/api/admin/models/update','/api/admin/covers/import','/api/admin/covers/update','/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/models/import','/api/admin/models/inspect','/api/admin/models/update','/api/admin/covers/import','/api/admin/covers/update','/api/admin/rooms/import','/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -79,11 +79,14 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     let bytes = 0;
     for await (const chunk of req) {
       bytes += Buffer.byteLength(chunk);
-      if (bytes > (req.url?.startsWith('/api/admin/rooms/') ? 32768 : 4096)) { reply(res, 413, { error: 'Message trop volumineux.' }); return; }
+      if (bytes > (req.url==='/api/admin/rooms/import' ? 512*1024 : req.url?.startsWith('/api/admin/rooms/') ? 32768 : 4096)) { reply(res, 413, { error: 'Message trop volumineux.' }); return; }
       chunks.push(Buffer.from(chunk));
     }
     const body: unknown = JSON.parse(Buffer.concat(chunks).toString());
     if (!body || typeof body !== 'object' || Array.isArray(body)) { reply(res, 400, { error: 'Objet JSON attendu.' }); return; }
+    if(req.url==='/api/admin/rooms/import'){
+      try{const command=body as Record<string,unknown>;if(Object.keys(command).sort().join(',')!=='library,revision')throw Error('Bibliothèque et révision attendues.');const library=store.replace(command.library,command.revision);room.model=store.active();room.libraryRevision=library.revision;log('room_library_imported',{revision:library.revision,rooms:library.rooms.length});broadcast();reply(res,200,{library});}catch(error){reply(res,400,{error:error instanceof Error?error.message:'Import impossible.'});}return;
+    }
     if(req.url==='/api/admin/display-modes'){
       try{const policy=room.display.configure(body);log('display_policy',{revision:policy.revision,defaultMode:policy.defaultMode});broadcast();reply(res,200,{policy});}
       catch(error){reply(res,400,{error:error instanceof Error?error.message:'Configuration invalide.'});}return;

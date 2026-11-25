@@ -47,7 +47,7 @@ export class TeamPortal {
   }
   canGrab(slot:number,target:string){const p=this.state.players[slot-1];return this.active&&['collecting','opening','portal-open'].includes(this.state.phase)&&target===STAFF_IDS[slot-1]&&!!p?.ready;}
   act(c:PortalCommand,slot:number,room:RoomModel|null,now:number,mode:DisplayMode='quest-webxr'){
-    if(!this.active||c.sessionId!==this.state.sessionId||this.state.simulation)throw Error('Session portail incompatible.');
+    if(!this.active||c.sessionId!==this.state.sessionId)throw Error('Session portail incompatible.');
     if(this.seen.has(c.commandId))throw Error('Commande déjà reçue.');
     if(c.action!=='pose'&&c.revision!==this.state.revision||c.revision>this.state.revision)throw Error('Révision portail périmée.');
     const p=this.state.players[slot-1];if(!p?.present)throw Error('Place absente.');

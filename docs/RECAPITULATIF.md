@@ -1312,3 +1312,9 @@ La Bibliothèque permet d’importer plusieurs images de jaquettes par cassette 
 
 Le proxy HAOS relaie désormais les routes publiques et d’administration des jaquettes avec une limite d’import de 4 Mio.
 
+La console d’administration propose aussi l’export JSON de la bibliothèque de pièces et son import contrôlé. Le serveur valide la bibliothèque, vérifie la révision courante et écrit le remplacement atomiquement ; l’import ne supprime aucune donnée avant validation.
+
+La simulation 3D transmet maintenant les poses virtuelles du joueur au portail pendant le mode test. Un passage au joystick peut donc déclencher la transition vers la première étape de l’aventure, avec la méthode `virtual-crossing` ; le passage physique Quest reste distinct.
+
+Version de l’add-on préparée : 0.15.10.
+
