@@ -1,4 +1,4 @@
-## 0.15.8
+## 0.15.9\n\n- Ajout des jaquettes originales du Vidéoclub rétro dans la Bibliothèque.\n- Quatre films des années 80, années de sortie et cachettes thématiques.\n- Nouvelle aventure Menthe 27 version 0.5.0.\n\n## 0.15.8
 
 - Ajout du puzzle Videoclub retro : decouverte, montage de trois cassettes, erreurs et ordre gagnant.
 - Nouvelle aventure Menthe 27 version 0.4.0, avec progression coffre, blackjack puis videoclub.
