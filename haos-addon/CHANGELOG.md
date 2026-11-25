@@ -400,3 +400,8 @@
 ## 0.15.11
 - Ajoute la transition de brouillard lors du passage collectif du vortex en simulation PC.
 - Le panneau mural affiche le puzzle courant et NJOSoftware au dos.
+## 0.15.12
+
+- Navigation joueur et administration organisée en sidebar sur écran large.
+- Lien direct vers l’administration ajouté dans la sidebar joueur.
+

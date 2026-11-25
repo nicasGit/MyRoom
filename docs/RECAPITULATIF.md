@@ -1332,3 +1332,7 @@ Les pages joueur et administration utilisent maintenant un menu de panneaux sél
 Sur les écrans larges, ces menus sont affichés en barre latérale fixe et restent horizontaux sur les petits écrans. La barre joueur contient aussi un lien direct vers `/admin.html`.
 
 Vérifications prévues : typecheck, compilation et tests logiciels. Aucun test matériel Quest ou mobile n'est revendiqué.
+
+## 25 novembre 2026 - Préparation de la version 0.15.12
+
+La version de l'add-on HAOS passe de 0.15.11 à 0.15.12 pour intégrer la sidebar et le lien direct vers l'administration. Aucun test matériel Quest ou mobile n'est revendiqué. Publication à effectuer après validation.
