@@ -12,6 +12,12 @@ const el=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById
 let session=0;
 let token='',debug=false,state:State|undefined,busy=false,queue:Pending[]=[],timer:ReturnType<typeof setTimeout>|undefined,catalogueKey='',clearPreviews=()=>{};
 let editing:LibraryAsset|undefined,editRevision=0;
+const VIDEOCLUB_COVERS=[
+  {id:'tape-indiana',title:'Indiana Jones',year:1981,hide:'Sous le bureau',image:'/covers/videoclub/indiana-jones.svg'},
+  {id:'tape-gremlins',title:'Gremlins',year:1984,hide:'Dans la boîte des Gremlins',image:'/covers/videoclub/gremlins.svg'},
+  {id:'tape-backfuture',title:'Retour vers le futur',year:1985,hide:'Derrière une affiche rétro',image:'/covers/videoclub/retour-vers-le-futur.svg'},
+  {id:'tape-goonies',title:'Les Goonies',year:1985,hide:'Dans une boîte à cartes',image:'/covers/videoclub/goonies.svg'},
+] as const;
 const dialog=el<HTMLDialogElement>('model-dialog'),preview=new ModelPreview(el('model-preview'),el('model-status'));
 const notice=(message:string)=>{el('notice').textContent=message;};
 async function responseJSON(response:Response){let data:any;try{data=await response.json();}catch{throw Error(`HTTP ${response.status} : vérifier les limites du proxy HTTPS.`);}if(!response.ok)throw Error(data.error??`HTTP ${response.status}`);return data;}
@@ -45,6 +51,10 @@ function drawCatalogue(){
     card.append(image,status,title,info,configure,add);host.append(card);
   }
   clearPreviews=catalogPreviews(host,previews);
+}
+function drawVideoclubCovers(){
+  const host=el('videoclub-covers');host.replaceChildren();
+  for(const cover of VIDEOCLUB_COVERS){const card=document.createElement('article');card.className='player';const image=document.createElement('img');image.className='library-thumbnail cover-thumbnail';image.src=cover.image;image.alt=`Jaquette originale MyRoom : ${cover.title}`;const title=document.createElement('h3');title.textContent=`${cover.title} · ${cover.year}`;const info=document.createElement('p');info.textContent=`Cachette : ${cover.hide}`;card.append(image,title,info);host.append(card);}
 }
 async function refresh(){
   clearTimeout(timer);const current=session;try{const next=await api('state') as State;if(current!==session)return;state=next;setImportedCatalog(state.objectCatalog);el('login-panel').hidden=true;el('workspace').hidden=false;el('connection').textContent=debug?'Mode debug':'Connecté';drawCatalogue();}
@@ -96,3 +106,4 @@ el('login').onsubmit=event=>{event.preventDefault();session++;token=el<HTMLInput
 el('logout').onclick=()=>{session++;token='';debug=false;clearTimeout(timer);state=undefined;queue=[];clearPreviews();dialog.close();el('workspace').hidden=true;el('login-panel').hidden=false;el('connection').textContent='Non connecté';};
 window.addEventListener('pagehide',()=>{clearTimeout(timer);clearPreviews();preview.dispose();},{once:true});
 void fetch('/api/admin/auth').then(responseJSON).then(access=>{if(access.debug){debug=true;void refresh();}}).catch(()=>{});
+drawVideoclubCovers();
