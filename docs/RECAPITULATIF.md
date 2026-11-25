@@ -1318,3 +1318,9 @@ La simulation 3D transmet maintenant les poses virtuelles du joueur au portail p
 
 Version de l’add-on préparée : 0.15.10.
 
+
+## 26 novembre 2026 - Simulation PC et panneau d'information
+
+La simulation PC transmet les poses virtuelles du groupe et lance maintenant la premiere etape apres le passage collectif. Une transition visuelle de brouillard masque le vortex pendant le changement d'univers, puis laisse apparaitre la piece et les objets de l'aventure. Le panneau mural reste deplacable comme objet de scene, affiche le puzzle courant et porte la signature NJOSoftware au dos.
+
+Verifications a executer avant publication : `npm run typecheck`, `npm run build` et `npm test`. Aucun test materiel Quest n'est revendique.

@@ -396,3 +396,7 @@
 - Import et sélection persistante de jaquettes personnalisées pour le Vidéoclub.
 - Franchissement virtuel fonctionnel dans la simulation PC, avec lancement de l’aventure après validation serveur.
 
+
+## 0.15.11
+- Ajoute la transition de brouillard lors du passage collectif du vortex en simulation PC.
+- Le panneau mural affiche le puzzle courant et NJOSoftware au dos.

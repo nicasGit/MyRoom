@@ -55,6 +55,8 @@ function wallConsole(model:RoomModel,state:AdventureState){
   const panel=new THREE.Group();panel.name='wall-symbol-panel';panel.position.set(pose.position.x,pose.height,pose.position.z);panel.rotation.y=pose.yaw;
   const frame=box(1.04,0.8,0.065,0x705332);panel.add(frame);
   const face=box(0.97,0.73,0.025,0x172630);face.position.z=0.045;panel.add(face);
+  const puzzleName=state.videoclub?'Videoclub retro':state.hybrid||state.phase==='blackjack'?'Blackjack hybride':state.phase==='symbols'?'Coffre a symboles':'Etape suivante';
+  const info=plaque(`Puzzle : ${puzzleName}`,'#ffe082',0.8,0.1);info.position.set(0,0.34,0.065);panel.add(info);
   const title=plaque(state.phase==='symbols'?'Sceaux du coffre':'Coffre déverrouillé','#ffe082',0.8,0.12);title.position.set(0,0.27,0.065);panel.add(title);
   for(const [i,id] of (['sun','tree','moon','star'] as const).entries()){
     const inserted=state.symbols.entered[i],slot=symbolTile(inserted,'#a7f3a0',i);slot.position.set((i-1.5)*0.235,0.08,0.065);panel.add(slot);
@@ -62,6 +64,7 @@ function wallConsole(model:RoomModel,state:AdventureState){
     button.userData.action={action:'press_symbol',target:id};panel.add(button);
   }
   const hint=plaque('Choisir les symboles dans le bon ordre','#c3d8eb',0.85,0.09);hint.position.set(0,-0.29,0.065);panel.add(hint);
+  const back=plaque('NJOSoftware','#9cdced',0.78,0.18);back.position.set(0,0,-0.04);back.rotation.y=Math.PI;panel.add(back);
   return panel;
 }
 export function adventureGroup(model:RoomModel,state:AdventureState,actorId?:string){

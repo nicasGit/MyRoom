@@ -14,20 +14,20 @@ type Hooks={intro:()=>boolean;position:(position:THREE.Vector3,camera:boolean)=>
 type Offset={x:number;y:number;yaw:number;scale:number};
 export class SimulatorScene {
   readonly video=document.createElement('video');readonly host=document.createElement('section');
-  private surface=document.createElement('div');private message=document.createElement('p');private adjustButton=document.createElement('button');private target=document.createElement('select');
+  private surface=document.createElement('div');private message=document.createElement('p');private adjustButton=document.createElement('button');private target=document.createElement('select');private transition=document.createElement('div');
   private scene=new THREE.Scene();private world=new THREE.Group();private camera=new THREE.PerspectiveCamera(65,1,.05,100);private renderer?:THREE.WebGLRenderer;
   private state?:SimState;private room?:THREE.Group;private game?:THREE.Group;private key='';private modelKey='';
-  private active=false;private cameraMode=false;private adjusting=false;private raf=0;private previous=0;private yaw=0;private pitch=0;
+  private active=false;private cameraMode=false;private adjusting=false;private raf=0;private previous=0;private yaw=0;private pitch=0;private portalPhase='waiting';private transitionUntil=0;
   private keys=new Set<string>();private moveX=0;private moveZ=0;private pointers=new Map<number,{x:number;y:number}>();private dragged=false;
   private bases=new Map<THREE.Object3D,{position:THREE.Vector3;quaternion:THREE.Quaternion;scale:THREE.Vector3}>();private offsets=new Map<string,Offset>();private synthetic?:GrabHand;private firstGrip=false;private libraryHands?:GrabHand[];private grabOrigin=new THREE.Vector3();private dropping=false;private dropButton=document.createElement('button');
   constructor(parent:HTMLElement,private hooks:Hooks){
-    this.host.className='simulator';this.host.hidden=true;this.surface.className='simulator-surface';
+    this.host.className='simulator';this.host.hidden=true;this.surface.className='simulator-surface';this.transition.className='simulator-transition';this.transition.setAttribute('aria-hidden','true');
     this.video.autoplay=true;this.video.muted=true;this.video.playsInline=true;this.video.setAttribute('webkit-playsinline','');this.video.setAttribute('aria-label','Flux caméra local');
     this.message.setAttribute('role','status');this.target.setAttribute('aria-label','Objet de superposition à placer');
     const reset=document.createElement('button');reset.textContent='Recentrer';reset.onclick=()=>this.recenter();
     this.adjustButton.textContent='Placer la superposition';this.adjustButton.onclick=()=>{this.adjusting=!this.adjusting;this.adjustButton.setAttribute('aria-pressed',String(this.adjusting));};
     this.dropButton.textContent='Poser l’objet';this.dropButton.hidden=true;this.dropButton.onclick=()=>{this.dropping=true;};
-    this.host.append(this.message,reset,this.adjustButton,this.target,this.dropButton,this.surface);this.surface.append(this.video);parent.prepend(this.host);this.scene.add(this.world);
+    this.host.append(this.message,reset,this.adjustButton,this.target,this.dropButton,this.surface);this.surface.append(this.video,this.transition);parent.prepend(this.host);this.scene.add(this.world);
     const joystick=document.createElement('div');joystick.className='simulator-joystick';joystick.textContent='Déplacer';joystick.setAttribute('aria-label','Joystick tactile de déplacement');this.surface.append(joystick);
     const steer=(event:PointerEvent)=>{const rect=joystick.getBoundingClientRect();this.moveX=THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/35,-1,1);this.moveZ=THREE.MathUtils.clamp(-(event.clientY-rect.top-rect.height/2)/35,-1,1);};
     joystick.onpointerdown=event=>{event.preventDefault();joystick.setPointerCapture(event.pointerId);steer(event);};joystick.onpointermove=event=>{if(joystick.hasPointerCapture(event.pointerId))steer(event);};
@@ -38,7 +38,7 @@ export class SimulatorScene {
     new ResizeObserver(()=>this.resize()).observe(this.surface);
     window.addEventListener('pagehide',()=>{this.stop();this.renderer?.dispose();},{once:true});
   }
-  receive(state:SimState){this.state=state;const modelKey=JSON.stringify(state.model);if(modelKey!==this.modelKey){this.modelKey=modelKey;this.offsets.clear();this.recenter();if(this.room)disposeGroup(this.room);this.room=state.model?modelGroup(state.model):undefined;if(this.room)this.world.add(this.room);}
+  receive(state:SimState){const nextPhase=state.portal.phase;if(nextPhase!==this.portalPhase){if(nextPhase==='transitioning'){this.transitionUntil=performance.now()+2300;this.transition.classList.remove('simulator-transition-fade');this.transition.classList.add('simulator-transition-active');}else if(nextPhase==='completed'){this.transitionUntil=Math.max(this.transitionUntil,performance.now()+700);this.transition.classList.remove('simulator-transition-active');this.transition.classList.add('simulator-transition-fade');}this.portalPhase=nextPhase;}this.state=state;const modelKey=JSON.stringify(state.model);if(modelKey!==this.modelKey){this.modelKey=modelKey;this.offsets.clear();this.recenter();if(this.room)disposeGroup(this.room);this.room=state.model?modelGroup(state.model):undefined;if(this.room)this.world.add(this.room);}
     const key=JSON.stringify([modelKey,state.adventure.revision,state.portal.revision,state.actor]);if(key!==this.key){this.key=key;if(this.game)disposeGroup(this.game);this.game=state.model?(this.hooks.intro()?portalView(state.portal,state.slot):adventureGroup(state.model,state.adventure,state.actor)):undefined;if(this.game){addLibraryObjects(this.game,state.model!);this.world.add(this.game);}this.bases.clear();for(const node of Object.values(this.game?.userData.grabbables??{}) as THREE.Object3D[])this.bases.set(node,{position:node.position.clone(),quaternion:node.quaternion.clone(),scale:node.scale.clone()});this.options();}
   }
   start(camera:boolean){
@@ -96,7 +96,7 @@ export class SimulatorScene {
       const magnitude=Math.max(1,Math.hypot(forward,right)),x=this.camera.position.x+(Math.cos(this.yaw)*right-Math.sin(this.yaw)*forward)/magnitude*dt*1.4,z=this.camera.position.z+(-Math.sin(this.yaw)*right-Math.cos(this.yaw)*forward)/magnitude*dt*1.4;
       if(canStand(model,x,z)){this.camera.position.x=x;this.camera.position.z=z;}this.camera.rotation.set(this.pitch,this.yaw,0,'YXZ');this.hooks.position(this.camera.position,this.cameraMode);
     }
-    if(this.room)this.room.visible=!this.cameraMode;this.hooks.wall.visible=this.hooks.intro()&&!!model;
+    if(this.transitionUntil&&performance.now()>this.transitionUntil){this.transitionUntil=0;this.transition.classList.remove('simulator-transition-active','simulator-transition-fade');}if(this.room)this.room.visible=!this.cameraMode;this.hooks.wall.visible=this.hooks.intro()&&!!model;
     for(const [node,base] of this.bases){node.position.copy(base.position);node.quaternion.copy(base.quaternion);node.scale.copy(base.scale);}if(this.game){applyObjectPoses(this.game,this.state?.adventure.objects);animateAdventure(this.game,time);this.game.userData.animatePortal?.(Date.now());}
     this.world.position.set(0,0,0);this.world.rotation.set(0,0,0);this.world.scale.setScalar(1);
     for(const [id,offset] of this.offsets){const object=id==='scene'?this.world:this.game?.userData.grabbables?.[id];if(object){object.position.x+=offset.x;object.position.y+=offset.y;object.rotation.y+=offset.yaw;object.scale.setScalar(offset.scale);}}
