@@ -1329,4 +1329,6 @@ Verifications executees : `npm run typecheck`, `npm run build` et `npm test` (16
 
 Les pages joueur et administration utilisent maintenant un menu de panneaux sélectionnables. La page joueur sépare le lancement, le diagnostic, le calibrage, la pièce 3D et l'aventure. La console admin sépare la vue d'ensemble, l'aventure, Team Portal, les modes d'affichage, les pièces, les joueurs et le journal. Les contrôles existants restent inchangés et sont regroupés sans modifier le protocole serveur.
 
+Sur les écrans larges, ces menus sont affichés en barre latérale fixe et restent horizontaux sur les petits écrans. La barre joueur contient aussi un lien direct vers `/admin.html`.
+
 Vérifications prévues : typecheck, compilation et tests logiciels. Aucun test matériel Quest ou mobile n'est revendiqué.

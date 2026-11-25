@@ -3,7 +3,16 @@ a { color: #67e8f9; }
 .page-menu { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 22px; padding:8px; position:sticky; top:0; z-index:20; background:rgb(17 24 39 / 94%); border:1px solid #334155; border-radius:12px; backdrop-filter:blur(8px); }
 .page-menu button { margin:0; background:#17283f; color:#cbd5e1; border:1px solid #3b526d; }
 .page-menu button[aria-current="page"] { background:#67e8f9; color:#102030; border-color:#67e8f9; }
+.page-menu-link { display:block; padding:12px 18px; border:1px solid #3b526d; border-radius:6px; color:#cbd5e1; text-decoration:none; text-align:center; }
+.page-menu-link:hover, .page-menu-link:focus-visible { background:#243b59; color:#fff; }
 .page-panel { margin-bottom:20px; }
+main:has(> .page-menu) { display:grid; grid-template-columns:210px minmax(0,1fr); gap:24px; max-width:1080px; }
+main:has(> .page-menu) > .page-menu { grid-column:1; grid-row:1 / -1; flex-direction:column; align-self:start; position:sticky; top:18px; }
+main:has(> .page-menu) > .page-panel, main:has(> .page-menu) > .simulator { grid-column:2; }
+@media (max-width:760px) {
+  main:has(> .page-menu) { display:block; }
+  main:has(> .page-menu) > .page-menu { position:sticky; top:0; flex-direction:row; }
+}
 #game-launch { margin: 20px 0; padding: 18px; border: 1px solid #67e8f9; border-radius: 12px; background: #17283f; }
 #game-launch #enter { background: #67e8f9; color: #102030; font-size: 1.1rem; font-weight: 700; min-height: 52px; }
 #game-launch #status:empty { display: none; }

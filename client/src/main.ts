@@ -60,6 +60,14 @@ setupPanelMenu(document.querySelector('main')!,[
   {id:'room',label:'Pièce 3D',selector:'#room-panel'},
   {id:'puzzle',label:'Aventure',selector:'#puzzle-panel'},
 ]);
+const pageMenu=document.querySelector<HTMLElement>('main > .page-menu');
+if(pageMenu){
+  const adminLink=document.createElement('a');
+  adminLink.className='page-menu-link';
+  adminLink.href='/admin.html';
+  adminLink.textContent='Administration';
+  pageMenu.append(adminLink);
+}
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;
