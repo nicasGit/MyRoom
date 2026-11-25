@@ -3,6 +3,7 @@
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#111827"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" href="/icons/myroom-192.png"><link rel="apple-touch-icon" href="/icons/myroom-192.png"><title>MyRoom — Diagnostic WebXR</title></head>
 <body>
   <main>
+    <section id="home-panel" class="page-panel" aria-label="Accueil et lancement">
     <h1>MyRoom</h1><p>Prototype partagé · Quest 2 / Quest 3 / Quest 3S</p>
     <section id="game-launch" aria-label="Lancer le jeu">
       <button id="enter" disabled>Lancer le jeu en WebXR</button>
@@ -14,19 +15,27 @@
       <p>L’application utilise cette adresse et nécessite une connexion à votre serveur MyRoom. L’installation ne garantit pas la disponibilité de l’AR sur le téléphone.</p>
     </section>
     <p><a href="/admin.html">Administration de la salle →</a></p>
+    </section>
+    <section id="diagnostic-panel" class="page-panel" aria-label="Diagnostic et joueurs">
     <h2>Diagnostic WebXR</h2><ul id="diagnostics"></ul>
     <p>Quest 3 : configurez l’espace dans le casque et autorisez les données spatiales. Après A/B, importez les surfaces disponibles. Aux contrôleurs : A/X importer, B droit enregistrer le brouillon après vérification, Y gauche annuler. Les surfaces dépendent des capacités du navigateur.</p>
     <p>Déplacer les objets après A/B : pincer près d’un petit objet avec une main, ou maintenir les poignées des contrôleurs. Coffre, table et panneau nécessitent les deux mains. Relâcher pose l’objet ; perdre le suivi annule la prise. Un indice se cache sous le coffre. Les mains suivies dépendent des capacités WebXR accordées par le navigateur.</p>
     <h2>Joueurs (4 places)</h2><ol id="players"></ol>
+    </section>
+    <section id="calibration-panel" class="page-panel" aria-label="Calibrage manuel">
     <h2>Calibrage manuel</h2>
     <p>Choisissez les mêmes repères A puis B au sol, séparés d'au moins 50 cm. Sur téléphone, visez avec le centre de l'écran et touchez « Placer A » puis « Placer B ». Sur casque, visez avec le contrôleur et utilisez la gâchette. Le rayon est projeté sur le sol local (y = 0) ; A définit l'origine et A → B l'axe +X.</p>
     <button id="reset">Recommencer le calibrage</button><p id="calibration">Non calibré</p>
+    </section>
+    <section id="room-panel" class="page-panel" aria-label="Pièce 3D">
     <h2>Pièce 3D enregistrée</h2>
     <p>Après A/B, relevez les coins du sol, saisissez la hauteur des murs et ajoutez des obstacles cubiques. Les hauteurs sont des mesures manuelles, pas une détection caméra.</p>
     <label for="room-admin-token">Jeton administrateur pour enregistrer une pièce (à saisir avant l’AR)</label>
     <input id="room-admin-token" type="password" autocomplete="off" placeholder="Même jeton que l’administration">
     <p id="room-summary" role="status">Chargement de la pièce active…</p>
     <div id="room-preview"></div><p>Glisser pour tourner l’aperçu 3D ; pincer ou utiliser la molette pour zoomer. La bibliothèque de pièces se gère dans l’administration.</p>
+    </section>
+    <section id="puzzle-panel" class="page-panel" aria-label="Enigme et aventure">
     <h2>Énigme de démonstration</h2><p id="puzzle"></p>
     <button id="solve" disabled>Résoudre l'énigme partagée</button>
     <p>Aucune validation physique sur casque effectuée. Le calibrage est expérimental et doit être refait après recentrage.</p>
@@ -36,6 +45,8 @@
       <canvas id="adventure-map" width="800" height="420" hidden style="width:100%;max-width:800px" aria-label="Plan des énigmes"></canvas>
       <div id="adventure-desktop"></div>
     </section>
+    </section>
+
   </main>
   <div id="xr-overlay" hidden>
     <div class="xr-crosshair" aria-hidden="true">+</div>

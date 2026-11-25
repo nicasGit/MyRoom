@@ -9,6 +9,7 @@ import { PortalAdmin } from './portal/portal-admin';
 import type { PortalPublic } from '../../server/src/portal/portal-types.js';
 import { area,type RoomLibrary } from '../../server/src/scene-schema.js';
 import { AdventureEditor } from './adventure-editor';
+import { setupPanelMenu } from './panel-menu';
 import type { AdventureState } from '../../server/src/adventure.js';
 import type { AdventureManifest } from '../../server/src/engine/puzzle-types.js';
 type Player = { id: string; slot: number; name:string;address?: string; userAgent?: string; connectedAt: string };
@@ -30,7 +31,7 @@ const objectLibrary=new LibraryAdmin(el('dashboard'),body=>api('rooms/objects',b
 const adventureEditor=new AdventureEditor(el('adventure-editor'),(room,revision)=>api('rooms/save',{room,revision}),()=>{void refresh();});
 const startAdventure=document.createElement('button');startAdventure.textContent='Commencer les énigmes';startAdventure.id='adventure-start';el('adventure-reset').after(startAdventure);
 startAdventure.onclick=()=>{if(adventureEditor.hasChanges()){notice.textContent='Enregistrez ou rechargez les placements avant de commencer.';return;}void action('adventure/start',{});};
-const catalogPanel=document.createElement('section');catalogPanel.className='panel';
+const catalogPanel=document.createElement('section');catalogPanel.className='panel';catalogPanel.id='admin-adventure-panel';
 catalogPanel.innerHTML='<h2>Aventure et équipe</h2><label>Aventure <select id="adventure-catalog"></select></label><button id="adventure-select">Choisir cette aventure</button><button id="adventure-stop" class="secondary">Arrêter la partie</button><p id="adventure-description"></p><p id="adventure-progress"></p><form id="player-names"><h3>Noms des quatre places</h3><div id="player-name-fields" class="players"></div><button type="submit">Enregistrer les noms</button><button id="suggest-names" type="button" class="secondary">Team Léon</button><button id="random-names" type="button" class="secondary">Noms aléatoires</button><p>Choisissez les noms puis cliquez sur Enregistrer les noms.</p></form><p>Les noms restent attachés aux places pendant ce démarrage du serveur. Les identités et sauvegardes persistantes viendront en Phase 3.</p>';
 el('dashboard').prepend(catalogPanel);
 const puzzleAdmin=document.createElement('div');puzzleAdmin.innerHTML='<p id="adventure-captain"></p><button id="adventure-hint">Partager l’indice suivant</button><button id="adventure-reset-puzzle" class="secondary">Réinitialiser l’énigme active</button><p id="adventure-hints"></p>';catalogPanel.append(puzzleAdmin,el('adventure-reset'));el('adventure-reset').textContent='Réinitialiser l’aventure';
@@ -83,6 +84,18 @@ function node(tag: string, text: string, className?: string) {
   return value;
 }
 const displayAdmin=new DisplayAdmin(el('dashboard'),policy=>api('display-modes',policy));
+const panelId=(selector:string,id:string)=>{const panel=document.querySelector<HTMLElement>(selector)?.closest<HTMLElement>('section.panel');if(panel)panel.id=id;};
+const metrics=document.querySelector<HTMLElement>('.metrics');if(metrics)metrics.id='admin-overview-panel';
+panelId('#players','admin-players-panel');panelId('#rooms','admin-rooms-panel');panelId('#logs','admin-logs-panel');panelId('#reset','admin-controls-panel');
+setupPanelMenu(el('dashboard'),[
+  {id:'overview',label:'Vue d’ensemble',selector:'#admin-overview-panel'},
+  {id:'adventure',label:'Aventure',selector:'#admin-adventure-panel'},
+  {id:'portal',label:'Team Portal',selector:'#admin-portal-panel'},
+  {id:'display',label:'Modes d’affichage',selector:'#admin-display-panel'},
+  {id:'rooms',label:'Pièces et objets',selector:'#admin-rooms-panel'},
+  {id:'players',label:'Joueurs',selector:'#admin-players-panel'},
+  {id:'logs',label:'Journal',selector:'#admin-logs-panel'},
+], 'overview');
 function render(state: State) {
   if(state.objectCatalog)setImportedCatalog(state.objectCatalog);
   displayAdmin.receive(state.displayPolicy,state.displayClients);

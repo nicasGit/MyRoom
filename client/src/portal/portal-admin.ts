@@ -4,7 +4,7 @@ export class PortalAdmin {
   private busy=false;private result=document.createElement('p');
   private fields=new Map<string,HTMLInputElement>();private enabled=document.createElement('input');private confirmed=document.createElement('input');
   constructor(host:HTMLElement,private api:(body:unknown)=>Promise<unknown>,private notify:(text:string)=>void){
-    const panel=document.createElement('section');panel.className='panel';const title=document.createElement('h2');title.textContent='Team Portal · introduction de session';
+    const panel=document.createElement('section');panel.className='panel';panel.id='admin-portal-panel';const title=document.createElement('h2');title.textContent='Team Portal · introduction de session';
     const warning=document.createElement('p');warning.textContent='Vérifiez réellement le couloir d’approche et de sortie. Le placement virtuel ne garantit pas l’absence d’obstacles. Gardez Guardian/Boundary actif, marchez calmement. Les noms sont ceux des quatre places ci-dessus.';
     this.result.setAttribute('role','status');panel.append(title,warning,this.status,this.form,this.players,this.controls,this.result);host.append(panel);
     for(const [input,text] of [[this.enabled,'Activer cette introduction'],[this.confirmed,'J’ai vérifié physiquement le passage et ses deux côtés']] as const){input.type='checkbox';const label=document.createElement('label');label.append(input,document.createTextNode(text));this.form.append(label);}

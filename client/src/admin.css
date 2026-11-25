@@ -2,3 +2,4 @@
 
 .library-thumbnail{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;background:linear-gradient(145deg,#263b51,#101b2b);border:1px solid #344a61;border-radius:9px;margin-bottom:14px}.library-shortcut{display:inline-block;margin:0 0 20px}
 .file-button{display:inline-block;cursor:pointer;margin-left:8px}
+.page-menu{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px;padding:8px;position:sticky;top:0;z-index:20;background:rgb(16 24 36 / 95%);border:1px solid #344256;border-radius:12px;backdrop-filter:blur(8px)}.page-menu button{margin:0;background:#192637;border-color:#384b63;color:#d7e4f5}.page-menu button[aria-current="page"]{background:#78e2c4;color:#0b2820;border-color:#78e2c4}.panel[hidden]{display:none!important}

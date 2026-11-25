@@ -23,6 +23,7 @@ import './cover-catalog';
 import { GrabInputs,ObjectGrabber,nearGrabbable } from './object-grab';
 import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
+import { setupPanelMenu } from './panel-menu';
 import { PortalClient } from './portal/portal-client';
 import { portalView } from './portal/portal-view';
 import { attachStaffToBelt } from './portal/staff-view';
@@ -52,6 +53,13 @@ diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContex
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
 diagnostic('Version client', '0.15.7');
 handPreview(document.querySelector('main')!);
+setupPanelMenu(document.querySelector('main')!,[
+  {id:'home',label:'Accueil / lancer',selector:'#home-panel'},
+  {id:'diagnostic',label:'Diagnostic',selector:'#diagnostic-panel'},
+  {id:'calibration',label:'Calibrage',selector:'#calibration-panel'},
+  {id:'room',label:'Pièce 3D',selector:'#room-panel'},
+  {id:'puzzle',label:'Aventure',selector:'#puzzle-panel'},
+]);
 async function checkXR() {
   try {
     const supported = await navigator.xr?.isSessionSupported('immersive-ar') ?? false;

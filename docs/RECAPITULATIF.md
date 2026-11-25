@@ -1324,3 +1324,9 @@ Version de l’add-on préparée : 0.15.10.
 La simulation PC transmet les poses virtuelles du groupe et lance maintenant la premiere etape apres le passage collectif. Une transition visuelle de brouillard masque le vortex pendant le changement d'univers, puis laisse apparaitre la piece et les objets de l'aventure. Le panneau mural reste deplacable comme objet de scene, affiche le puzzle courant et porte la signature NJOSoftware au dos.
 
 Verifications executees : `npm run typecheck`, `npm run build` et `npm test` (167 tests). Publication 0.15.11 reussie via le workflow GitHub Actions du commit `63e8489`, avec image ARM64 publiee dans GHCR. Aucun test materiel Quest n'est revendique.
+
+## 26 novembre 2026 - Navigation simplifiée des interfaces
+
+Les pages joueur et administration utilisent maintenant un menu de panneaux sélectionnables. La page joueur sépare le lancement, le diagnostic, le calibrage, la pièce 3D et l'aventure. La console admin sépare la vue d'ensemble, l'aventure, Team Portal, les modes d'affichage, les pièces, les joueurs et le journal. Les contrôles existants restent inchangés et sont regroupés sans modifier le protocole serveur.
+
+Vérifications prévues : typecheck, compilation et tests logiciels. Aucun test matériel Quest ou mobile n'est revendiqué.
