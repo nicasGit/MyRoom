@@ -1,6 +1,7 @@
 import { importedCatalog } from './object-library.js';
 import { modelAdmin } from './model-api.js';
 import type { ModelStore } from './model-store.js';
+import type { CoverStore } from './cover-store.js';
 import { editRoomObjects } from './object-library-commands.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
@@ -21,7 +22,7 @@ function reply(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
   res.end(JSON.stringify(body));
 }
-export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore, models?:ModelStore) {
+export async function admin(req: IncomingMessage, res: ServerResponse, room: Room, connections: Map<string, Connection>, broadcast: () => void, store: RoomStore, models?:ModelStore, covers?:CoverStore) {
   const preparePlacements=()=>{
     if(!room.model||room.model.puzzles)return;
     const model=parseRoom({...room.model,puzzles:suggestPuzzleLayout(room.model)});
@@ -47,6 +48,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
       puzzle: room.snapshot().puzzle,
       library:store.snapshot(),objectCatalog:importedCatalog(),
+      covers:covers?.snapshot(),
       adventure:room.snapshot().adventure,
       adventures:room.adventure.listAdventures(),
       playerNames:room.playerNames,playerNamesRevision:room.playerNamesRevision,
@@ -57,7 +59,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
       logs: recentLogs(),
     }); return;
   }
-  if (req.method !== 'POST' || !['/api/admin/models/import','/api/admin/models/inspect','/api/admin/models/update','/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
+  if (req.method !== 'POST' || !['/api/admin/models/import','/api/admin/models/inspect','/api/admin/models/update','/api/admin/covers/import','/api/admin/covers/update','/api/admin/rooms/objects','/api/admin/display-modes','/api/admin/portal', '/api/admin/reset', '/api/admin/kick', '/api/admin/rooms/save', '/api/admin/rooms/activate', '/api/admin/rooms/delete','/api/admin/rooms/rename','/api/admin/players/names','/api/admin/adventure/save-objects','/api/admin/adventure/hint','/api/admin/adventure/reset-puzzle','/api/admin/adventure/select','/api/admin/adventure/test-step','/api/admin/adventure/stop','/api/admin/adventure/reset','/api/admin/adventure/start','/api/admin/adventure/place','/api/admin/adventure/test-mode'].includes(req.url ?? '')) {
     reply(res, 404, { error: 'Route inconnue.' }); return;
   }
   const allowed = process.env.PUBLIC_ORIGIN;
@@ -65,6 +67,10 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
     reply(res, 403, { error: 'Origine non autorisée : vérifier public_origin.' }); return;
   }
   if(req.url?.startsWith('/api/admin/models/')){if(!models){reply(res,503,{error:'Model store unavailable'});return;}await modelAdmin(req,res,models,broadcast);return;}
+  if(req.url==='/api/admin/covers/import'||req.url==='/api/admin/covers/update'){
+    if(!covers){reply(res,503,{error:'Cover store unavailable'});return;}
+    try{if(req.url.endsWith('/import')){const chunks:Buffer[]=[];let bytes=0;for await(const chunk of req){bytes+=Buffer.byteLength(chunk);if(bytes>4*1024*1024)throw Error('Image trop volumineuse (4 Mio maximum).');chunks.push(Buffer.from(chunk));}const cover=covers.import(Buffer.concat(chunks),decodeURIComponent(String(req.headers['x-file-name']??'')),String(req.headers['x-tape-id']??''),String(req.headers['x-title']??''),Number(req.headers['x-year']),String(req.headers['content-type']??''));reply(res,200,{cover,catalog:covers.snapshot()});}else{if(req.headers['content-type']?.split(';')[0]!=='application/json')throw Error('JSON attendu.');const chunks:Buffer[]=[];for await(const chunk of req)chunks.push(Buffer.from(chunk));const cover=covers.update(JSON.parse(Buffer.concat(chunks).toString('utf8')));reply(res,200,{cover,catalog:covers.snapshot()});}broadcast();}catch(error){reply(res,400,{error:error instanceof Error?error.message:'Jaquette refusée.'});}return;
+  }
   if (req.headers['content-type']?.split(';')[0] !== 'application/json') {
     reply(res, 415, { error: 'JSON attendu.' }); return;
   }

@@ -19,6 +19,7 @@ import { modelGroup, disposeGroup } from './model-view';
 import { capturePlanes,captureMeshes,importSurfaces,QuestButtons } from './quest-scan';
 import { AdventureClient } from './adventure-client';
 import { adventureGroup,animateAdventure,applyObjectPoses } from './adventure-view';
+import './cover-catalog';
 import { GrabInputs,ObjectGrabber,nearGrabbable } from './object-grab';
 import { HandCards } from './hand-cards';
 import { InfoPanelAnchor } from './xr-info-panel';
@@ -499,6 +500,7 @@ const adventure=new AdventureClient(message=>{if(socket?.readyState!==WebSocket.
 const grabber=new ObjectGrabber(()=>ownId,()=>adventure.viewState()?.state.objects,message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},message=>{feedback.textContent=message;wallLobby.interactionNotice(message);});
 const handCards=new HandCards(()=>ownId,action=>adventure.handAction(action),message=>{feedback.textContent=message;});
 const portal=new PortalClient(message=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(message));return true;},()=>calibration,()=>updateAdventureScene(),message=>{feedback.textContent=message;});
+window.addEventListener('myroom-covers-updated',()=>updateAdventureScene());
 const wallLobby=new WallLobby(message=>{feedback.textContent=message;},()=>{grabber.cancel();handCards.cancel();survey.refresh();},token=>survey.authorize(token));
 document.addEventListener('myroom-portal-confirm',()=>portal.confirm());
 const startQuest=enter.onclick!;

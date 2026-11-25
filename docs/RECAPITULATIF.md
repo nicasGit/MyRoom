@@ -1306,3 +1306,9 @@ La confirmation de sauvegarde valide aussi le schéma de la bibliothèque reçue
 Le test d’intégration HTTP/WebSocket vérifie l’accusé de réception d’un ancien client et l’absence de cet événement dans les logs admin et stdout, tout en conservant les autres diagnostics. La version 0.3.4 comprend les améliorations de sauvegarde et d’alignement développées pour 0.3.3.
 
 Vérifications finales : typecheck et compilation réussis, 27 tests réussis. Les workflows GitHub Actions 0.3.3 et 0.3.4 ont terminé avec succès ; le manifeste ARM64 0.3.4 a été vérifié dans GHCR. Aucun essai physique de cette version réalisé par l’agent.
+# 25 novembre 2026 — Catalogue de jaquettes personnalisables
+
+La Bibliothèque permet d’importer plusieurs images de jaquettes par cassette du Vidéoclub, de conserver l’historique sur disque dans le répertoire de données du serveur, de sélectionner l’image active et de modifier son titre et son année. Les fichiers sont validés côté serveur (PNG, JPEG, WebP ou SVG, 4 Mio maximum) et le rendu du puzzle recharge la sélection publiée. Les images commerciales ne sont pas fournies par MyRoom : l’administrateur doit disposer des droits nécessaires. Vérifications exécutées : `npm run typecheck`, `npm run build` et `npm test` (167 tests). Aucun test matériel Quest ou iPad n’a été effectué.
+
+Le proxy HAOS relaie désormais les routes publiques et d’administration des jaquettes avec une limite d’import de 4 Mio.
+

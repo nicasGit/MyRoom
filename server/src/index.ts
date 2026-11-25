@@ -16,10 +16,12 @@ import { join } from 'node:path';
 import { PortalPlacementStore } from './portal/placement-store.js';
 import { parsePortalCommand,STAFF_IDS } from './portal/portal-types.js';
 import { parseObjectCommand } from './object-manipulation.js';
+import { CoverStore } from './cover-store.js';
 
 const registry=createRegistry();
 const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
 const models = new ModelStore(process.env.DATA_DIR??'data');
+const covers = new CoverStore(process.env.DATA_DIR??'data');
 const room = new Room(new Adventure(registry,catalog));
 room.display=new DisplayModes(process.env.DATA_DIR??'data');
 const store = new RoomStore(process.env.DATA_DIR ?? 'data');
@@ -32,8 +34,10 @@ const http = createServer((req, res) => {
     const path=models.publicPath(req.url.slice('/api/library/models/'.length));
     try{if(!path)throw Error('not found');const bytes=readFileSync(path);res.writeHead(200,{'Content-Type':'model/gltf-binary','Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'});res.end(bytes);}catch{res.writeHead(404);res.end();}return;
   }
+  if(req.method==='GET'&&req.url==='/api/covers'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(covers.publicSnapshot()));return;}
+  if(req.method==='GET'&&req.url?.startsWith('/api/covers/files/')){try{const path=covers.publicFile(req.url.slice('/api/covers/files/'.length));if(!path)throw Error();const bytes=readFileSync(path);const ext=path.split('.').pop();res.writeHead(200,{'Content-Type':ext==='svg'?'image/svg+xml':`image/${ext==='jpg'?'jpeg':ext}`,'Cache-Control':'public, max-age=31536000, immutable'});res.end(bytes);}catch{res.writeHead(404);res.end();}return;}
   if (req.url?.startsWith('/api/admin/')) {
-    void admin(req, res, room, connections, broadcast, store, models).catch(error => {
+    void admin(req, res, room, connections, broadcast, store, models, covers).catch(error => {
       log('admin_error', { message: String(error) });
       if (!res.headersSent) { res.writeHead(500); res.end(); }
     });

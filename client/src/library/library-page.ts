@@ -6,7 +6,8 @@ import type { ObjectSnapshot } from '../../../server/src/object-manipulation.js'
 import { ModelPreview } from './model-preview';
 import { catalogPreviews } from './catalog-previews';
 
-type State={objectCatalog:ReturnType<typeof importedCatalog>;library:RoomLibrary;adventure:{running:boolean;objects:ObjectSnapshot};portal:{active:boolean}};
+type Cover={id:string;name:string;tapeId:string;title:string;year:number;image:string;source?:string};
+type State={objectCatalog:ReturnType<typeof importedCatalog>;library:RoomLibrary;adventure:{running:boolean;objects:ObjectSnapshot};portal:{active:boolean};covers:{revision:number;covers:Cover[];selected:Record<string,string>}};
 type Pending={file:File;status:string;ready:boolean;selected:boolean};
 const el=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 let session=0;
@@ -54,8 +55,14 @@ function drawCatalogue(){
 }
 function drawVideoclubCovers(){
   const host=el('videoclub-covers');host.replaceChildren();
-  for(const cover of VIDEOCLUB_COVERS){const card=document.createElement('article');card.className='player';const image=document.createElement('img');image.className='library-thumbnail cover-thumbnail';image.src=cover.image;image.alt=`Jaquette originale MyRoom : ${cover.title}`;const title=document.createElement('h3');title.textContent=`${cover.title} · ${cover.year}`;const info=document.createElement('p');info.textContent=`Cachette : ${cover.hide}`;card.append(image,title,info);host.append(card);}
+  const covers=state?.covers?.covers??VIDEOCLUB_COVERS.map(item=>({...item,id:`builtin-${item.id}`,name:item.title,tapeId:item.id}));
+  for(const tape of VIDEOCLUB_COVERS){const group=document.createElement('section');group.className='cover-group';const heading=document.createElement('h3');heading.textContent=`${tape.title} — cassette ${tape.year}`;group.append(heading);const row=document.createElement('div');row.className='cover-list';
+    for(const cover of covers.filter(item=>item.tapeId===tape.id)){const card=document.createElement('article');card.className='player cover-card';const image=document.createElement('img');image.className='library-thumbnail cover-thumbnail';image.src=cover.image;image.alt=cover.name;const radio=document.createElement('input');radio.type='radio';radio.name=`cover-${tape.id}`;radio.checked=state?.covers.selected[tape.id]===cover.id;radio.onchange=()=>void updateCover(cover,{selected:true});const label=document.createElement('label');label.append(radio,' Utiliser cette image');const title=document.createElement('input');title.value=cover.title;title.maxLength=120;const year=document.createElement('input');year.type='number';year.min='1900';year.max='2200';year.value=String(cover.year);const save=document.createElement('button');save.textContent='Enregistrer titre / année';save.className='secondary';save.onclick=()=>void updateCover(cover,{title:title.value.trim(),year:Number(year.value)});card.append(image,label,title,year,save);row.append(card);}const upload=document.createElement('label');upload.className='cover-upload';upload.textContent='Ajouter une image';const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp,image/svg+xml';input.onchange=()=>{const file=input.files?.[0];if(file)void importCover(tape.id,file);};upload.append(input);row.append(upload);group.append(row);host.append(group);
+  }
 }
+async function refreshCovers(){try{const fresh=await api('state') as State;state=fresh;drawVideoclubCovers();}catch(error){notice(String(error));}}
+async function importCover(tapeId:string,file:File){busy=true;try{const title=prompt('Nom du film',VIDEOCLUB_COVERS.find(item=>item.id===tapeId)?.title??'')?.trim();if(!title)return;const year=Number(prompt('Année',String(new Date().getFullYear())));if(!Number.isInteger(year))throw Error('Année invalide.');await responseJSON(await fetch('/api/admin/covers/import',{method:'POST',headers:{...headers(),'Content-Type':file.type,'X-File-Name':encodeURIComponent(file.name),'X-Tape-Id':tapeId,'X-Title':title,'X-Year':String(year)},body:file}));await refreshCovers();notice('Jaquette importée.');}catch(error){notice(String(error));}finally{busy=false;}}
+async function updateCover(cover:Cover,changes:{title?:string;year?:number;selected?:boolean}){try{const result=await api('covers/update',{revision:state!.covers.revision,cover:{id:cover.id,tapeId:cover.tapeId,title:changes.title??cover.title,year:changes.year??cover.year},selected:changes.selected===true}) as {catalog:State['covers']};state!.covers=result.catalog;drawVideoclubCovers();notice('Jaquette mise à jour.');}catch(error){notice(String(error));}}
 async function refresh(){
   clearTimeout(timer);const current=session;try{const next=await api('state') as State;if(current!==session)return;state=next;setImportedCatalog(state.objectCatalog);el('login-panel').hidden=true;el('workspace').hidden=false;el('connection').textContent=debug?'Mode debug':'Connecté';drawCatalogue();}
   catch(error){notice(String(error));}finally{if(current===session&&(token||debug))timer=setTimeout(()=>{if(!busy)void refresh();else timer=setTimeout(()=>void refresh(),2000);},2000);}
@@ -101,7 +108,7 @@ el('import').onclick=()=>{void(async()=>{
   }await refresh();notice(`${imported} fichier(s) importé(s) ou déjà présent(s), ${failed} échec(s).`);}
   finally{busy=false;drawQueue();}
 })();};
-el('search').oninput=drawCatalogue;el('category').onchange=drawCatalogue;el('refresh').onclick=()=>void refresh();
+el('search').oninput=drawCatalogue;el('category').onchange=drawCatalogue;el('refresh').onclick=()=>void refresh();el('refresh-covers').onclick=()=>void refreshCovers();
 el('login').onsubmit=event=>{event.preventDefault();session++;token=el<HTMLInputElement>('token').value;el<HTMLInputElement>('token').value='';void refresh();};
 el('logout').onclick=()=>{session++;token='';debug=false;clearTimeout(timer);state=undefined;queue=[];clearPreviews();dialog.close();el('workspace').hidden=true;el('login-panel').hidden=false;el('connection').textContent='Non connecté';};
 window.addEventListener('pagehide',()=>{clearTimeout(timer);clearPreviews();preview.dispose();},{once:true});
