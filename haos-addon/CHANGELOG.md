@@ -1,3 +1,7 @@
+## 0.15.27
+
+- Ajuste les tests réseau et solo au délai de transition vortex de dix secondes.
+
 ## 0.15.26
 
 - Aligne les tests du portail sur la transition de dix secondes.

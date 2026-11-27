@@ -49,7 +49,7 @@ test('portail réseau : quatre prises, reprise privée, passages géométriques,
       assert.equal(crossed.portal.players[i].validationMethod,'physical-xr');
       if(i<3){assert.equal(crossed.adventure.running,false);assert.equal(crossed.portal.players.filter((p:any)=>p.crossed).length,i+1);}
     }
-    s=await until(s=>s.adventure.running);assert.equal(s.portal.phase,'completed');assert.equal(s.adventure.engine.stepId,'symbols');assert.deepEqual(s.library.rooms[0],room);
+    s=await until(s=>s.adventure.running,16000);assert.equal(s.portal.phase,'completed');assert.equal(s.adventure.engine.stepId,'symbols');assert.deepEqual(s.library.rooms[0],room);
     assert.deepEqual(s.portal.ghosts,[]);
     const revision=s.adventure.revision;await new Promise(resolve=>setTimeout(resolve,1100));assert.equal((await state()).adventure.revision,revision);
     assert.equal((await post('adventure/stop',{})).status,200);s=await state();assert.equal((await post('portal',{action:'simulate-start',revision:s.portal.revision})).status,400);

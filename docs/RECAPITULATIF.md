@@ -1,3 +1,7 @@
+## Tests réseau adaptés au brouillard — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.27. Les scénarios réseau et les tests de sélection solo attendent maintenant la transition complète de dix secondes avant de vérifier le démarrage de l’aventure.
+
 ## Validation de la transition vortex — 27 novembre 2026
 
 Version add-on/client préparée : 0.15.26. Les tests du portail couvrent maintenant le délai réel de dix secondes, y compris la simulation, afin d’éviter une régression du compte à rebours et du brouillard.

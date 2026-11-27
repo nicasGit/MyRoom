@@ -70,7 +70,7 @@ test('portal: one to four selected players, strict count and legacy defaults',()
     assert.equal(Object.keys(p.staffPoses()).length,count);
     p.simulate(1,false);p.tick(1200,()=>{});p.tick(6200,()=>{});let starts=0;
     for(let slot=1;slot<=count;slot++)p.simulate(slot,true);
-    p.tick(6300,()=>starts++);p.tick(8300,()=>starts++);p.tick(9000,()=>starts++);
+    p.tick(6300,()=>starts++);p.tick(15300,()=>starts++);p.tick(16300,()=>starts++);
     assert.equal(starts,1);assert.equal(p.snapshot().phase,'completed');
   }
   const room=new Room();room.snapshot();room.portal.configure({...config,playerCount:1});
