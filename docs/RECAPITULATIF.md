@@ -1,7 +1,21 @@
-## Calibrage partagé et manipulation libre — 27 novembre 2026\n\nLe serveur diffuse un repère de calibrage partagé par pièce et conserve la première distance A/B publiée ; chaque casque doit encore viser les mêmes marqueurs physiques, car les ancres WebXR persistantes restent locales au navigateur. La page signale ce repère aux clients et les sessions publient leur distance de contrôle. Cette évolution ne constitue pas une ancre native Meta inter-appareils et n'a pas été testée sur Quest réel.\n\nLes objets relâchés se posent désormais sur le sol ou sur le dessus d'un obstacle sous-jacent au lieu de traverser l'obstacle. Les poses acceptent une orientation quaternion pour tous les objets et la prise utilise l'orientation suivie pour inspecter les faces arrière et inférieure. Les dimensions de chute des objets de bibliothèque sont issues du catalogue ; les éléments historiques utilisent une enveloppe prudente.\n\nVérifications à exécuter après cette modification : 
-pm run typecheck, 
-pm run build, 
-pm test.\n\n### 25 novembre 2026 - Videoclub 80s et cachettes thematiques (preparation)
+## Indices, vortex et import de jaquettes — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.17. Les fragments d'indices utilisent désormais des fiches 3D en papier avec bordure et texte, sans supprimer le panneau de validation du coffre. Les modèles GLB de bâtons déjà présents dans le catalogue sont conservés ; les faisceaux entre bâtons et vortex ont été retirés. Le bâton du joueur est masqué dès son entrée dans le couloir vortex.
+
+Les champs de placement du vortex dans l'administration déclenchent maintenant une sauvegarde automatique après une courte pause, tant que le rituel est arrêté. L'authentification administrative reste appliquée ; le mode debug existant peut l'autoriser sans jeton. Les jaquettes acceptent 16 Mio côté serveur et proxy Nginx ; un proxy HTTPS externe peut encore imposer une limite inférieure.
+
+## Calibrage partagé et manipulation libre — 27 novembre 2026
+
+Le serveur diffuse un repère de calibrage partagé par pièce et conserve la première distance A/B publiée ; chaque casque doit encore viser les mêmes marqueurs physiques, car les ancres WebXR persistantes restent locales au navigateur. La page signale ce repère aux clients et les sessions publient leur distance de contrôle. Cette évolution ne constitue pas une ancre native Meta inter-appareils et n'a pas été testée sur Quest réel.
+
+Les objets relâchés se posent désormais sur le sol ou sur le dessus d'un obstacle sous-jacent au lieu de traverser l'obstacle. Les poses acceptent une orientation quaternion pour tous les objets et la prise utilise l'orientation suivie pour inspecter les faces arrière et inférieure. Les dimensions de chute des objets de bibliothèque sont issues du catalogue ; les éléments historiques utilisent une enveloppe prudente.
+
+Vérifications à exécuter après cette modification : 
+npm run typecheck, 
+npm run build, 
+npm test.
+
+### 25 novembre 2026 - Videoclub 80s et cachettes thematiques (preparation)
 
 Le puzzle propose quatre jaquettes originales inspirees des videoclubs des annees 80 : Indiana Jones (1981), Gremlins (1984), Retour vers le futur (1985) et Les Goonies (1985). Les annees servent de logique de classement. Chaque cassette possede une cachette thematique, dont la boite des Gremlins, et les cartes sont generees localement avec un style retro original ; aucune pochette commerciale n est embarquee. Les quatre SVG sont charges dans la page Bibliotheque pour servir de reference visuelle. La version d aventure 0.5.0 coexiste avec la version 0.4.0 et conserve les anciennes configurations a trois cassettes.
 

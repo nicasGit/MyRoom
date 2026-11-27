@@ -1,3 +1,7 @@
+## 0.15.17
+
+- Indices papier réalistes, vortex auto-sauvegardé depuis l’administration, bâtons masqués dans le couloir et import de jaquettes jusqu’à 16 Mio.
+
 ## 0.15.16
 
 - Repère de calibrage partagé par pièce, chute sur obstacles et rotation complète des objets manipulables.

@@ -102,3 +102,6 @@ fiches ne dupliquent aucune règle de coffre, blackjack ou autre énigme.
 Les tests logiciels couvrent les formats, limites, références externes, cycles,
 révisions, doublons, versions d’instances, persistance et API. Aucun essai physique
 Quest ou iPad n’est annoncé pour cette version.
+
+
+Les jaquettes acceptent jusqu'� 16 Mio c�t� serveur et proxy HAOS. Un HTTP 413 indique qu'un proxy externe conserve une limite inf�rieure.

@@ -434,7 +434,7 @@ ${(portal.story()||adventure.story()||scanStatus.textContent||'').slice(0,240)}`
         corridor.group.position.copy(calibration.origin);corridor.group.rotation.y=-calibration.yaw;
         corridor.update(portal.state,ownSlot,roomHead,_time/1000);
       }else if(!inCorridor)corridor.group.visible=false;
-      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;const ownStaff=gameGroup.userData.grabbables?.[`staff${ownSlot}`] as THREE.Object3D|undefined;if(ownStaff&&roomHead)attachStaffToBelt(ownStaff,roomHead,ownSlot%2?'right':'left');}
+      if(inCorridor&&gameGroup){const staffs=Object.entries(gameGroup.userData.grabbables??{}).filter(([id])=>id.startsWith('staff')).map(([,node])=>node);for(const child of gameGroup.children)if(!staffs.includes(child))child.visible=false;const ownStaff=gameGroup.userData.grabbables?.[`staff${ownSlot}`] as THREE.Object3D|undefined;if(ownStaff){ownStaff.visible=!inCorridor;if(inCorridor&&roomHead)attachStaffToBelt(ownStaff,roomHead,ownSlot%2?'right':'left');}}
       scene.background=inCorridor?corridorBackground:null;
       const screenInput=session!.interactionMode==='screen-space';
       const hands=frame&&calibration&&!screenInput?grabInputs.read(frame,reference,session!.inputSources,calibration,portal.visible()&&!!portal.state?.active):[];
