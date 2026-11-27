@@ -1,3 +1,11 @@
+## Clic des menus et version admin - 27 novembre 2026
+
+Version add-on/client prÃ©parÃ©e : 0.15.19. Le pincement avec les mains sÃ©lectionne maintenant les boutons du panneau admin sans le dÃ©placer ; lâ€™indicateur de version est affichÃ© aprÃ¨s connexion.
+
+## Clic des menus avec les mains - 27 novembre 2026
+
+Le pincement dâ€™une main suivie est maintenant rÃ©servÃ© Ã  la sÃ©lection du bouton visÃ©. Il ne dÃ©clenche plus le dÃ©placement du panneau dâ€™administration ; le dÃ©placement reste disponible avec la poignÃ©e dâ€™un contrÃ´leur. Cela Ã©vite quâ€™un clic sur le menu soit interprÃ©tÃ© comme une prise du panneau.
+
 ## Transition vortex vers l'aventure — 27 novembre 2026
 
 Après la dernière traversée, le client conserve l'introduction cinq secondes. Le vortex se contracte et un nuage de particules se disperse avant que l'affichage bascule vers le coffre et l'aventure déjà démarrée côté serveur. Les tests serveur restent indépendants du rendu XR ; aucune validation Quest matérielle n'est annoncée.

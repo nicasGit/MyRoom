@@ -22,6 +22,12 @@ let loading = false;
 let session = 0;
 let previousPlayers = '';
 const notice = el('notice');
+const versionBadge = document.createElement('span');
+versionBadge.id = 'app-version';
+versionBadge.className = 'badge';
+versionBadge.style.marginLeft = '8px';
+versionBadge.textContent = 'Version inconnue';
+el('connection').after(versionBadge);
 const portalAdmin=new PortalAdmin(el('dashboard'),async body=>{const command=body as Record<string,unknown>;if(command.action==='reset'){const latest=await api<State>('state');return api('portal',{...command,revision:latest.portal.revision});}return api('portal',body);},text=>{notice.textContent=text;});
 let library:RoomLibrary|undefined;
 let libraryRevision=-1;
@@ -165,6 +171,7 @@ function render(state: State) {
   el('revision').textContent = `Démo · révision ${state.puzzle.revision}`;
   el('uptime').textContent = `${Math.floor(state.uptimeSeconds / 3600)} h ${Math.floor(state.uptimeSeconds / 60) % 60} min`;
   el('origin').textContent = state.publicOrigin;
+  el('app-version').textContent = `MyRoom ${String((state as State & {version?:string}).version ?? 'inconnue')}`;
   const playerKey = JSON.stringify([state.players,state.playerNames]);
   if (playerKey !== previousPlayers) el('players').replaceChildren(...[1, 2, 3, 4].map(slot => {
     const player = state.players.find(p => p.slot === slot);

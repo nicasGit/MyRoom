@@ -255,6 +255,15 @@ test('menu grip: world-space drag under a rotated parent, release and tracking l
   mover.update([panel],[{side:'right',pressed:false,position:destination,orientation:rotation}]);assert.equal(mover.holding,false);assert.deepEqual(placement.position,posed);
   mover.update([panel],[{side:'left',pressed:true,position:destination,orientation:rotation}]);mover.update([panel],[]);assert.equal(mover.holding,false);
 });
+test('menu pinch selects instead of moving the admin panel',()=>{
+  const group=new THREE.Group(),placement=new THREE.Group();group.add(placement);placement.position.set(0,1,-1);group.updateMatrixWorld(true);
+  let moved=false;const panel={group,placement,distanceTo:()=>0,markMoved:()=>{moved=true;}};
+  const mover=new MenuMover(),hand={side:'right',pressed:true,dragging:false,position:new THREE.Vector3(0,1,-1),orientation:new THREE.Quaternion()};
+  mover.update([panel],[hand]);
+  assert.equal(mover.holding,false);
+  assert.equal(moved,false);
+});
+
 test('menu cursor: nearest panel surface is visible above UI, and lost rays hide the cursor',()=>{
   const pointers=new MenuPointers(),panel={group:new THREE.Group(),intersection:()=>({point:new THREE.Vector3(0,1,-2),distance:2})} as unknown as WallMenuView;
   pointers.update([panel],[{origin:new THREE.Vector3(0,1,0),direction:new THREE.Vector3(0,0,-1)}]);

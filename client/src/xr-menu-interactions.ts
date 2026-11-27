@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { WallMenuView } from './portal/wall-menu-view';
-export type MenuHand={side:string;pressed:boolean;position:THREE.Vector3;orientation:THREE.Quaternion;ray?:{origin:THREE.Vector3;direction:THREE.Vector3}};
+export type MenuHand={side:string;pressed:boolean;position:THREE.Vector3;orientation:THREE.Quaternion;ray?:{origin:THREE.Vector3;direction:THREE.Vector3};dragging?:boolean};
 type Panel=Pick<WallMenuView,'group'|'placement'|'distanceTo'|'markMoved'> & Partial<Pick<WallMenuView,'intersection'>>;
 export class MenuMover {
   private hold?:{panel:Panel;side:string;offset:THREE.Matrix4};
@@ -16,7 +16,10 @@ export class MenuMover {
       if(node.parent)world.premultiply(node.parent.matrixWorld.clone().invert());
       world.decompose(node.position,node.quaternion,node.scale);return;
     }
-    for(const hand of hands.filter(h=>h.pressed)){
+    // A hand pinch is a menu click. Panel dragging uses the controller grip
+    // gesture, exposed separately as `dragging`, so a pinch cannot steal the
+    // select event and move the admin panel instead of activating its button.
+    for(const hand of hands.filter(h=>h.dragging ?? h.pressed)){
       const panel=panels.filter(p=>p.group.visible&&p.distanceTo(hand.position)<.18).sort((a,b)=>a.distanceTo(hand.position)-b.distanceTo(hand.position))[0];
       if(!panel){
         if(!hand.ray)continue;

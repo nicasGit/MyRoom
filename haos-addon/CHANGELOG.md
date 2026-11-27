@@ -1,3 +1,7 @@
+## 0.15.19
+
+- Clic menu des mains sÃ©parÃ© du dÃ©placement du panneau et version visible dans la console admin.
+
 ## 0.15.18
 
 - Transition du vortex vers l’aventure avec dissipation en brouillard après cinq secondes.

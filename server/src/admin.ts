@@ -15,6 +15,7 @@ import { PUZZLE_ITEMS,findPuzzlePanel } from './scene-schema.js';
 import { adminAccess } from './admin-access.js';
 import { configurePortalPlacement,suggestPortalPlacement } from './portal/portal-placement.js';
 import { parseRoom,suggestPuzzleLayout } from './scene-schema.js';
+import { MYROOM_VERSION } from './version.js';
 
 export type Connection = { socket: WebSocket; address?: string; userAgent?: string; connectedAt: string };
 const started = Date.now();
@@ -42,6 +43,7 @@ export async function admin(req: IncomingMessage, res: ServerResponse, room: Roo
   }
   if (req.method === 'GET' && req.url === '/api/admin/state') {
     reply(res, 200, {
+      version: MYROOM_VERSION,
       portal:room.snapshot().portal,
       displayPolicy:room.display.snapshot(),displayClients:room.display.clients(),
       uptimeSeconds: Math.floor((Date.now() - started) / 1000),
