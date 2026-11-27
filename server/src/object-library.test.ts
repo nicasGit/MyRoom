@@ -99,6 +99,7 @@ test('library interaction: server enforces fixed/two hands, leases, stale/duplic
   const again={...c,revision:objects.snapshot().revision};assert.equal(objects.act(again,'a',room,5,'again').changed,true);
   assert.equal(objects.act({...move,lease:'again',seq:2},'a',room,6,'unused').changed,true);
   assert.equal(objects.act({...move,lease:'again',action:'drop',seq:3},'a',room,7,'unused').changed,true);
+  assert.equal(objects.snapshot().poses['prop:table-a']!.y,0,'un objet de bibliothèque relâché tombe au sol');
   objects.configure(room,1,{staff1:{x:1,y:0,z:1,yaw:0}});
   assert.equal(objects.snapshot().poses['prop:table-a']!.scale,1.2,'portal/scene transitions preserve room furniture');
   const fixed=parseRoom({...room,objects:{version:1,items:[{...table,movable:false}]}});objects.configure(fixed,0);
@@ -167,6 +168,6 @@ test('library network: protected authoring, shared poses, concurrent refusal and
     const moved={...command,action:'move',seq:2,lease,pose:{...pose,y:.15,scale:1.1}};
     assert.equal((await send(0,moved)).changed,true);assert.equal((await send(0,{...moved,action:'drop',seq:3})).changed,true);
     s=await state();assert.equal((await post('rooms/objects',{action:'save',revision:s.library.revision,objectRevision:s.adventure.objects.revision})).status,200);
-    const restored=new RoomStore(directory).active()!;assert.equal(restored.objects!.items[0].pose.y,.15);assert.equal(restored.objects!.items[0].pose.scale,1.1);
+    const restored=new RoomStore(directory).active()!;assert.equal(restored.objects!.items[0].pose.y,0);assert.equal(restored.objects!.items[0].pose.scale,1.1);
   }finally{for(const ws of clients)ws.terminate();child.kill();if(child.exitCode===null)await once(child,'exit');rmSync(directory,{recursive:true,force:true});}
 });

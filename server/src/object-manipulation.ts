@@ -57,7 +57,7 @@ export class ObjectManipulation {
       if(c.pose.y<0||c.pose.y>model.height-0.2||!inside(c.pose,model.floor)||Math.hypot(c.pose.x-current.x,c.pose.y-current.y,c.pose.z-current.z)>0.8)return reject('Déplacement trop rapide, hors pièce ou hauteur invalide.');
       if(model.obstacles.some(o=>Math.abs(c.pose.x-o.x)<o.width/2&&Math.abs(c.pose.z-o.z)<o.depth/2&&c.pose.y<o.height-0.02))return reject('Objet dans un obstacle.');
       let pose={...c.pose};
-      if(prop){pose.scale=c.pose.scale??current.scale??1;if(Math.max(pose.scale/(current.scale??1),(current.scale??1)/pose.scale)>1.5)return reject('Resize too fast');try{validateObjectPlacement(model,prop,{...pose,scale:pose.scale});}catch(error){return reject(error instanceof Error?error.message:'Invalid object placement');}}
+      if(prop){pose.scale=c.pose.scale??current.scale??1;if(c.action==='drop')pose.y=0;if(Math.max(pose.scale/(current.scale??1),(current.scale??1)/pose.scale)>1.5)return reject('Resize too fast');try{validateObjectPlacement(model,prop,{...pose,scale:pose.scale});}catch(error){return reject(error instanceof Error?error.message:'Invalid object placement');}}
 
       if(c.target==='panel') {const panel=findPuzzlePanel(model,c.pose);if(!panel)return reject('Aucun mur libre pour le panneau.');const p=puzzlePanel({...model,puzzles:{...model.puzzles!,panel}})!;pose={...p.position,y:p.height,yaw:p.yaw};}
       this.poses[c.target]=pose;held!.seq=c.seq;held!.expiresAt=now+4000;

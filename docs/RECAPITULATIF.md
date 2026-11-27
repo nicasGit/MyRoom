@@ -1336,3 +1336,9 @@ Vérifications prévues : typecheck, compilation et tests logiciels. Aucun test 
 ## 25 novembre 2026 - Préparation de la version 0.15.12
 
 La version de l'add-on HAOS passe de 0.15.11 à 0.15.12 pour intégrer la sidebar et le lien direct vers l'administration. Aucun test matériel Quest ou mobile n'est revendiqué. Publication à effectuer après validation.
+
+## 25 novembre 2026 - Migration Node.js 24
+
+Le moteur serveur, l'image HAOS et le workflow de validation utilisent maintenant Node.js 24. Le moteur Alpine reste ciblé sur linux/arm64. Version d'add-on préparée : 0.15.13. Vérifications locales à exécuter avant publication ; aucune validation matérielle Quest annoncée.
+
+Les objets de bibliothèque manipulables sont maintenant replacés au niveau du sol lorsqu'ils sont relâchés ; la validation serveur conserve les limites de pièce, obstacles et échelle.

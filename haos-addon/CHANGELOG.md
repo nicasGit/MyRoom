@@ -405,3 +405,8 @@
 - Navigation joueur et administration organisée en sidebar sur écran large.
 - Lien direct vers l’administration ajouté dans la sidebar joueur.
 
+## 0.15.13
+
+- Runtime et validation CI migrés vers Node.js 24.
+- Image HAOS construite depuis `node:24-alpine` pour aarch64.
+
