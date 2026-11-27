@@ -1,3 +1,7 @@
+## 0.15.21
+
+- Version joueur récupérable directement via /api/version, même avant la connexion WebSocket.
+
 ## 0.15.20
 
 - Vortex conservé dix secondes après le passage de toute l’équipe, avec version affichée dans l’interface joueur.

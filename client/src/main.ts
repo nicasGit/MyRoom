@@ -52,6 +52,7 @@ function diagnostic(label: string, value: string) {
 diagnostic('Contexte sécurisé HTTPS / localhost', String(window.isSecureContext));
 diagnostic('API WebXR', navigator.xr ? 'disponible' : 'absente');
 const versionDiagnostic=diagnostic('Version client', 'Connexion au serveur…');
+void fetch('/api/version',{cache:'no-store'}).then(response=>response.ok?response.json() as Promise<{version?:unknown}>:undefined).then(payload=>{if(typeof payload?.version==='string')versionDiagnostic.textContent=`Version client : ${payload.version}`;}).catch(()=>{});
 handPreview(document.querySelector('main')!);
 setupPanelMenu(document.querySelector('main')!,[
   {id:'home',label:'Accueil / lancer',selector:'#home-panel'},

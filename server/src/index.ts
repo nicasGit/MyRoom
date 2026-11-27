@@ -17,6 +17,7 @@ import { PortalPlacementStore } from './portal/placement-store.js';
 import { parsePortalCommand,STAFF_IDS } from './portal/portal-types.js';
 import { parseObjectCommand } from './object-manipulation.js';
 import { CoverStore } from './cover-store.js';
+import { MYROOM_VERSION } from './version.js';
 
 const registry=createRegistry();
 const catalog=createCatalog(registry,process.env.ADVENTURE_CATALOG_DIR??join(process.env.DATA_DIR??'data','adventures'));
@@ -29,6 +30,7 @@ room.portalStore=new PortalPlacementStore(process.env.DATA_DIR??'data');
 room.model = store.active(); room.libraryRevision = store.snapshot().revision;
 const connections = new Map<string, Connection>();
 const http = createServer((req, res) => {
+  if(req.method==='GET'&&req.url==='/api/version'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({version:MYROOM_VERSION}));return;}
   if(req.method==='GET'&&req.url==='/api/library/catalog'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(importedCatalog()));return;}
   if(req.method==='GET'&&req.url?.startsWith('/api/library/models/')){
     const path=models.publicPath(req.url.slice('/api/library/models/'.length));

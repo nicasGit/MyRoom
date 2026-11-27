@@ -1,3 +1,7 @@
+## Version joueur chargée directement - 27 novembre 2026
+
+Version add-on/client préparée : 0.15.21. Le diagnostic joueur récupère maintenant la version via une route HTTP sans attendre la session WebSocket.
+
 ## Transition vortex 10 secondes et version joueur - 27 novembre 2026
 
 Version add-on/client préparée : 0.15.20. La transition du vortex et le brouillard durent désormais dix secondes ; la version serveur est aussi affichée dans le diagnostic WebXR.
