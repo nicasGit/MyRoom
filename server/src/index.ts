@@ -96,6 +96,9 @@ wss.on('connection', (ws, req) => {
     try {
       if (binary) throw new Error('JSON texte attendu');
       const message: unknown = JSON.parse(raw.toString());
+      if(message&&typeof message==='object'&&'type' in message&&message.type==='calibration_publish'){
+        counted=true;const value=message as {distance?:unknown};if(typeof value.distance!=='number')throw Error('Calibrage invalide');room.publishCalibration(slot!,value.distance);log('shared_calibration',{id,slot,distance:value.distance});ws.send(JSON.stringify({type:'calibration_result',accepted:true}));broadcast();return;
+      }
       if(message&&typeof message==='object'&&'type' in message&&message.type==='display_mode'){
         counted=true;if(++count>30){ws.close(1008,'Trop de messages');return;}
         try{const command=parseModeCommand(message);const previousMode=room.display.mode(id);const result=room.display.act(id,command);if(previousMode!==result.mode)room.portal.clearTracking(slot!);ws.send(JSON.stringify(result));log('display_mode',{id,slot,mode:result.mode,action:command.action});broadcast();}

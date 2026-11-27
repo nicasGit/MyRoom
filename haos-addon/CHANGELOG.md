@@ -1,3 +1,7 @@
+## 0.15.16
+
+- Repère de calibrage partagé par pièce, chute sur obstacles et rotation complète des objets manipulables.
+
 ## 0.15.9\n\n- Ajout des jaquettes originales du VidÃ©oclub rÃ©tro dans la BibliothÃ¨que.\n- Quatre films des annÃ©es 80, annÃ©es de sortie et cachettes thÃ©matiques.\n- Nouvelle aventure Menthe 27 version 0.5.0.\n\n## 0.15.8
 
 - Ajout du puzzle Videoclub retro : decouverte, montage de trois cassettes, erreurs et ordre gagnant.

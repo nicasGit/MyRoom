@@ -1,5 +1,6 @@
 import { isLibraryObjectId,libraryAsset,libraryNumber } from './object-library.js';
 import { PUZZLE_ITEMS,validateObjectPlacement,inside,puzzlePanel,findPuzzlePanel,type PuzzleItem,type RoomModel } from './scene-schema.js';
+import type { RoomObject } from './object-library.js';
 import { record,integer,list,text } from './engine/validation.js';
 export type ObjectId=`prop:${string}`|PuzzleItem|'panel'|import('./portal/portal-types.js').StaffId;
 export type ObjectPose={x:number;y:number;z:number;yaw:number;scale?:number;quaternion?:{x:number;y:number;z:number;w:number}};
@@ -16,7 +17,7 @@ export function parseObjectCommand(value:unknown):ObjectCommand{
   let quaternion:ObjectPose['quaternion'];
   if(pose.quaternion!==undefined){
     const q=record(pose.quaternion,['x','y','z','w']);
-    if(!String(c.target).startsWith('staff')||Object.keys(q).length!==4||[q.x,q.y,q.z,q.w].some(n=>typeof n!=='number'||!Number.isFinite(n))||Math.abs(Math.hypot(q.x as number,q.y as number,q.z as number,q.w as number)-1)>.001)throw Error('Orientation du bâton invalide.');
+    if(!String(c.target).startsWith('staff')&&!isLibraryObjectId(c.target)||Object.keys(q).length!==4||[q.x,q.y,q.z,q.w].some(n=>typeof n!=='number'||!Number.isFinite(n))||Math.abs(Math.hypot(q.x as number,q.y as number,q.z as number,q.w as number)-1)>.001)throw Error('Orientation du bâton invalide.');
     quaternion={x:q.x as number,y:q.y as number,z:q.z as number,w:q.w as number};
   }
   return {type:'object_action',action:c.action as ObjectCommand['action'],target:c.target as ObjectId,revision:integer(c.revision),lease:text(c.lease,64),seq:integer(c.seq),hands:list(c.hands,2).map(point),pose:{...p,yaw:pose.yaw,...(scale===undefined?{}:{scale}),...(quaternion?{quaternion}:{})}};
@@ -33,6 +34,12 @@ export class ObjectManipulation {
     const panel=puzzlePanel(model);if(panel)this.poses.panel={...panel.position,y:panel.height,yaw:panel.yaw};
   }
   snapshot():ObjectSnapshot{return {rules:structuredClone(this.rules),revision:this.revision,poses:structuredClone(this.poses),held:[...this.held].map(([target,l])=>({target,owner:l.owner,lease:l.lease,expiresAt:l.expiresAt}))};}
+  private supportHeight(model:RoomModel,target:ObjectId,pose:ObjectPose,prop?:RoomObject){
+    const asset=prop?libraryAsset(prop.asset,prop.assetVersion??1):undefined;
+    const halfWidth=(asset?.size.width??(target==='table'?1:.24))*(pose.scale??1)/2;
+    const halfDepth=(asset?.size.depth??(target==='table'?.55:.24))*(pose.scale??1)/2;
+    return Math.max(0,...model.obstacles.filter(o=>Math.abs(pose.x-o.x)<=o.width/2+halfWidth&&Math.abs(pose.z-o.z)<=o.depth/2+halfDepth).map(o=>o.height));
+  }
   resetPortal(extra:Partial<Record<ObjectId,ObjectPose>>){
     for(const [id,lease] of this.held)this.poses[id]=lease.original;
     this.held.clear();
@@ -57,8 +64,9 @@ export class ObjectManipulation {
       if(c.pose.y<0||c.pose.y>model.height-0.2||!inside(c.pose,model.floor)||Math.hypot(c.pose.x-current.x,c.pose.y-current.y,c.pose.z-current.z)>0.8)return reject('Déplacement trop rapide, hors pièce ou hauteur invalide.');
       if(model.obstacles.some(o=>Math.abs(c.pose.x-o.x)<o.width/2&&Math.abs(c.pose.z-o.z)<o.depth/2&&c.pose.y<o.height-0.02))return reject('Objet dans un obstacle.');
       let pose={...c.pose};
-      if(prop){pose.scale=c.pose.scale??current.scale??1;if(c.action==='drop')pose.y=0;if(Math.max(pose.scale/(current.scale??1),(current.scale??1)/pose.scale)>1.5)return reject('Resize too fast');try{validateObjectPlacement(model,prop,{...pose,scale:pose.scale});}catch(error){return reject(error instanceof Error?error.message:'Invalid object placement');}}
+      if(prop){pose.scale=c.pose.scale??current.scale??1;if(c.action==='drop')pose.y=this.supportHeight(model,c.target,pose,prop);if(Math.max(pose.scale/(current.scale??1),(current.scale??1)/pose.scale)>1.5)return reject('Resize too fast');try{validateObjectPlacement(model,prop,{...pose,scale:pose.scale});}catch(error){return reject(error instanceof Error?error.message:'Invalid object placement');}}
 
+      else if(c.action==='drop'){const support=this.supportHeight(model,c.target,pose);if(support>0)pose.y=support;}
       if(c.target==='panel') {const panel=findPuzzlePanel(model,c.pose);if(!panel)return reject('Aucun mur libre pour le panneau.');const p=puzzlePanel({...model,puzzles:{...model.puzzles!,panel}})!;pose={...p.position,y:p.height,yaw:p.yaw};}
       this.poses[c.target]=pose;held!.seq=c.seq;held!.expiresAt=now+4000;
       if(c.action==='drop')this.held.delete(c.target);

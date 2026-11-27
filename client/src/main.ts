@@ -290,10 +290,13 @@ enter.onclick = async () => {
       hud.visible=!touchOverlay&&!calibration;
       if(!touchOverlay&&pose){
         hudAnchor.place(hud,new THREE.Vector3().copy(pose.transform.position),new THREE.Quaternion().copy(pose.transform.orientation));
-        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}\n${handStatus}\n${(feedback.textContent??'').slice(0,180)}\n${(portal.story()||adventure.story()||scanStatus.textContent||'').slice(0,240)}`;
+        const text=`MyRoom | ${calibration?'A/X importer · B enregistrer · Y annuler':'Gâchette : placer '+(firstPoint?'B':'A')+' au sol'}
+${handStatus}
+${(feedback.textContent??'').slice(0,180)}
+${(portal.story()||adventure.story()||scanStatus.textContent||'').slice(0,240)}`;
         if(text!==hudKey){
           hudKey=text;hudContext.fillStyle='rgba(9,20,34,0.94)';hudContext.fillRect(0,0,1024,512);hudContext.fillStyle='#ffffff';hudContext.font='30px sans-serif';
-          let y=42;for(const paragraph of text.split('\n')){let line='';for(const word of paragraph.split(' ')){if(hudContext.measureText(line+word).width>970){hudContext.fillText(line,24,y);y+=38;line='';}line+=word+' ';}hudContext.fillText(line,24,y);y+=45;}
+          let y=42;for(const paragraph of text.split('\\n')){let line='';for(const word of paragraph.split(' ')){if(hudContext.measureText(line+word).width>970){hudContext.fillText(line,24,y);y+=38;line='';}line+=word+' ';}hudContext.fillText(line,24,y);y+=45;}
           hudTexture.needsUpdate=true;
         }
       }
@@ -352,6 +355,7 @@ enter.onclick = async () => {
           feedback.textContent = '✓ B placé. Calibrage terminé.';
           xrEvent('placement_accepted', { step: 'B', x: point.x, y: point.y, z: point.z });
           xrEvent('calibration_completed', { distance: calibration.distance });
+        if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'calibration_publish',distance:calibration.distance}));
           const anchorA=firstPoint;if(latestFrame&&anchorA){void createSpatialAnchorHandles(latestFrame,reference!,anchorA,point).then(handles=>{if(handles)writeSpatialAnchors(anchorRoomId,handles);}).catch(()=>{});}
           survey.refresh();if(!survey.current())wallLobby.setRoomMode(true);
           calibrationMessage(`Calibré : A → B = ${calibration.distance.toFixed(2)} m ; B dans la pièce = (${roomPoint.x.toFixed(2)}, ${roomPoint.z.toFixed(2)}). Recommencez pour changer les repères.`);
