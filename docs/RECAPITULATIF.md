@@ -4,7 +4,7 @@ Après la dernière traversée, le client conserve l'introduction cinq secondes. Le
 
 ## Indices, vortex et import de jaquettes — 27 novembre 2026
 
-Version add-on/client préparée : 0.15.17. Les fragments d'indices utilisent désormais des fiches 3D en papier avec bordure et texte, sans supprimer le panneau de validation du coffre. Les modèles GLB de bâtons déjà présents dans le catalogue sont conservés ; les faisceaux entre bâtons et vortex ont été retirés. Le bâton du joueur est masqué dès son entrée dans le couloir vortex.
+Version add-on/client publiée : 0.15.18. Les fragments d'indices utilisent désormais des fiches 3D en papier avec bordure et texte, sans supprimer le panneau de validation du coffre. Les modèles GLB de bâtons déjà présents dans le catalogue sont conservés ; les faisceaux entre bâtons et vortex ont été retirés. Le bâton du joueur est masqué dès son entrée dans le couloir vortex.
 
 Les champs de placement du vortex dans l'administration déclenchent maintenant une sauvegarde automatique après une courte pause, tant que le rituel est arrêté. L'authentification administrative reste appliquée ; le mode debug existant peut l'autoriser sans jeton. Les jaquettes acceptent 16 Mio côté serveur et proxy Nginx ; un proxy HTTPS externe peut encore imposer une limite inférieure.
 

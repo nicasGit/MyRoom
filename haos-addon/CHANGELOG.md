@@ -1,3 +1,7 @@
+## 0.15.18
+
+- Transition du vortex vers l’aventure avec dissipation en brouillard après cinq secondes.
+
 ## 0.15.17
 
 - Indices papier réalistes, vortex auto-sauvegardé depuis l’administration, bâtons masqués dans le couloir et import de jaquettes jusqu’à 16 Mio.
