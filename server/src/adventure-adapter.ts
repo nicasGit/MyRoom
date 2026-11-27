@@ -54,7 +54,7 @@ export class Adventure {
     this.beforeTest??=previous;this.revision++;this.message='Session de test temporaire : '+this.engine.currentStep().narrative;
   }
   listAdventures(){return this.catalog.list();}
-  select(id:string,version:string,revision:number){if(this.beforeTest)throw new Error('Quittez le mode test avant de changer d’aventure.');if(revision!==this.revision)throw new Error('La partie a changé. Actualisez avant de sélectionner.');const manifest=this.catalog.get(id,version);if(manifest.objects.some(o=>o.objectId!==o.placementKey))throw new Error('Ce placement nécessite le futur moteur de rendu par aventure.');this.engine.select(id,version);this.sceneEpoch++;this.revision++;this.message=this.engine.currentStep().narrative;}
+  select(id:string,version:string,revision:number){if(this.beforeTest)throw new Error('Quittez le mode test avant de changer d’aventure.');if(revision!==this.revision)throw new Error('La partie a changé. Actualisez avant de sélectionner.');const manifest=this.catalog.get(id,version);this.engine.select(id,version);this.sceneEpoch++;this.revision++;this.message=this.engine.currentStep().narrative;}
   snapshot():AdventureState{
     const engine=this.engine.publicState(),active=this.engine.activeInstance();
     const symbols=active?.type==='symbol-chest'?active:engine.instances.find(i=>i.type==='symbol-chest'),blackjack=active?.type==='blackjack-legacy'?active:engine.instances.find(i=>i.type==='blackjack-legacy');

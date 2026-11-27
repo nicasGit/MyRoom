@@ -1,3 +1,11 @@
+## Noms de joueurs aléatoires par défaut — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.24. Les quatre places reçoivent maintenant au démarrage des noms distincts issus de la liste de personnages ; l’administration peut toujours appliquer Team Léon ou une nouvelle sélection aléatoire.
+
+## Sélection du coffre immersif — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.23. La sélection d’une aventure n’est plus bloquée lorsque ses objets sont placés sur un emplacement différent (par exemple une cassette sur une cachette). Le rendu par aventure utilise ces emplacements et les anciennes pièces restent compatibles.
+
 ## Coffre immersif avec fragments de lettre — 27 novembre 2026
 
 Version add-on/client préparée : 0.15.22. Le catalogue ajoute Opération Menthe 27 0.6.0 : quatre fragments de lettre déchirée, une fausse piste sous le coffre et des indices progressifs. Les versions historiques restent sélectionnables. Le rendu Three.js remplace les feuilles rectangulaires par des fragments irréguliers avec plis. Aucun test matériel Quest n’est annoncé.

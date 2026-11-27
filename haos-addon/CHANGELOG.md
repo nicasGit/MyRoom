@@ -1,3 +1,11 @@
+## 0.15.24
+
+- Noms de joueurs distincts attribués automatiquement au démarrage.
+
+## 0.15.23
+
+- Autorise la sélection du coffre immersif et de ses objets placés sur des emplacements dédiés.
+
 ## 0.15.22
 
 - Ajout du coffre immersif Menthe 27 avec fragments de lettre et fausse piste cachée.

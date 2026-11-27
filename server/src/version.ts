@@ -1,2 +1,2 @@
 /** Release identifier displayed by the administration console. */
-export const MYROOM_VERSION = '0.15.22';
+export const MYROOM_VERSION = '0.15.24';

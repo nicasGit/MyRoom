@@ -12,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
 import { suggestPortalPlacement } from './portal/portal-placement.js';
 import { MYROOM_VERSION } from './version.js';
+import { randomPlayerNames } from './player-name-presets.js';
 export type SharedCalibration={roomId:string;revision:number;distance:number;createdAt:string;sourceSlot:number};
 export class Room {
   display=new DisplayModes();
@@ -39,7 +40,7 @@ export class Room {
   constructor(public adventure=new Adventure()){}
   sharedCalibration:SharedCalibration|undefined;
   publishCalibration(slot:number,distance:number){if(!Number.isFinite(distance)||distance<.5||distance>10)throw Error('Calibrage partagé invalide.');if(!this.sharedCalibration)this.sharedCalibration={roomId:this.model?.id??'no-room',revision:1,distance,createdAt:new Date().toISOString(),sourceSlot:slot};return this.sharedCalibration;}
-  playerNames=['Joueur 1','Joueur 2','Joueur 3','Joueur 4'];
+  playerNames=randomPlayerNames();
   playerNamesRevision=0;
   setPlayerNames(names:unknown,revision:unknown){
     if(integer(revision)!==this.playerNamesRevision)throw new Error('Les noms ont changÃ©. Actualisez avant de recommencer.');
