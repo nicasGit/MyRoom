@@ -1,3 +1,7 @@
+## 0.15.20
+
+- Vortex conservé dix secondes après le passage de toute l’équipe, avec version affichée dans l’interface joueur.
+
 ## 0.15.19
 
 - Clic menu des mains séparé du déplacement du panneau et version visible dans la console admin.

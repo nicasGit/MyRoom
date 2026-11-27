@@ -11,6 +11,7 @@ import type { PortalPlacementStore } from './portal/placement-store.js';
 import { randomUUID } from 'node:crypto';
 import { ObjectManipulation } from './object-manipulation.js';
 import { suggestPortalPlacement } from './portal/portal-placement.js';
+import { MYROOM_VERSION } from './version.js';
 export type SharedCalibration={roomId:string;revision:number;distance:number;createdAt:string;sourceSlot:number};
 export class Room {
   display=new DisplayModes();
@@ -62,7 +63,7 @@ export class Room {
   snapshot() {
     this.adventure.configure(this.model);
     this.maintain();
-    return { type: 'state',objectCatalog:importedCatalog(),adminAccess:adminAccess(),display:{policy:this.display.snapshot(),clients:this.display.clients().map(({id,mode})=>({id,mode}))},sharedCalibration:this.sharedCalibration,lobby:{adventures:this.adventure.listAdventures().map(({id,version,title})=>({id,version,title})),names:[...this.playerNames],namesRevision:this.playerNamesRevision},portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
+    return { type: 'state',version:MYROOM_VERSION,objectCatalog:importedCatalog(),adminAccess:adminAccess(),display:{policy:this.display.snapshot(),clients:this.display.clients().map(({id,mode})=>({id,mode}))},sharedCalibration:this.sharedCalibration,lobby:{adventures:this.adventure.listAdventures().map(({id,version,title})=>({id,version,title})),names:[...this.playerNames],namesRevision:this.playerNamesRevision},portal:this.portal.snapshot(), players: [...this.players].map(([id, slot]) => ({ id, slot,name:this.playerNames[slot-1] })), puzzle: { id: 'demo', solved: this.solved, revision: this.revision }, model:this.model, libraryRevision:this.libraryRevision,adventure:{...this.adventure.snapshot(),objects:this.objects.snapshot()} };
   }
   reset() { this.solved = false; this.revision++; }
 }

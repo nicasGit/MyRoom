@@ -19,7 +19,7 @@ export class PortalClient {
   receive(state:PortalPublic,slot:number,model:RoomModel|null,bypassIntro=false){
     const previous=this.state,bypassChanged=this.bypassIntro!==bypassIntro;this.bypassIntro=bypassIntro;this.state=state;this.slot=slot;
     if(previous?.sessionId!==state.sessionId){this.seq=0;this.wasReady=false;this.transitionUntil=0;clearTimeout(this.transitionTimer);}
-    if(state.phase==='completed'&&previous?.phase!=='completed'){this.transitionUntil=performance.now()+5000;clearTimeout(this.transitionTimer);this.transitionTimer=setTimeout(()=>{this.transitionUntil=0;this.changed();},5000);}
+    if(state.phase==='completed'&&previous?.phase!=='completed'){this.transitionUntil=performance.now()+10000;clearTimeout(this.transitionTimer);this.transitionTimer=setTimeout(()=>{this.transitionUntil=0;this.changed();},10000);}
     const changed=bypassChanged||previous?.revision!==state.revision||previous?.sessionId!==state.sessionId;
     if(changed){
       for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!;root.hidden=this.visible();}

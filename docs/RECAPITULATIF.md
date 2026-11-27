@@ -1,3 +1,7 @@
+## Transition vortex 10 secondes et version joueur - 27 novembre 2026
+
+Version add-on/client préparée : 0.15.20. La transition du vortex et le brouillard durent désormais dix secondes ; la version serveur est aussi affichée dans le diagnostic WebXR.
+
 ## Clic des menus et version admin - 27 novembre 2026
 
 Version add-on/client préparée : 0.15.19. Le pincement avec les mains sélectionne maintenant les boutons du panneau admin sans le déplacer ; l’indicateur de version est affiché après connexion.
