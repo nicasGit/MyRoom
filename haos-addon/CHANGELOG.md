@@ -1,3 +1,8 @@
+## 0.15.28
+
+- Ajoute un compte à rebours aérien et un bip par seconde pendant la transition vortex.
+- Renforce la visibilité du brouillard et aligne la simulation PC sur les dix secondes.
+
 ## 0.15.27
 
 - Ajuste les tests réseau et solo au délai de transition vortex de dix secondes.

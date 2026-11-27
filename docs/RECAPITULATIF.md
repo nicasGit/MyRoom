@@ -1,3 +1,7 @@
+## Compte à rebours aérien et brouillard renforcé — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.28. La transition du vortex affiche désormais un compte à rebours visible dans le ciel, un bip par seconde lorsque l’audio est autorisé par le navigateur, et un brouillard procédural plus lisible. La simulation PC conserve la durée complète de dix secondes. Aucun essai matériel Quest n’a été réalisé.
+
 ## Tests réseau adaptés au brouillard — 27 novembre 2026
 
 Version add-on/client préparée : 0.15.27. Les scénarios réseau et les tests de sélection solo attendent maintenant la transition complète de dix secondes avant de vérifier le démarrage de l’aventure.
