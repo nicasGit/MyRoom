@@ -1342,3 +1342,10 @@ La version de l'add-on HAOS passe de 0.15.11 à 0.15.12 pour intégrer la sideba
 Le moteur serveur, l'image HAOS et le workflow de validation utilisent maintenant Node.js 24. Le moteur Alpine reste ciblé sur linux/arm64. Version d'add-on préparée : 0.15.13. Vérifications locales à exécuter avant publication ; aucune validation matérielle Quest annoncée.
 
 Les objets de bibliothèque manipulables sont maintenant replacés au niveau du sol lorsqu'ils sont relâchés ; la validation serveur conserve les limites de pièce, obstacles et échelle.
+# Mise à jour jaquettes et bibliothèque 3D — 27 novembre 2026
+
+Les jaquettes importées sont maintenant sélectionnées automatiquement pour la cassette choisie. Le client recharge périodiquement le catalogue public afin qu’une modification faite depuis l’administration soit visible dans une partie déjà ouverte.
+
+La bibliothèque conserve ses vrais modèles GLB avec aperçu 3D interactif dans l’administration. Les objets importés restent versionnés et réutilisables dans les pièces et les énigmes. Aucun test matériel Quest n’a été effectué pour cette évolution.
+
+Version add-on préparée : 0.15.14.

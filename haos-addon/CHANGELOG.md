@@ -410,3 +410,9 @@
 - Runtime et validation CI migrés vers Node.js 24.
 - Image HAOS construite depuis `node:24-alpine` pour aarch64.
 
+## 0.15.14
+
+- Les jaquettes importées sont automatiquement appliquées à la cassette choisie.
+- Synchronisation périodique du catalogue de jaquettes dans les parties déjà ouvertes.
+- Aperçu 3D des modèles GLB de la bibliothèque conservé pour les objets du premier puzzle.
+
