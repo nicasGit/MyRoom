@@ -1,3 +1,7 @@
+## Validation de la transition vortex — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.26. Les tests du portail couvrent maintenant le délai réel de dix secondes, y compris la simulation, afin d’éviter une régression du compte à rebours et du brouillard.
+
 ## Brouillard du vortex pendant la transition — 27 novembre 2026
 
 Version add-on/client préparée : 0.15.25. Quand tous les participants requis ont traversé, la transition serveur dure dix secondes : le brouillard apparaît immédiatement, atteint son intensité puis se dissipe avant l’ouverture de l’aventure. Le seuil utilise le nombre de joueurs configuré, y compris le mode solo.

@@ -1,3 +1,7 @@
+## 0.15.26
+
+- Aligne les tests du portail sur la transition de dix secondes.
+
 ## 0.15.25
 
 - Transition vortex de dix secondes avec brouillard progressif après le dernier passage, y compris en solo.

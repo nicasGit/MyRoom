@@ -280,12 +280,12 @@ test('portail : commandes répétées/périmées, passage unique et lancement un
   const p=open();assert.equal(p.snapshot().phase,'portal-open');
   const s=p.snapshot(),c={type:'portal_action' as const,sessionId:s.sessionId,revision:s.revision,commandId:'unique',seq:2,action:'confirm' as const};p.act(c,1,model,6300);assert.throws(()=>p.act(c,1,model,6400));assert.throws(()=>p.act({...c,commandId:'stale'},2,model,6400));
   for(let slot=2;slot<=4;slot++)for(const [index,d] of [.6,.2,-.1,-.4].entries())pose(p,slot,index+2,6500+index*300,d);
-  assert.equal(p.snapshot().players.every(player=>player.crossed),true);let starts=0;p.tick(7500,()=>starts++);assert.equal(p.snapshot().phase,'transitioning');p.tick(9500,()=>starts++);p.tick(10000,()=>starts++);assert.equal(starts,1);assert.equal(p.snapshot().phase,'completed');
+  assert.equal(p.snapshot().players.every(player=>player.crossed),true);let starts=0;p.tick(7500,()=>starts++);assert.equal(p.snapshot().phase,'transitioning');p.tick(16500,()=>starts++);p.tick(17500,()=>starts++);assert.equal(starts,1);assert.equal(p.snapshot().phase,'completed');
 });
 test('portail : reprise privée de place, absence, commandes admin et simulation explicite',()=>{
   const seats=new SeatSessions(),first=seats.acquire('one',undefined,false);seats.disconnect('one',true);assert.throws(()=>seats.acquire('attacker','wrong',true));assert.equal(seats.acquire('other',undefined,true).slot,2);assert.equal(seats.acquire('reconnected',first.token,true).slot,1);assert.throws(()=>seats.acquire('duplicate',first.token,true));
   const p=open();p.presence([1,2,3],6300);assert.equal(p.snapshot().players[3].claimed,true);assert.equal(p.snapshot().players[3].ready,false);assert.throws(()=>p.adminCross(1));p.skip();let starts=0;p.tick(10000,()=>starts++);assert.equal(starts,1);
-  p.begin('simulation',['A','B','C','D'],model,11000,true);p.presence([],11000);p.tick(11000,()=>{});for(let i=1;i<=4;i++)p.simulate(i,false);p.tick(11001,()=>{});p.tick(16001,()=>{});for(let i=1;i<=4;i++)p.simulate(i,true);p.tick(16002,()=>{});p.tick(18002,()=>starts++);assert.equal(starts,2);
+  p.begin('simulation',['A','B','C','D'],model,11000,true);p.presence([],11000);p.tick(11000,()=>{});for(let i=1;i<=4;i++)p.simulate(i,false);p.tick(11001,()=>{});p.tick(16001,()=>{});for(let i=1;i<=4;i++)p.simulate(i,true);p.tick(16002,()=>{});p.tick(26002,()=>starts++);assert.equal(starts,2);
 });
 test('portail : placements séparés atomiques et lancement Room conservant les énigmes',()=>{
   const directory=mkdtempSync(join(tmpdir(),'myroom-portal-'));try{const store=new PortalPlacementStore(directory);store.save('room@adventure',config);assert.deepEqual(new PortalPlacementStore(directory).get('room@adventure'),config);}finally{rmSync(directory,{recursive:true,force:true});}
