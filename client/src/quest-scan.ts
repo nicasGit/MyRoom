@@ -26,6 +26,16 @@ export function captureMeshes(frame:XRFrame,reference:XRReferenceSpace):Surface[
 
 export class QuestButtons {
   private states=new WeakMap<XRInputSource,boolean[]>();
+  pollMenu(sources:Iterable<XRInputSource>){
+    let pressed=false;
+    for(const source of sources){
+      if(source.handedness!=='left'||source.gamepad?.mapping!=='xr-standard')continue;
+      const previous=this.states.get(source),current=Array.from(source.gamepad.buttons,b=>b.pressed);this.states.set(source,current);
+      if(!previous)continue;
+      if(([4,5] as const).some(index=>current[index]&&!previous[index]))pressed=true;
+    }
+    return pressed;
+  }
   poll(sources:Iterable<XRInputSource>):('import'|'save'|'cancel')[]{
     const actions:('import'|'save'|'cancel')[]=[];
     for(const source of sources){

@@ -1349,3 +1349,7 @@ Les jaquettes importées sont maintenant sélectionnées automatiquement pour la
 La bibliothèque conserve ses vrais modèles GLB avec aperçu 3D interactif dans l’administration. Les objets importés restent versionnés et réutilisables dans les pièces et les énigmes. Aucun test matériel Quest n’a été effectué pour cette évolution.
 
 Version add-on préparée : 0.15.14.
+
+Le bouton système gauche du contrôleur Quest (lorsqu’il est exposé par le navigateur WebXR) ouvre ou masque le menu mural pendant l’aventure. Les ancres persistantes sont restaurées seulement si le navigateur et le casque exposent `restorePersistentAnchor` et si les poignées correspondent à la pièce ; un nouveau calibrage A/B remplace volontairement l’alignement local et peut donc décaler l’affichage. Les ancres ne sont pas partagées entre appareils.
+
+Version add-on préparée : 0.15.15. Aucun test matériel Quest n’a été effectué.

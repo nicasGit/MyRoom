@@ -64,6 +64,7 @@ export class WallLobby {
     void this.request('state').then((state:AdminState)=>{this.portal=state.portal;this.adventure=state.adventure;this.model=state.library.rooms.find(room=>room.id===state.library.activeId)??null;if(this.lobby){this.lobby.names=state.playerNames;this.lobby.namesRevision=state.playerNamesRevision;}this.draw();}).catch(error=>{this.notice=String(error);this.draw();}).finally(()=>{this.polling=false;});
   }
   pick(origin:THREE.Vector3,direction:THREE.Vector3){if(!this.view.group.visible)return false;const id=this.view.pick(origin,direction);if(!id)return false;void this.act(id);return true;}
+  openMenu(){this.tab='home';this.placement=undefined;this.draw(true);}
   private draw(force=false){
     const p=this.portal,a=this.adventure,l=this.lobby;if(!p||!a||!l)return;
     const key=JSON.stringify([p.revision,p.players,a.revision,l,this.tab,this.page,this.name,this.notice,this.busy,!!this.token,this.roomMode,this.debug,this.model?.objects,this.objectId,this.placement,importedCatalog().revision]);if(!force&&key===this.key)return;this.key=key;

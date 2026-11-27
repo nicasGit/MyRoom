@@ -416,3 +416,8 @@
 - Synchronisation périodique du catalogue de jaquettes dans les parties déjà ouvertes.
 - Aperçu 3D des modèles GLB de la bibliothèque conservé pour les objets du premier puzzle.
 
+## 0.15.15
+
+- Le bouton système gauche du Quest rouvre ou masque le menu mural pendant l’aventure.
+- Le menu reste dans le repère de la pièce ; le calibrage A/B et les ancres persistantes restent distincts.
+

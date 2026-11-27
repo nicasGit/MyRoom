@@ -180,6 +180,7 @@ enter.onclick = async () => {
     overlay.hidden = !touchOverlay;
     element('xr-exit').onclick = () => { void session?.end().catch(error => calibrationMessage(String(error))); };
     session.addEventListener('end', () => {
+      menuOpen=false;
       grabber.cancel();handCards.cancel();
       adventure.setXRActive(false);
       xrEvent('session_ended');currentXRSession=undefined;
@@ -248,7 +249,7 @@ enter.onclick = async () => {
     const menuMover=new MenuMover(),menuPointers=new MenuPointers();scene.add(menuPointers.group);
     const surveyMenu=new WallMenuView(true),surveyAnchor=new InfoPanelAnchor(-.95);surveyMenu.group.visible=false;scene.add(surveyMenu.group);let surveyMenuKey='';
     const handsView=new XRHandsView();scene.add(handsView.group);
-    let menuRequested=false;
+    let menuRequested=false,menuOpen=false;
     const phoneControls=new PhoneControls(overlay,()=>{menuRequested=true;},{rooms:()=>wallLobby.setRoomMode(!wallLobby.roomMode),exit:()=>{void session?.end();}});
     const handDots=[0,1].map(()=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(0.025,12,8),new THREE.MeshBasicMaterial({color:0x67e8f9,depthTest:false}));dot.renderOrder=1001;dot.visible=false;scene.add(dot);return dot;});
     let handStatus='';
@@ -268,6 +269,7 @@ enter.onclick = async () => {
         else if(action==='save')survey.saveDraft();
         else survey.cancel();
       }
+      if(questButtons.pollMenu(session!.inputSources)){menuOpen=!menuOpen;if(menuOpen)wallLobby.openMenu();}
       if(performance.now()-lastScanUpdate>1000){
         lastScanUpdate=performance.now();
         const planes=frame.detectedPlanes,meshes=frame.detectedMeshes;
@@ -438,7 +440,7 @@ enter.onclick = async () => {
       phoneControls.update(touchOverlay,phoneEnabled,!!calibration&&!!pose&&portal.visible(),context);
       wallLobby.tick(performance.now());
       if(calibration){wallLobby.view.group.position.copy(calibration.origin);wallLobby.view.group.rotation.y=-calibration.yaw;}
-      wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&portal.visible()&&!wallLobby.roomMode&&!inCorridor;
+      wallLobby.view.group.visible=wallLobby.placed&&!!calibration&&(portal.visible()||menuOpen)&&!wallLobby.roomMode&&!inCorridor;
       overlay.classList.toggle('xr-lobby-ready',!!calibration);overlay.classList.toggle('xr-room-mode',wallLobby.roomMode);
       element('survey-panel').hidden=!calibration||!wallLobby.roomMode;if(surveyGroup)surveyGroup.visible=wallLobby.roomMode;if(gameGroup)gameGroup.visible=!wallLobby.roomMode;
       if(menuRequested&&pose){menuRequested=false;wallLobby.pick(new THREE.Vector3().copy(pose.transform.position),new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().copy(pose.transform.orientation)));}
