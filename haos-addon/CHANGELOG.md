@@ -1,3 +1,7 @@
+## 0.15.25
+
+- Transition vortex de dix secondes avec brouillard progressif après le dernier passage, y compris en solo.
+
 ## 0.15.24
 
 - Noms de joueurs distincts attribués automatiquement au démarrage.

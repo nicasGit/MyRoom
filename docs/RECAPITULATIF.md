@@ -1,3 +1,7 @@
+## Brouillard du vortex pendant la transition — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.25. Quand tous les participants requis ont traversé, la transition serveur dure dix secondes : le brouillard apparaît immédiatement, atteint son intensité puis se dissipe avant l’ouverture de l’aventure. Le seuil utilise le nombre de joueurs configuré, y compris le mode solo.
+
 ## Noms de joueurs aléatoires par défaut — 27 novembre 2026
 
 Version add-on/client préparée : 0.15.24. Les quatre places reçoivent maintenant au démarrage des noms distincts issus de la liste de personnages ; l’administration peut toujours appliquer Team Léon ou une nouvelle sélection aléatoire.

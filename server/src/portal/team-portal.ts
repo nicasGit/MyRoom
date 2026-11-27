@@ -7,7 +7,7 @@ export class TeamPortal {
   private state:PortalPublic={serverNow:0,sessionId:'inactive',revision:0,active:false,phase:'waiting',config:structuredClone(DEFAULT_PORTAL),simulation:false,startedAt:0,players:[]};
   private pose=new Map<number,{p:Vec3;at:number;seq:number;mode:DisplayMode}>();
   private detectors=Array.from({length:4},()=>new CrossingDetector());
-  private seen=new Set<string>();private launched=false;
+  private seen=new Set<string>();private launched=false;private skipped=false;
   private room:RoomModel|null=null;private layoutKey='';private positions:ReturnType<typeof staffLayout>={};
   setRoom(room:RoomModel|null){this.room=room;const key=JSON.stringify([room,this.state.config]);if(key!==this.layoutKey){this.layoutKey=key;this.positions=staffLayout(this.state.config,room);}}
   snapshot(now=Date.now()){
@@ -29,10 +29,10 @@ export class TeamPortal {
     if(this.active)throw Error('Introduction déjà active.');validatePlacement(this.state.config,room);this.setRoom(room);
     if(Object.keys(this.positions).length!==(this.state.config.playerCount??4))throw Error('Pas assez de place libre pour disperser les bâtons du groupe. Ajustez le portail ou le relevé de pièce.');
     if(!this.state.config.confirmed)throw Error('L’organisateur doit vérifier et confirmer l’espace physique.');
-    this.pose.clear();this.seen.clear();this.detectors.forEach(d=>d.reset());this.launched=false;
+    this.pose.clear();this.seen.clear();this.detectors.forEach(d=>d.reset());this.launched=false;this.skipped=false;
     this.state={...this.state,sessionId,revision:this.state.revision+1,active:true,phase:'waiting',simulation,startedAt:now,players:names.slice(0,this.state.config.playerCount??4).map((name,i)=>({slot:i+1,name,present:false,ready:false,claimed:false,crossed:false}))};
   }
-  cancel(){this.state.active=false;this.state.phase='waiting';this.state.revision++;this.pose.clear();this.detectors.forEach(d=>d.reset());}
+  cancel(){this.state.active=false;this.state.phase='waiting';this.state.revision++;this.pose.clear();this.detectors.forEach(d=>d.reset());this.skipped=false;}
   presence(slots:number[],now:number){
     let changed=false;
     for(const p of this.state.players){const present=this.state.simulation||slots.includes(p.slot),ready=present&&(this.state.simulation||!!this.pose.get(p.slot)&&now-this.pose.get(p.slot)!.at<1500);
@@ -68,7 +68,7 @@ export class TeamPortal {
   private cross(slot:number,method:import('./portal-types.js').PassageMethod='simulation'){const p=this.state.players[slot-1];if(this.state.phase!=='portal-open'||!this.allReady()||!p||p.crossed)throw Error('Passage déjà validé ou portail indisponible.');p.crossed=true;p.validationMethod=method;this.state.revision++;}
   adminCross(slot:number){this.cross(slot,'admin');}
   simulate(slot:number,cross:boolean){if(!this.state.simulation||!this.active)throw Error('Simulation PC inactive.');if(cross)this.cross(slot);else this.claim(slot,STAFF_IDS[slot-1]);}
-  skip(){if(!this.active)throw Error('Introduction inactive.');this.state.phase='transitioning';this.state.startedAt=0;this.state.players.forEach(p=>{p.present=true;p.ready=true;p.crossed=true;p.validationMethod='admin';});this.state.simulation=true;this.state.revision++;}
+  skip(){if(!this.active)throw Error('Introduction inactive.');this.skipped=true;this.state.phase='transitioning';this.state.startedAt=0;this.state.players.forEach(p=>{p.present=true;p.ready=true;p.crossed=true;p.validationMethod='admin';});this.state.simulation=true;this.state.revision++;}
   tick(now:number,launch:()=>void){
     if(!this.active)return false;const old=this.state.revision;
     if(this.state.phase==='waiting'&&this.state.players.some(p=>p.ready)){this.state.phase='collecting';this.state.revision++;}
@@ -80,7 +80,7 @@ export class TeamPortal {
       this.detectors.forEach((detector,index)=>{detector.reset();const pose=this.pose.get(index+1);if(pose&&now-pose.at<=1200)detector.sample(pose.p,pose.at,this.state.config.portal);});
     }
     if(this.state.phase==='portal-open'&&this.allReady()&&this.state.players.every(p=>p.crossed)){this.state.phase='transitioning';this.state.startedAt=now;this.state.revision++;}
-    if(this.state.phase==='transitioning'&&this.allReady()&&now-this.state.startedAt>=2000&&!this.launched){launch();this.launched=true;this.state.phase='completed';this.state.active=false;this.state.revision++;this.pose.clear();}
+    if(this.state.phase==='transitioning'&&this.allReady()&&now-this.state.startedAt>=(this.skipped?0:10000)&&!this.launched){launch();this.launched=true;this.state.phase='completed';this.state.active=false;this.state.revision++;this.pose.clear();}
     return old!==this.state.revision;
   }
   staffPoses(){if(!this.active)return {};this.setRoom(this.room);return Object.fromEntries(Object.entries(this.positions).map(([id,p])=>[id,{...p,yaw:0}]));}
