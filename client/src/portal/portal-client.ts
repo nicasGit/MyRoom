@@ -7,18 +7,19 @@ import { modelGroup,disposeGroup } from '../model-view';
 import { createPreview } from '../model-view';
 import type { RoomModel } from '../../../server/src/scene-schema.js';
 export class PortalClient {
-  state:PortalPublic|undefined;private bypassIntro=false;private slot=0;private seq=0;private last=-Infinity;private wasReady=false;
+  state:PortalPublic|undefined;private bypassIntro=false;private slot=0;private seq=0;private last=-Infinity;private wasReady=false;private transitionUntil=0;private transitionTimer:ReturnType<typeof setTimeout>|undefined;
   private panels:HTMLElement[]=[];private audio:AudioContext|undefined;private preview:(model:RoomModel|null)=>void;private previewState:PortalPublic|undefined;private host=document.createElement('div');
   constructor(private send:(command:PortalCommand)=>boolean,private calibration:()=>ReturnType<typeof makeCalibration>|undefined,private changed:()=>void,private notify:(text:string)=>void){
     for(const id of ['adventure-desktop','adventure-ar']){const panel=document.createElement('section');panel.hidden=true;document.getElementById(id)!.before(panel);this.panels.push(panel);}
     const host=this.host;host.hidden=true;this.panels[0].after(host);
-    this.preview=createPreview(host,model=>{const group=modelGroup(model);if(this.previewState?.config.enabled&&this.previewState.phase!=='completed')group.add(portalView(this.previewState,this.slot));return group;});
+    this.preview=createPreview(host,model=>{const group=modelGroup(model);if(this.previewState?.config.enabled&&this.visible())group.add(portalView(this.previewState,this.slot));return group;});
     document.addEventListener('pointerdown',()=>{try{this.audio=new AudioContext();void this.audio.resume();}catch{}},{once:true});
   }
-  visible(){return !this.bypassIntro&&!!this.state?.config.enabled&&this.state.phase!=='completed';}
+  visible(){return !this.bypassIntro&&!!this.state?.config.enabled&&(this.state.phase!=='completed'||performance.now()<this.transitionUntil);}
   receive(state:PortalPublic,slot:number,model:RoomModel|null,bypassIntro=false){
     const previous=this.state,bypassChanged=this.bypassIntro!==bypassIntro;this.bypassIntro=bypassIntro;this.state=state;this.slot=slot;
-    if(previous?.sessionId!==state.sessionId){this.seq=0;this.wasReady=false;}
+    if(previous?.sessionId!==state.sessionId){this.seq=0;this.wasReady=false;this.transitionUntil=0;clearTimeout(this.transitionTimer);}
+    if(state.phase==='completed'&&previous?.phase!=='completed'){this.transitionUntil=performance.now()+5000;clearTimeout(this.transitionTimer);this.transitionTimer=setTimeout(()=>{this.transitionUntil=0;this.changed();},5000);}
     const changed=bypassChanged||previous?.revision!==state.revision||previous?.sessionId!==state.sessionId;
     if(changed){
       for(const id of ['adventure-desktop','adventure-ar']){const root=document.getElementById(id)!;root.hidden=this.visible();}

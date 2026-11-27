@@ -1,3 +1,7 @@
+## Transition vortex vers l'aventure — 27 novembre 2026
+
+Après la dernière traversée, le client conserve l'introduction cinq secondes. Le vortex se contracte et un nuage de particules se disperse avant que l'affichage bascule vers le coffre et l'aventure déjà démarrée côté serveur. Les tests serveur restent indépendants du rendu XR ; aucune validation Quest matérielle n'est annoncée.
+
 ## Indices, vortex et import de jaquettes — 27 novembre 2026
 
 Version add-on/client préparée : 0.15.17. Les fragments d'indices utilisent désormais des fiches 3D en papier avec bordure et texte, sans supprimer le panneau de validation du coffre. Les modèles GLB de bâtons déjà présents dans le catalogue sont conservés ; les faisceaux entre bâtons et vortex ont été retirés. Le bâton du joueur est masqué dès son entrée dans le couloir vortex.
