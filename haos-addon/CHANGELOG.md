@@ -1,3 +1,7 @@
+## 0.15.22
+
+- Ajout du coffre immersif Menthe 27 avec fragments de lettre et fausse piste cachée.
+
 ## 0.15.21
 
 - Version joueur récupérable directement via /api/version, même avant la connexion WebSocket.

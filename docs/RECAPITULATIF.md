@@ -1,3 +1,7 @@
+## Coffre immersif avec fragments de lettre — 27 novembre 2026
+
+Version add-on/client préparée : 0.15.22. Le catalogue ajoute Opération Menthe 27 0.6.0 : quatre fragments de lettre déchirée, une fausse piste sous le coffre et des indices progressifs. Les versions historiques restent sélectionnables. Le rendu Three.js remplace les feuilles rectangulaires par des fragments irréguliers avec plis. Aucun test matériel Quest n’est annoncé.
+
 ## Version joueur chargée directement - 27 novembre 2026
 
 Version add-on/client préparée : 0.15.21. Le diagnostic joueur récupère maintenant la version via une route HTTP sans attendre la session WebSocket.

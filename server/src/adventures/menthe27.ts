@@ -36,3 +36,30 @@ export const menthe27Videoclub80s={
   objects:[...structuredClone(menthe27Hybrid.objects),{instanceId:'menthe-videoclub-80s',objectId:'tape-indiana',placementKey:'king'},{instanceId:'menthe-videoclub-80s',objectId:'tape-gremlins',placementKey:'chest'},{instanceId:'menthe-videoclub-80s',objectId:'tape-backfuture',placementKey:'four'},{instanceId:'menthe-videoclub-80s',objectId:'tape-goonies',placementKey:'eight'}],
   victory:{requiredSteps:['symbols','casino','videoclub','after-videoclub']},
 };
+
+// Version immersive du coffre : les anciennes versions restent disponibles pour
+// les pièces et sessions déjà enregistrées. Les fragments sont de vrais indices
+// progressifs ; aucun ordre n'est donné directement par le panneau mural.
+const immersiveChestConfig={
+  ...structuredClone(menthe27Hybrid.instances[0].config),
+  hints:[
+    'Cherchez quatre morceaux de lettre, chacun caché près d’un sceau.',
+    'Alignez les fragments : le message parle du jour, du bois, de la nuit puis des étoiles.',
+    'La feuille froissée sous le coffre est une fausse piste.',
+  ],
+  clues:[
+    {id:'clue-sun',text:'Fragment A — « Quand le jour se lève, le premier sceau est déjà allumé. »',truth:true},
+    {id:'clue-tree',text:'Fragment B — « Le bois pousse après la lumière et garde le deuxième sceau. »',truth:true},
+    {id:'clue-moon',text:'Fragment C — « Quand le soleil disparaît, la lune prend sa place. »',truth:true},
+    {id:'clue-star',text:'Fragment D — « Enfin, les premières étoiles ferment la marche. »',truth:true},
+    {id:'clue-false',text:'Papier froissé sous le coffre — « Commencez par la dernière lumière… »',truth:false},
+  ],
+};
+export const menthe27Immersive={
+  ...structuredClone(menthe27Videoclub80s),
+  version:'0.6.0',
+  title:'Opération Menthe 27 — Coffre immersif',
+  description:'Le coffre se découvre avec quatre fragments de lettre cachés dans la pièce, puis le blackjack et le vidéoclub des années 80.',
+  instances:structuredClone(menthe27Videoclub80s.instances).map(instance=>instance.id==='menthe-chest'?{...instance,config:immersiveChestConfig}:instance),
+  steps:structuredClone(menthe27Videoclub80s.steps).map(step=>step.id==='symbols'?{...step,title:'Le coffre aux fragments',narrative:'Les symboles ne sont pas affichés : rassemblez les fragments de lettre pour comprendre l’ordre des sceaux.'}:step),
+};
